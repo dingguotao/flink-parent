@@ -65,7 +65,10 @@ public class AbstractJobClusterExecutor<
     public CompletableFuture<JobClient> execute(
             @Nonnull final Pipeline pipeline, @Nonnull final Configuration configuration)
             throws Exception {
+        // TODO 流图（StreamGraph）转成作业图（JobGraph）
         final JobGraph jobGraph = PipelineExecutorUtils.getJobGraph(pipeline, configuration);
+
+
 
         try (final ClusterDescriptor<ClusterID> clusterDescriptor =
                 clusterClientFactory.createClusterDescriptor(configuration)) {
