@@ -60,5 +60,6 @@ fi
 if [[ $STARTSTOP == "start-foreground" ]]; then
     exec "${FLINK_BIN_DIR}"/flink-console.sh $ENTRYPOINT "${args[@]}"
 else
+    # clouding 这里就是执行 flink-daemon.sh start standalonesession "${args[@]}"
     "${FLINK_BIN_DIR}"/flink-daemon.sh $STARTSTOP $ENTRYPOINT "${args[@]}"
 fi

@@ -1779,6 +1779,7 @@ public class StreamExecutionEnvironment {
     public JobExecutionResult execute(String jobName) throws Exception {
         Preconditions.checkNotNull(jobName, "Streaming Job name should not be null.");
 
+        // TODO 这个非常关键，生成了StreamGraph
         return execute(getStreamGraph(jobName));
     }
 
@@ -1793,6 +1794,7 @@ public class StreamExecutionEnvironment {
      */
     @Internal
     public JobExecutionResult execute(StreamGraph streamGraph) throws Exception {
+        // TODO 异步执行
         final JobClient jobClient = executeAsync(streamGraph);
 
         try {
@@ -1901,7 +1903,9 @@ public class StreamExecutionEnvironment {
 
         CompletableFuture<JobClient> jobClientFuture =
                 executorFactory
+                        // 这个executor有很多种模式
                         .getExecutor(configuration)
+                        // TODO 这个是核心流程
                         .execute(streamGraph, configuration, userClassloader);
 
         try {

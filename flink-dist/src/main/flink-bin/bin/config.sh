@@ -450,6 +450,7 @@ readWorkers() {
 
 # starts or stops TMs on all workers
 # TMWorkers start|stop
+# clouding 启动taskManager
 TMWorkers() {
     CMD=$1
 

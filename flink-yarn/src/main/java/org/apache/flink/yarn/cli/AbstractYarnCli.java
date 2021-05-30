@@ -62,6 +62,7 @@ abstract class AbstractYarnCli extends AbstractCustomCommandLine {
                                 configuration.get(DeploymentOptions.TARGET))
                         || YarnJobClusterExecutor.NAME.equalsIgnoreCase(
                                 configuration.get(DeploymentOptions.TARGET));
+        // TODO 参数里有-m yarn-cluster 或者 yarn有appId，或者命令行指定了appId 或者 执行器是yarn
         return hasYarnExecutor || yarnJobManager || hasYarnAppId;
     }
 
