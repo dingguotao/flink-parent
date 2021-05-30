@@ -34,6 +34,7 @@ public class DefaultCLI extends AbstractCustomCommandLine {
 
     @Override
     public boolean isActive(CommandLine commandLine) {
+        // TODO 走到这里，意外这 YANR的没有配置
         // always active because we can try to read a JobManager address from the config
         return true;
     }

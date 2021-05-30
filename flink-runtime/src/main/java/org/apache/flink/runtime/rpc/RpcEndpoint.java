@@ -205,6 +205,8 @@ public abstract class RpcEndpoint implements RpcGateway, AutoCloseableAsync {
      * Triggers stop of the rpc endpoint. This tells the underlying rpc server that the rpc endpoint
      * is no longer ready to process remote procedure calls.
      */
+    // clouding 注释: 2021/5/30 10:36
+    //          只要当前Endpoint需要被销毁，就会调用onStop()
     protected final void stop() {
         rpcServer.stop();
     }

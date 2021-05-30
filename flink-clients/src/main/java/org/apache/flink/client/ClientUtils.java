@@ -120,15 +120,19 @@ public enum ClientUtils {
             boolean suppressSysout)
             throws ProgramInvocationException {
         checkNotNull(executorServiceLoader);
+        // 用户的类加载器
         final ClassLoader userCodeClassLoader = program.getUserCodeClassLoader();
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         try {
+            // TODO 这个还使用了个类加载器？？？是要干什么
             Thread.currentThread().setContextClassLoader(userCodeClassLoader);
 
             LOG.info(
                     "Starting program (detached: {})",
                     !configuration.getBoolean(DeploymentOptions.ATTACHED));
 
+            // TODO 设置了两个Context，一个流的，一个batch的
+            // TODO 代码里的 getExecutionEnviornment就是用的这个
             ContextEnvironment.setAsContext(
                     executorServiceLoader,
                     configuration,
@@ -144,6 +148,7 @@ public enum ClientUtils {
                     suppressSysout);
 
             try {
+                // 反射，调用我们代码里的main方法
                 program.invokeInteractiveModeForExecution();
             } finally {
                 ContextEnvironment.unsetAsContext();

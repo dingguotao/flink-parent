@@ -22,7 +22,7 @@
 bin=`dirname "$0"`
 bin=`cd "$bin"; pwd`
 
-# clouding 加载配置
+# clouding 加载配置config.sh
 . "$bin"/config.sh
 
 # Start the JobManager instance(s)
@@ -38,9 +38,12 @@ if [[ $HIGH_AVAILABILITY == "zookeeper" ]]; then
         master=${MASTERS[i]}
         webuiport=${WEBUIPORTS[i]}
         # clouding 是否本地启动.这个变量在readMasters 中声明和赋值
+
+        # clouding 启动本地的jobmaster
         if [ ${MASTERS_ALL_LOCALHOST} = true ] ; then
             "${FLINK_BIN_DIR}"/jobmanager.sh start "${master}" "${webuiport}"
         else
+            # clouding 启动远程的jobmaster
             ssh -n $FLINK_SSH_OPTS $master -- "nohup /bin/bash -l \"${FLINK_BIN_DIR}/jobmanager.sh\" start ${master} ${webuiport} &"
         fi
     done
