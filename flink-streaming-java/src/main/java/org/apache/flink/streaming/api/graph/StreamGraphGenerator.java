@@ -262,11 +262,21 @@ public class StreamGraphGenerator {
     public StreamGraph generate() {
         streamGraph = new StreamGraph(executionConfig, checkpointConfig, savepointRestoreSettings);
         shouldExecuteInBatchMode = shouldExecuteInBatchMode(runtimeExecutionMode);
+        // clouding 注释: 2021/5/31 22:34
+        //          设置streamGraph
         configureStreamGraph(streamGraph);
+
+        // clouding 注释: 2021/5/31 22:34
+        //          这个HashMap，用来存储已经transform的算子
 
         alreadyTransformed = new HashMap<>();
 
         for (Transformation<?> transformation : transformations) {
+            /*********************
+             * clouding 注释: 2021/5/31 22:35
+             *   从 env对象中，拿到所有的transformation，转换成StreamNode
+             *   也就是从最开始的 Function -> Operator -> Transformation -> StreamNode
+             *********************/
             transform(transformation);
         }
 
@@ -383,6 +393,8 @@ public class StreamGraphGenerator {
 
         if (transform.getMaxParallelism() <= 0) {
 
+            // clouding 注释: 2021/5/31 22:37
+            //          设置算子的并行度，如果MaxParallelism没有设置，就使用的job设置的
             // if the max parallelism hasn't been set, then first use the job wide max parallelism
             // from the ExecutionConfig.
             int globalMaxParallelismFromConfig = executionConfig.getMaxParallelism();
@@ -392,15 +404,22 @@ public class StreamGraphGenerator {
         }
 
         // call at least once to trigger exceptions about MissingTypeInfo
+        // 输出类型
         transform.getOutputType();
 
+        // clouding 注释: 2021/5/31 22:40
+        //          这个东西，说白了就是个Map，转换了下格式。translatorMap
         @SuppressWarnings("unchecked")
         final TransformationTranslator<?, Transformation<?>> translator =
                 (TransformationTranslator<?, Transformation<?>>)
                         translatorMap.get(transform.getClass());
 
+        // clouding 注释: 2021/5/31 22:41
+        //          这个集合，会存放转换后的 StreamNode的值
         Collection<Integer> transformedIds;
         if (translator != null) {
+            // clouding 注释: 2021/5/31 22:41
+            //          如果在translatorMap集合里，那么就是内置的
             transformedIds = translate(translator, transform);
         } else {
             transformedIds = legacyTransform(transform);

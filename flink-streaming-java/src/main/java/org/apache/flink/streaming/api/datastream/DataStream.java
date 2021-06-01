@@ -629,6 +629,12 @@ public class DataStream<T> {
      */
     public <R> SingleOutputStreamOperator<R> flatMap(
             FlatMapFunction<T, R> flatMapper, TypeInformation<R> outputType) {
+        // clouding 注释: 2021/5/31 21:45
+        //    flatMapper 是这个function
+        //          StreamFlatMap是一个Function，也是一个StreamOperator
+        //   在使用transform，把StreamFlatMap 转换成Transformation
+        //  最终都会加入到 StreamExecutionEnvironment的transformations的集合中
+        //
         return transform("Flat Map", outputType, new StreamFlatMap<>(clean(flatMapper)));
     }
 
@@ -1202,10 +1208,16 @@ public class DataStream<T> {
                         outTypeInfo,
                         environment.getParallelism());
 
+        /*********************
+         * clouding 注释: 2021/5/31 21:52
+         *  构建SingleOutputStreamOperator
+         *********************/
         @SuppressWarnings({"unchecked", "rawtypes"})
         SingleOutputStreamOperator<R> returnStream =
                 new SingleOutputStreamOperator(environment, resultTransform);
 
+        // clouding 注释: 2021/5/31 21:53
+        //          加入到transformations
         getExecutionEnvironment().addOperator(resultTransform);
 
         return returnStream;

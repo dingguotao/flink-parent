@@ -318,6 +318,8 @@ public class RestClient implements AutoCloseableAsync {
         ByteBuf payload =
                 Unpooled.wrappedBuffer(sw.toString().getBytes(ConfigConstants.DEFAULT_CHARSET));
 
+        // clouding 注释: 2021/5/31 23:37
+        //          构建一个httpRequest
         Request httpRequest =
                 createRequest(
                         targetAddress + ':' + targetPort,
@@ -341,6 +343,8 @@ public class RestClient implements AutoCloseableAsync {
                                     typeParameters.toArray(new Class<?>[typeParameters.size()]));
         }
 
+        // clouding 注释: 2021/5/31 23:38
+        //          发送http请求
         return submitRequest(targetAddress, targetPort, httpRequest, responseType);
     }
 
@@ -418,6 +422,8 @@ public class RestClient implements AutoCloseableAsync {
 
     private <P extends ResponseBody> CompletableFuture<P> submitRequest(
             String targetAddress, int targetPort, Request httpRequest, JavaType responseType) {
+        // clouding 注释: 2021/5/31 23:41
+        //          这个是netty客户端，连接到服务端
         final ChannelFuture connectFuture = bootstrap.connect(targetAddress, targetPort);
 
         final CompletableFuture<Channel> channelFuture = new CompletableFuture<>();
@@ -444,6 +450,8 @@ public class RestClient implements AutoCloseableAsync {
                                     throw new IOException(
                                             "Netty pipeline was not properly initialized.");
                                 } else {
+                                    // clouding 注释: 2021/5/31 23:44
+                                    //          写入数据到http
                                     httpRequest.writeTo(channel);
                                     future = handler.getJsonFuture();
                                     success = true;
