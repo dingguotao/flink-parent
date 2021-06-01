@@ -211,9 +211,17 @@ public class StreamGraphGenerator {
         streamGraph.setJobName(jobName);
         streamGraph.setGlobalDataExchangeMode(globalDataExchangeMode);
 
+        // clouding 注释: 2021/5/31 22:34
+        //          这个HashMap，用来存储已经transform的算子
+
         alreadyTransformed = new HashMap<>();
 
         for (Transformation<?> transformation : transformations) {
+            /*********************
+             * clouding 注释: 2021/5/31 22:35
+             *   从 env对象中，拿到所有的transformation，转换成StreamNode
+             *   也就是从最开始的 Function -> Operator -> Transformation -> StreamNode
+             *********************/
             transform(transformation);
         }
 
@@ -250,6 +258,8 @@ public class StreamGraphGenerator {
 
         if (transform.getMaxParallelism() <= 0) {
 
+            // clouding 注释: 2021/5/31 22:37
+            //          设置算子的并行度，如果MaxParallelism没有设置，就使用的job设置的
             // if the max parallelism hasn't been set, then first use the job wide max parallelism
             // from the ExecutionConfig.
             int globalMaxParallelismFromConfig = executionConfig.getMaxParallelism();
@@ -259,6 +269,7 @@ public class StreamGraphGenerator {
         }
 
         // call at least once to trigger exceptions about MissingTypeInfo
+        // 输出类型
         transform.getOutputType();
 
         Collection<Integer> transformedIds;

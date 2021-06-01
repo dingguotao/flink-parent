@@ -60,6 +60,10 @@ public class AbstractSessionClusterExecutor<
     public CompletableFuture<JobClient> execute(
             @Nonnull final Pipeline pipeline, @Nonnull final Configuration configuration)
             throws Exception {
+        /*********************
+         * clouding 注释: 2021/5/31 23:24
+         *   从StreamGraph 构建JobGraph
+         *********************/
         final JobGraph jobGraph = PipelineExecutorUtils.getJobGraph(pipeline, configuration);
 
         try (final ClusterDescriptor<ClusterID> clusterDescriptor =
@@ -67,6 +71,11 @@ public class AbstractSessionClusterExecutor<
             final ClusterID clusterID = clusterClientFactory.getClusterId(configuration);
             checkState(clusterID != null);
 
+            /*********************
+             * clouding 注释: 2021/5/31 23:25
+             *   下面的就是生成clusterClient，会有很多种实现，适配不同的系统
+             *   standalone的集群，就会生成 RestClusterClient
+             *********************/
             final ClusterClientProvider<ClusterID> clusterClientProvider =
                     clusterDescriptor.retrieve(clusterID);
             ClusterClient<ClusterID> clusterClient = clusterClientProvider.getClusterClient();

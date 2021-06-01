@@ -434,6 +434,8 @@ public class StreamGraph implements Pipeline {
             throw new RuntimeException("Duplicate vertexID " + vertexID);
         }
 
+        // clouding 注释: 2021/5/31 22:48
+        //          生成一个StreamNode
         StreamNode vertex =
                 new StreamNode(
                         vertexID,
@@ -444,6 +446,8 @@ public class StreamGraph implements Pipeline {
                         new ArrayList<OutputSelector<?>>(),
                         vertexClass);
 
+        // clouding 注释: 2021/5/31 22:48
+        //          加入到StreamNodes这个Map里
         streamNodes.put(vertexID, vertex);
 
         return vertex;
@@ -552,6 +556,9 @@ public class StreamGraph implements Pipeline {
     }
 
     public void addEdge(Integer upStreamVertexID, Integer downStreamVertexID, int typeNumber) {
+        // clouding 注释: 2021/5/31 23:16
+        //          upStreamVertexID 就是上游的StreamNodeId
+        //          downStreamVertexID 就是下游的StreamNodeId
         addEdgeInternal(
                 upStreamVertexID,
                 downStreamVertexID,
@@ -616,15 +623,22 @@ public class StreamGraph implements Pipeline {
                     outputTag,
                     shuffleMode);
         } else {
+            // 根据StreamNodeId，拿到StreamNode
             StreamNode upstreamNode = getStreamNode(upStreamVertexID);
             StreamNode downstreamNode = getStreamNode(downStreamVertexID);
 
             // If no partitioner was specified and the parallelism of upstream and downstream
             // operator matches use forward partitioning, use rebalance otherwise.
+            /*********************
+             * clouding 注释: 2021/5/31 23:17
+             *   如果并行度一样，那么就是Forward
+             *********************/
             if (partitioner == null
                     && upstreamNode.getParallelism() == downstreamNode.getParallelism()) {
                 partitioner = new ForwardPartitioner<Object>();
             } else if (partitioner == null) {
+                // clouding 注释: 2021/5/31 23:17
+                //          并行度不一样，就是rebalance的
                 partitioner = new RebalancePartitioner<Object>();
             }
 
@@ -648,6 +662,8 @@ public class StreamGraph implements Pipeline {
                 shuffleMode = ShuffleMode.UNDEFINED;
             }
 
+            // clouding 注释: 2021/5/31 23:18
+            //          构建StreamEdge对象
             StreamEdge edge =
                     new StreamEdge(
                             upstreamNode,
@@ -658,7 +674,11 @@ public class StreamGraph implements Pipeline {
                             outputTag,
                             shuffleMode);
 
+            // clouding 注释: 2021/5/31 23:19
+            //          给上游的StreamNode设置 出边，也就是后续节点
             getStreamNode(edge.getSourceId()).addOutEdge(edge);
+            // clouding 注释: 2021/5/31 23:19
+            //          给下游的StreamNode设置入边，也就是前置节点
             getStreamNode(edge.getTargetId()).addInEdge(edge);
         }
     }
