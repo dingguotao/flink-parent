@@ -293,6 +293,8 @@ public class PackagedProgram implements AutoCloseable {
         }
 
         try {
+            // clouding 注释: 2021/5/31
+            //          反射获取main方法
             mainMethod = entryClass.getMethod("main", String[].class);
         } catch (NoSuchMethodException e) {
             throw new ProgramInvocationException(

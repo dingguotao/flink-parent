@@ -1340,6 +1340,8 @@ public class StreamExecutionEnvironment {
     @PublicEvolving
     public DataStreamSource<String> socketTextStream(
             String hostname, int port, String delimiter, long maxRetry) {
+        // clouding 注释: 2021/5/31 21:41
+        //          所有的数据源，底层都是addSource方法
         return addSource(
                 new SocketTextStreamFunction(hostname, port, delimiter, maxRetry), "Socket Stream");
     }
@@ -1573,6 +1575,13 @@ public class StreamExecutionEnvironment {
         clean(function);
 
         final StreamSource<OUT, ?> sourceOperator = new StreamSource<>(function);
+        // clouding 注释: 2021/5/31 21:43
+        //          返回DataStreamSource
+        //  关于DataStream这个东西的抽象，有四种；
+        //  1. DataStream
+        //  2. KeyedDataStream
+        //  3. DataStreamSource
+        //  4. DataStreamSink
         return new DataStreamSource<>(
                 this, resolvedTypeInfo, sourceOperator, isParallel, sourceName);
     }
@@ -1648,7 +1657,12 @@ public class StreamExecutionEnvironment {
     public JobExecutionResult execute(String jobName) throws Exception {
         Preconditions.checkNotNull(jobName, "Streaming Job name should not be null.");
 
-        // TODO 这个非常关键，生成了StreamGraph
+        /*********************
+         * clouding 注释: 2021/5/31 21:55
+         *   这个很重要
+         *   getStreamGraph 获取StreamGraph
+         *   execute(StreamGraph) 提交StreamGraph
+         *********************/
         return execute(getStreamGraph(jobName));
     }
 
@@ -1776,6 +1790,8 @@ public class StreamExecutionEnvironment {
                                  .execute(streamGraph, configuration);
 
         try {
+            // clouding 注释: 2021/5/31 23:22
+            //          阻塞jobClientFuture，获取返回值
             JobClient jobClient = jobClientFuture.get();
             jobListeners.forEach(jobListener -> jobListener.onJobSubmitted(jobClient, null));
             return jobClient;
@@ -1826,6 +1842,11 @@ public class StreamExecutionEnvironment {
      */
     @Internal
     public StreamGraph getStreamGraph(String jobName, boolean clearTransformations) {
+        /*********************
+         * clouding 注释: 2021/5/31 22:31
+         *   核心逻辑，生成StreamGraph
+         *   先构造StreamGraphGenerator，再generate graph
+         *********************/
         StreamGraph streamGraph = getStreamGraphGenerator().setJobName(jobName).generate();
         if (clearTransformations) {
             this.transformations.clear();

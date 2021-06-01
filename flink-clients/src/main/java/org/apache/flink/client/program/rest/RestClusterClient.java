@@ -293,6 +293,15 @@ public class RestClusterClient<T> implements ClusterClient<T> {
 
     @Override
     public CompletableFuture<JobID> submitJob(@Nonnull JobGraph jobGraph) {
+        /*********************
+         * clouding 注释: 2021/5/31 23:27
+         *   这个的意思，就是把JobGraph持久化到磁盘
+         *   这个文件的前缀：flink-jobgraph
+         *   这个文件的后缀：.bin
+         *   持久化了之后，就写成了一个文件，提交到Flink集群的时候，就是提交的这个文件。
+         *   在JobManager中，webMonitor（JobSubmitHandler）会去接收这个请求。
+         *   JobSubmitHandler 就会把这个文件，反序列化，得到JobGraph这个对象
+         *********************/
         CompletableFuture<java.nio.file.Path> jobGraphFileFuture =
                 CompletableFuture.supplyAsync(
                         () -> {
@@ -312,6 +321,8 @@ public class RestClusterClient<T> implements ClusterClient<T> {
                         },
                         executorService);
 
+        // clouding 注释: 2021/5/31 23:33
+        //          这个一般是把文件，上传到hdfs
         CompletableFuture<Tuple2<JobSubmitRequestBody, Collection<FileUpload>>> requestFuture =
                 jobGraphFileFuture.thenApply(
                         jobGraphFile -> {
@@ -358,12 +369,16 @@ public class RestClusterClient<T> implements ClusterClient<T> {
                                 }
                             }
 
+                            // clouding 注释: 2021/5/31 23:32
+                            //          构建一个调用rest接口的 body对象，发送请求
                             final JobSubmitRequestBody requestBody =
                                     new JobSubmitRequestBody(
                                             jobGraphFile.getFileName().toString(),
                                             jarFileNames,
                                             artifactFileNames);
 
+                            // clouding 注释: 2021/5/31 23:33
+                            //          返回结果，一个是body，一个是需要上传到hdfs的文件
                             return Tuple2.of(
                                     requestBody, Collections.unmodifiableCollection(filesToUpload));
                         });
@@ -371,6 +386,8 @@ public class RestClusterClient<T> implements ClusterClient<T> {
         final CompletableFuture<JobSubmitResponseBody> submissionFuture =
                 requestFuture.thenCompose(
                         requestAndFileUploads ->
+                                // clouding 注释: 2021/5/31 23:34
+                                //          重点，这个是给webMonitor发送请求
                                 sendRetriableRequest(
                                         JobSubmitHeaders.getInstance(),
                                         EmptyMessageParameters.getInstance(),
@@ -383,6 +400,8 @@ public class RestClusterClient<T> implements ClusterClient<T> {
                 .thenAccept(
                         jobGraphFile -> {
                             try {
+                                // clouding 注释: 2021/5/31 23:35
+                                //          提交成功后，就把jobGraph文件删除了
                                 Files.delete(jobGraphFile);
                             } catch (IOException e) {
                                 LOG.warn("Could not delete temporary file {}.", jobGraphFile, e);
@@ -768,12 +787,17 @@ public class RestClusterClient<T> implements ClusterClient<T> {
                     R request,
                     Collection<FileUpload> filesToUpload,
                     Predicate<Throwable> retryPredicate) {
+        // retry里面是个 任务
         return retry(
                 () ->
+                        // 拿到webMontor的url
                         getWebMonitorBaseUrl()
                                 .thenCompose(
+                                        // 拿到URL后，就发送请求
                                         webMonitorBaseUrl -> {
                                             try {
+                                                // clouding 注释: 2021/5/31 23:37
+                                                //          发送请求
                                                 return restClient.sendRequest(
                                                         webMonitorBaseUrl.getHost(),
                                                         webMonitorBaseUrl.getPort(),

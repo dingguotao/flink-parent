@@ -999,6 +999,8 @@ public class CliFrontend {
         }
 
         // get action
+        // // clouding 注释: 2021/5/31
+        //          这个在提交job的时候，就是run
         String action = args[0];
 
         // remove action from parameters
@@ -1074,6 +1076,8 @@ public class CliFrontend {
         final String configurationDirectory = getConfigurationDirectoryFromEnv();
 
         // 2. load the global configuration
+        // clouding 注释: 2021/5/31
+        //          加载conf目录下flink-conf.yaml配置
         final Configuration configuration =
                 GlobalConfiguration.loadConfiguration(configurationDirectory);
 
