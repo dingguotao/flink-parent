@@ -71,6 +71,8 @@ public class HeartbeatManagerSenderImpl<I, O> extends HeartbeatManagerImpl<I, O>
                 heartbeatMonitorFactory);
 
         this.heartbeatPeriod = heartbeatPeriod;
+        // clouding 注释: 2021/6/5 20:59
+        //          这个是立即执行一次发送心跳服务，也就是执行run()方法
         mainThreadExecutor.schedule(this, 0L, TimeUnit.MILLISECONDS);
     }
 
@@ -78,10 +80,15 @@ public class HeartbeatManagerSenderImpl<I, O> extends HeartbeatManagerImpl<I, O>
     public void run() {
         if (!stopped) {
             log.debug("Trigger heartbeat request.");
+            // clouding 注释: 2021/6/5 20:53
+            //          这里遍历了所有的heartbeatMonitor，之后挨个发送心跳。
             for (HeartbeatMonitor<O> heartbeatMonitor : getHeartbeatTargets().values()) {
                 requestHeartbeat(heartbeatMonitor);
             }
 
+            // clouding 注释: 2021/6/5 20:54
+            //          这里就是个延迟执行，定时 heartbeatPeriod 发一次所有的心跳 heartbeatPeriod = 10秒
+            //          每次任务都执行一次自己，下一次又会重新延迟执行，用的 ScheduledExecutor
             getMainThreadExecutor().schedule(this, heartbeatPeriod, TimeUnit.MILLISECONDS);
         }
     }

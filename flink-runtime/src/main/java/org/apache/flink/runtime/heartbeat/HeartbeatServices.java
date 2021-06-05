@@ -106,10 +106,13 @@ public class HeartbeatServices {
      * @return An HeartbeatServices instance created from the given configuration
      */
     public static HeartbeatServices fromConfiguration(Configuration configuration) {
+        // 心跳间隔 10秒
         long heartbeatInterval = configuration.getLong(HeartbeatManagerOptions.HEARTBEAT_INTERVAL);
 
+        // 心跳超时时间 5秒
         long heartbeatTimeout = configuration.getLong(HeartbeatManagerOptions.HEARTBEAT_TIMEOUT);
 
+        // 构造了心跳服务，还没启动
         return new HeartbeatServices(heartbeatInterval, heartbeatTimeout);
     }
 }

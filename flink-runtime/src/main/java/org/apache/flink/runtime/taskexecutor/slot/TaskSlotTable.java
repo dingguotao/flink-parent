@@ -45,6 +45,12 @@ import java.util.UUID;
  *
  * <p>Before the task slot table can be used, it must be started via the {@link #start} method.
  */
+/*********************
+ * clouding 注释: 2021/6/5 19:28
+ *   维护这个TaskManager上所有的TaskSlot和Task、Job的关系
+ *   通过TimeoutService做task的超时检测
+ *   当slot被调度执行一个Task，就会生成一个TaskSlot对象
+ *********************/
 public interface TaskSlotTable<T extends TaskSlotPayload>
         extends TimeoutListener<AllocationID>, AutoCloseableAsync {
     /**
