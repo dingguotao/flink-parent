@@ -137,12 +137,17 @@ public class TaskManagerRunner implements FatalErrorHandler {
                         Hardware.getNumberCPUCores(),
                         new ExecutorThreadFactory("taskmanager-future"));
 
+        // clouding 注释: 2021/6/5 16:15
+        //          Ha服务，一般是用zk来实现
         highAvailabilityServices =
                 HighAvailabilityServicesUtils.createHighAvailabilityServices(
                         configuration,
                         executor,
                         HighAvailabilityServicesUtils.AddressResolution.NO_ADDRESS_RESOLUTION);
 
+
+        // clouding 注释: 2021/6/5 16:16
+        //          rpc服务
         rpcService = createRpcService(configuration, highAvailabilityServices);
 
         HeartbeatServices heartbeatServices = HeartbeatServices.fromConfiguration(configuration);
@@ -156,6 +161,14 @@ public class TaskManagerRunner implements FatalErrorHandler {
                 MetricUtils.startRemoteMetricsRpcService(configuration, rpcService.getAddress());
         metricRegistry.startQueryService(metricQueryServiceRpcService, resourceId);
 
+        /*********************
+         * clouding 注释: 2021/6/5 16:21
+         *   这个东西比较重要，内部是两个定时任务（PermanentBlobCache，TransientBlobCache），用来检查，删除过期的Job资源文件
+         *   通过 引用计数法（RefCount），来判断文件是否过期
+         *   BlobCacheService是启动在TaskManager的缓存服务，有两种实现
+         *   1. 永久的 PermanentBlobCache
+         *   2. 临时的 TransientBlobCache
+         *********************/
         blobCacheService =
                 new BlobCacheService(
                         configuration, highAvailabilityServices.createBlobStore(), null);
@@ -326,6 +339,8 @@ public class TaskManagerRunner implements FatalErrorHandler {
     //  Static entry point
     // --------------------------------------------------------------------------------------------
 
+    // clouding 注释: 2021/6/5 12:22
+    //          taskManager的入口类
     public static void main(String[] args) throws Exception {
         // startup checks and logging
         EnvironmentInformation.logEnvironmentInfo(LOG, "TaskManager", args);
@@ -354,11 +369,15 @@ public class TaskManagerRunner implements FatalErrorHandler {
         final TaskManagerRunner taskManagerRunner;
 
         try {
+            // clouding 注释: 2021/6/5 16:25
+            //          这里会初始化很多重要的组件
             taskManagerRunner =
                     new TaskManagerRunner(
                             configuration,
                             resourceId,
                             pluginManager,
+                            // clouding 注释: 2021/6/5 16:26
+                            //          这个启动了taskExecutor，写的很隐蔽
                             TaskManagerRunner::createTaskExecutorService);
             taskManagerRunner.start();
         } catch (Exception exception) {
@@ -378,6 +397,8 @@ public class TaskManagerRunner implements FatalErrorHandler {
         Configuration configuration = null;
 
         try {
+            // clouding 注释: 2021/6/5 12:27
+            //          加载配置参数
             configuration = loadConfiguration(args);
         } catch (FlinkParseException fpe) {
             LOG.error("Could not load the configuration.", fpe);
@@ -390,6 +411,8 @@ public class TaskManagerRunner implements FatalErrorHandler {
     public static void runTaskManagerProcessSecurely(
             Configuration configuration, ResourceID resourceID) {
         replaceGracefulExitWithHaltIfConfigured(configuration);
+        // clouding 注释: 2021/6/5 12:29
+        //
         final PluginManager pluginManager =
                 PluginUtils.createPluginManagerFromRootFolder(configuration);
         FileSystem.initialize(configuration, pluginManager);
@@ -435,6 +458,11 @@ public class TaskManagerRunner implements FatalErrorHandler {
             FatalErrorHandler fatalErrorHandler)
             throws Exception {
 
+        /*********************
+         * clouding 注释: 2021/6/5 16:27
+         *   启动TaskExecutor
+         *   入参是之前创建的，id，rpc，ha，heartbeart，mectirc，bolb等等
+         *********************/
         final TaskExecutor taskExecutor =
                 startTaskManager(
                         configuration,
@@ -473,9 +501,13 @@ public class TaskManagerRunner implements FatalErrorHandler {
 
         String externalAddress = rpcService.getAddress();
 
+        // clouding 注释: 2021/6/5 16:28
+        //          获取这个taskExecutor的资源，包括 CPU core，堆内存，堆外内存，网络内存，managed 内存
         final TaskExecutorResourceSpec taskExecutorResourceSpec =
                 TaskExecutorResourceUtils.resourceSpecFromConfig(configuration);
 
+        // clouding 注释: 2021/6/5 16:30
+        //          启动taskManager的说需要的所有配置，都包装在这里
         TaskManagerServicesConfiguration taskManagerServicesConfiguration =
                 TaskManagerServicesConfiguration.fromConfiguration(
                         configuration,
@@ -496,6 +528,8 @@ public class TaskManagerRunner implements FatalErrorHandler {
                         taskManagerServicesConfiguration.getNumIoThreads(),
                         new ExecutorThreadFactory("flink-taskexecutor-io"));
 
+        // clouding 注释: 2021/6/5 16:32
+        //          这里又创建了很多taskManagerServices，这里创建的，主要是用来对外提供服务的组件
         TaskManagerServices taskManagerServices =
                 TaskManagerServices.fromConfiguration(
                         taskManagerServicesConfiguration,
@@ -510,6 +544,8 @@ public class TaskManagerRunner implements FatalErrorHandler {
 
         String metricQueryServiceAddress = metricRegistry.getMetricQueryServiceGatewayRpcAddress();
 
+        // clouding 注释: 2021/6/5 16:34
+        //          创建TaskExecutor
         return new TaskExecutor(
                 rpcService,
                 taskManagerConfiguration,

@@ -127,6 +127,8 @@ public class HeartbeatManagerImpl<I, O> implements HeartbeatManager<I, O> {
             if (heartbeatTargets.containsKey(resourceID)) {
                 log.debug("The target with resource ID {} is already been monitored.", resourceID);
             } else {
+                // clouding 注释: 2021/6/5 20:48
+                //          封装成HeartbeatMonitor，放到map中管理起来
                 HeartbeatMonitor<O> heartbeatMonitor =
                         heartbeatMonitorFactory.createHeartbeatMonitor(
                                 resourceID,
@@ -135,6 +137,8 @@ public class HeartbeatManagerImpl<I, O> implements HeartbeatManager<I, O> {
                                 heartbeatListener,
                                 heartbeatTimeoutIntervalMs);
 
+                // clouding 注释: 2021/6/5 20:52
+                //          这里放到map里，后面别人会遍历集合，来发心跳
                 heartbeatTargets.put(resourceID, heartbeatMonitor);
 
                 // check if we have stopped in the meantime (concurrent stop operation)

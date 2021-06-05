@@ -433,6 +433,8 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                         if (throwable != null) {
                             return new RegistrationResponse.Failure(throwable);
                         } else {
+                            // clouding 注释: 2021/6/5 20:39
+                            //          这里是内部注册
                             return registerTaskExecutorInternal(
                                     taskExecutorGateway, taskExecutorRegistration);
                         }
@@ -908,6 +910,8 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
             return new TaskExecutorRegistrationRejection(
                     "The ResourceManager does not recognize this TaskExecutor.");
         } else {
+            // clouding 注释: 2021/6/5 20:41
+            //          包装成 WorkerRegistration 统一注册
             WorkerRegistration<WorkerType> registration =
                     new WorkerRegistration<>(
                             taskExecutorGateway,
@@ -919,8 +923,17 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                     "Registering TaskManager with ResourceID {} ({}) at ResourceManager",
                     taskExecutorResourceId,
                     taskExecutorAddress);
+            // clouding 注释: 2021/6/5 20:41
+            //          放在map里
             taskExecutors.put(taskExecutorResourceId, registration);
 
+            /*********************
+             * clouding 注释: 2021/6/5 20:45
+             *   这个就是用来，注册成功过后，和 rm 保持心跳
+             *   这里rm会自动向taskManager发送心跳，taskManager收到后处理即可
+             *   taskExecutorResourceId 就是这个taskManager的唯一id
+             *
+             *********************/
             taskManagerHeartbeatManager.monitorTarget(
                     taskExecutorResourceId,
                     new HeartbeatTarget<Void>() {

@@ -105,6 +105,8 @@ public abstract class RegisteredRpcConnection<
         final RetryingRegistration<F, G, S, R> newRegistration = createNewRegistration();
 
         if (REGISTRATION_UPDATER.compareAndSet(this, null, newRegistration)) {
+            // clouding 注释: 2021/6/5 20:26
+            //          注册
             newRegistration.startRegistration();
         } else {
             // concurrent start operation
@@ -240,11 +242,16 @@ public abstract class RegisteredRpcConnection<
     // ------------------------------------------------------------------------
 
     private RetryingRegistration<F, G, S, R> createNewRegistration() {
+        // clouding 注释: 2021/6/5 20:25
+        //          这里是 TaskExecutorToResourceManagerConnection 这个的对象
+        //          返回 TaskExecutorToResourceManagerConnection.ResourceManagerRegistration 对象
         RetryingRegistration<F, G, S, R> newRegistration = checkNotNull(generateRegistration());
 
         CompletableFuture<RetryingRegistration.RetryingRegistrationResult<G, S, R>> future =
                 newRegistration.getFuture();
 
+        // clouding 注释: 2021/6/5 20:26
+        //          这个是成功后 newRegistration 执行的动作
         future.whenCompleteAsync(
                 (RetryingRegistration.RetryingRegistrationResult<G, S, R> result,
                         Throwable failure) -> {

@@ -58,6 +58,8 @@ public class NettyConnectionManager implements ConnectionManager {
 
     @Override
     public int start() throws IOException {
+        /// clouding 注释: 2021/6/5 16:40
+        //          这里启动了client和server，两个部分
         client.init(nettyProtocol, bufferPool);
 
         return server.init(nettyProtocol, bufferPool);
