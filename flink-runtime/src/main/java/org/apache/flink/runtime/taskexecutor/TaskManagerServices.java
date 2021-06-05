@@ -263,12 +263,20 @@ public class TaskManagerServices {
         // pre-start checks
         checkTempDirs(taskManagerServicesConfiguration.getTmpDirPaths());
 
+        // clouding 注释: 2021/6/5 16:34
+        //          TaskEventDispatcher这个东西，一般用来做调度Task的
         final TaskEventDispatcher taskEventDispatcher = new TaskEventDispatcher();
 
         // start the I/O manager, it will create some temp directories.
+        // IO管理
         final IOManager ioManager =
                 new IOManagerAsync(taskManagerServicesConfiguration.getTmpDirPaths());
 
+        /*********************
+         * clouding 注释: 2021/6/5 16:38
+         *   shuffleEnvironment = NettyShuffleEnvironment
+         *   这个用来为Shuffle提供各种支撑
+         *********************/
         final ShuffleEnvironment<?, ?> shuffleEnvironment =
                 createShuffleEnvironment(
                         taskManagerServicesConfiguration,
@@ -277,6 +285,8 @@ public class TaskManagerServices {
                         ioExecutor);
         final int listeningDataPort = shuffleEnvironment.start();
 
+        // clouding 注释: 2021/6/5 19:15
+        //          状态管理服务
         final KvStateService kvStateService =
                 KvStateService.fromConfiguration(taskManagerServicesConfiguration);
         kvStateService.start();
@@ -291,8 +301,12 @@ public class TaskManagerServices {
                                 ? taskManagerServicesConfiguration.getExternalDataPort()
                                 : listeningDataPort);
 
+        // clouding 注释: 2021/6/5 19:21
+        //          广播管理器
         final BroadcastVariableManager broadcastVariableManager = new BroadcastVariableManager();
 
+        // clouding 注释: 2021/6/5 19:26
+        //          当前的Slot和Task的映射关系，管理的对象就是taskSLotTable
         final TaskSlotTable<Task> taskSlotTable =
                 createTaskSlotTable(
                         taskManagerServicesConfiguration.getNumberOfSlots(),
@@ -301,8 +315,14 @@ public class TaskManagerServices {
                         taskManagerServicesConfiguration.getPageSize(),
                         ioExecutor);
 
+        /*********************
+         * clouding 注释: 2021/6/5 19:30
+         *   管理Job的
+         *********************/
         final JobTable jobTable = DefaultJobTable.create();
 
+        // clouding 注释: 2021/6/5 19:33
+        //          这个是管理JobMaster的服务
         final JobLeaderService jobLeaderService =
                 new DefaultJobLeaderService(
                         unresolvedTaskManagerLocation,

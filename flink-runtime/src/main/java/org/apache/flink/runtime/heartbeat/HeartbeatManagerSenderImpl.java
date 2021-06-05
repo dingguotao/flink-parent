@@ -90,6 +90,9 @@ public class HeartbeatManagerSenderImpl<I, O> extends HeartbeatManagerImpl<I, O>
                 requestHeartbeat(heartbeatMonitor);
             }
 
+            // clouding 注释: 2021/6/5 20:54
+            //          这里就是个延迟执行，定时 heartbeatPeriod 发一次所有的心跳 heartbeatPeriod = 10秒
+            //          每次任务都执行一次自己，下一次又会重新延迟执行，用的 ScheduledExecutor
             getMainThreadExecutor().schedule(this, heartbeatPeriod, TimeUnit.MILLISECONDS);
         }
     }

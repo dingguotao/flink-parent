@@ -152,6 +152,8 @@ public abstract class RetryingRegistration<
                                         fencingToken,
                                         targetType.asSubclass(FencedRpcGateway.class));
             } else {
+                // clouding 注释: 2021/6/5 20:28
+                //          连接RM
                 rpcGatewayFuture = rpcService.connect(targetAddress, targetType);
             }
 
@@ -160,6 +162,8 @@ public abstract class RetryingRegistration<
                     rpcGatewayFuture.thenAcceptAsync(
                             (G rpcGateway) -> {
                                 log.info("Resolved {} address, beginning registration", targetName);
+                                // clouding 注释: 2021/6/5 20:29
+                                //          这里是尝试去注册，第一次去注册
                                 register(
                                         rpcGateway,
                                         1,
@@ -190,6 +194,9 @@ public abstract class RetryingRegistration<
                                         strippedFailure.getMessage());
                             }
 
+                            // clouding 注释: 2021/6/5 20:29
+                            //          如果注册失败，就去等会再重试
+                            //          重试间隔：cluster.registration.error-delay，默认是 10秒
                             startRegistrationLater(
                                     retryingRegistrationConfiguration.getErrorDelayMillis());
                         }
@@ -218,6 +225,8 @@ public abstract class RetryingRegistration<
                     targetName,
                     attempt,
                     timeoutMillis);
+            // clouding 注释: 2021/6/5 20:36
+            //          调用注册，返回Response对象
             CompletableFuture<RegistrationResponse> registrationFuture =
                     invokeRegistration(gateway, fencingToken, timeoutMillis);
 
@@ -226,15 +235,20 @@ public abstract class RetryingRegistration<
                     registrationFuture.thenAcceptAsync(
                             (RegistrationResponse result) -> {
                                 if (!isCanceled()) {
+                                    // clouding 注释: 2021/6/5 20:37
+                                    //          注册成功
                                     if (result instanceof RegistrationResponse.Success) {
                                         log.debug(
                                                 "Registration with {} at {} was successful.",
                                                 targetName,
                                                 targetAddress);
                                         S success = (S) result;
+                                        // 注册成功
                                         completionFuture.complete(
                                                 RetryingRegistrationResult.success(
                                                         gateway, success));
+                                        // clouding 注释: 2021/6/5 20:37
+                                        //          注册被拒绝
                                     } else if (result instanceof RegistrationResponse.Rejection) {
                                         log.debug(
                                                 "Registration with {} at {} was rejected.",
@@ -244,6 +258,8 @@ public abstract class RetryingRegistration<
                                         completionFuture.complete(
                                                 RetryingRegistrationResult.rejection(rejection));
                                     } else {
+                                        // clouding 注释: 2021/6/5 20:37
+                                        //          其它失败情况
                                         // registration failure
                                         if (result instanceof RegistrationResponse.Failure) {
                                             RegistrationResponse.Failure failure =

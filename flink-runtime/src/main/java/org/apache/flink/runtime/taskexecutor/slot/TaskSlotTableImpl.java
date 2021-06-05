@@ -166,6 +166,8 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
         this.slotActions = Preconditions.checkNotNull(initialSlotActions);
         this.mainThreadExecutor = Preconditions.checkNotNull(mainThreadExecutor);
 
+        // clouding 注释: 2021/6/5 21:11
+        //          一个超时检测服务
         timerService.start(this);
 
         state = State.RUNNING;

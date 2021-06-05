@@ -297,6 +297,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         this.shuffleEnvironment = taskExecutorServices.getShuffleEnvironment();
         this.kvStateService = taskExecutorServices.getKvStateService();
         this.ioExecutor = taskExecutorServices.getIOExecutor();
+        // 实例化的时候，创建的
         this.resourceManagerLeaderRetriever = haServices.getResourceManagerLeaderRetriever();
 
         this.hardwareDescription =
@@ -308,10 +309,17 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         final ResourceID resourceId =
                 taskExecutorServices.getUnresolvedTaskManagerLocation().getResourceID();
+        /*********************
+         * clouding 注释: 2021/6/5 19:53
+         *   这两个心跳服务管理器：
+         *   1. jobManagerHeartbeatManager，管理和JobMaster的心跳连接。来一个JobMaster，就是这个类负责建立心跳
+         *   2. resourceManagerHeartbeatManager 管理和resourceManagerHeartbeat
+         *********************/
         this.jobManagerHeartbeatManager =
                 createJobManagerHeartbeatManager(heartbeatServices, resourceId);
         this.resourceManagerHeartbeatManager =
                 createResourceManagerHeartbeatManager(heartbeatServices, resourceId);
+        // taskExecutor初始化完毕后，就执行onStart()方法
     }
 
     private HeartbeatManager<Void, TaskExecutorHeartbeatPayload>
@@ -364,9 +372,24 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     //  Life cycle
     // ------------------------------------------------------------------------
 
+    /*********************
+     * clouding 注释: 2021/6/5 19:51
+     *   构造后就会调用onStart()方法
+     *********************/
     @Override
     public void onStart() throws Exception {
         try {
+            /*********************
+             * clouding 注释: 2021/6/5 19:56
+             *   这个很重要，启动了几个重要的服务
+             *   1. 监控 ResourceManager
+             *      1). 连接 ResourceManager
+             *      2). 注册自己
+             *      3). 维持心跳
+             *   2. 启动 TaskSlotTable 服务
+             *   3. 监控 JobMaster
+             *   4. 启动 FileCache 服务
+             *********************/
             startTaskExecutorServices();
         } catch (Throwable t) {
             final TaskManagerException exception =
@@ -376,21 +399,36 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             throw exception;
         }
 
+        // clouding 注释: 2021/6/5 19:57
+        //          超时
         startRegistrationTimeout();
     }
 
     private void startTaskExecutorServices() throws Exception {
         try {
             // start by connecting to the ResourceManager
+            /*********************
+             * clouding 注释: 2021/6/5 19:58
+             *  resourceManagerLeaderRetriever = StandaloneLeaderRetrievalService
+             *  与 ResouceManager 建立连接，添加监听。这个监听是，在ResourceManager变更时，收到消息，变换连接的RM
+             *
+             *********************/
             resourceManagerLeaderRetriever.start(new ResourceManagerLeaderListener());
 
+            // clouding 注释: 2021/6/5 21:11
+            //          启动taskSlotTable
             // tell the task slot table who's responsible for the task slot actions
             taskSlotTable.start(new SlotActionsImpl(), getMainThreadExecutor());
 
             // start the job leader service
+            // clouding 注释: 2021/6/5 21:12
+            //          监听JobMaster的变化
+            //          1. 如果已经启动的JobMaster，发生了迁移，就会执行 JobLeaderListenerImpl
             jobLeaderService.start(
                     getAddress(), getRpcService(), haServices, new JobLeaderListenerImpl());
 
+            // clouding 注释: 2021/6/5 21:13
+            //          资源缓存服务
             fileCache =
                     new FileCache(
                             taskManagerConfiguration.getTmpDirectories(),
@@ -1235,7 +1273,13 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     private void reconnectToResourceManager(Exception cause) {
         closeResourceManagerConnection(cause);
+        /*********************
+         * clouding 注释: 2021/6/5 20:19
+         *   注册超时服务。如果注册超过5分钟还没成功，就是失败
+         *********************/
         startRegistrationTimeout();
+        // clouding 注释: 2021/6/5 20:23
+        //          连接
         tryConnectToResourceManager();
     }
 
@@ -1252,6 +1296,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
         log.info("Connecting to ResourceManager {}.", resourceManagerAddress);
 
+        // clouding 注释: 2021/6/5 20:23
+        //          注册的对象
         final TaskExecutorRegistration taskExecutorRegistration =
                 new TaskExecutorRegistration(
                         getAddress(),
@@ -1271,6 +1317,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                         getMainThreadExecutor(),
                         new ResourceManagerRegistrationListener(),
                         taskExecutorRegistration);
+        // clouding 注释: 2021/6/5 20:24
+        //          开始注册
         resourceManagerConnection.start();
     }
 
@@ -1374,11 +1422,20 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     }
 
     private void startRegistrationTimeout() {
+        // clouding 注释: 2021/6/5 20:19
+        //          获取一个最大的注册超时时间
         final Time maxRegistrationDuration = taskManagerConfiguration.getMaxRegistrationDuration();
 
         if (maxRegistrationDuration != null) {
+            // clouding 注释: 2021/6/5 20:21
+            //          这里随机生成一个 超时的id，用来后面做超时的判断。如果服务正常启动后，就会修改 currentRegistrationTimeoutId，后续判断就不相等了
             final UUID newRegistrationTimeoutId = UUID.randomUUID();
+            // 默认两个值是相等的
             currentRegistrationTimeoutId = newRegistrationTimeoutId;
+            /*********************
+             * clouding 注释: 2021/6/5 20:20
+             *   这里启动了一个定时调度任务，延迟 maxRegistrationDuration 执行任务
+             *********************/
             scheduleRunAsync(
                     () -> registrationTimeout(newRegistrationTimeoutId), maxRegistrationDuration);
         }
@@ -1389,6 +1446,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     }
 
     private void registrationTimeout(@Nonnull UUID registrationTimeoutId) {
+        // clouding 注释: 2021/6/5 20:22
+        //          如果相等，说明服务没有启动成功，没有来修改 currentRegistrationTimeoutId 这个值
         if (registrationTimeoutId.equals(currentRegistrationTimeoutId)) {
             final Time maxRegistrationDuration =
                     taskManagerConfiguration.getMaxRegistrationDuration();
@@ -2060,6 +2119,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     /** The listener for leader changes of the resource manager. */
     private final class ResourceManagerLeaderListener implements LeaderRetrievalListener {
 
+        // clouding 注释: 2021/6/5 20:10
+        //          当RM发生变更时，就会调用这个方法
         @Override
         public void notifyLeaderAddress(final String leaderAddress, final UUID leaderSessionID) {
             runAsync(
