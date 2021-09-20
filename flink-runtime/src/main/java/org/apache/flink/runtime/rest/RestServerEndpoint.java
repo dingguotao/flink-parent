@@ -141,6 +141,10 @@ public abstract class RestServerEndpoint implements AutoCloseableAsync {
             final Router router = new Router();
             final CompletableFuture<String> restAddressFuture = new CompletableFuture<>();
 
+            /*********************
+             * clouding 注释: 2021/9/6 16:59
+             *   这里初始化了 handlers
+             *********************/
             handlers = initializeHandlers(restAddressFuture);
 
             /* sort the handlers such that they are ordered the following:
@@ -254,6 +258,8 @@ public abstract class RestServerEndpoint implements AutoCloseableAsync {
             restAddressFuture.complete(restBaseUrl);
 
             state = State.RUNNING;
+            // clouding 注释: 2021/9/6 17:22
+            //          到这里就把netty启动好了
 
             startInternal();
         }

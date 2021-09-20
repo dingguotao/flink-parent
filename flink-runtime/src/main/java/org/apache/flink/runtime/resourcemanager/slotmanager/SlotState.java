@@ -20,6 +20,8 @@ package org.apache.flink.runtime.resourcemanager.slotmanager;
 /** State of a slot. */
 enum SlotState {
     FREE,
+    // PENDING就是 ResourceManager分配给了某个JobMaster，但是，TaskExecutor还没offer资源
     PENDING,
+    // 已经发分配，并且TaskExecutor offer了资源
     ALLOCATED
 }

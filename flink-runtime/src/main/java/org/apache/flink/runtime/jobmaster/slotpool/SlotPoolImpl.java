@@ -321,8 +321,12 @@ public class SlotPoolImpl implements SlotPool {
             PendingRequest pendingRequest) {
 
         if (resourceManagerGateway == null) {
+            // clouding 注释: 2021/9/20 15:30
+            //          和ResourceManager建立连接
             stashRequestWaitingForResourceManager(pendingRequest);
         } else {
+            // clouding 注释: 2021/9/20 15:29
+            //          向ResourceManager发送请求
             requestSlotFromResourceManager(resourceManagerGateway, pendingRequest);
         }
 
@@ -336,9 +340,14 @@ public class SlotPoolImpl implements SlotPool {
         checkNotNull(resourceManagerGateway);
         checkNotNull(pendingRequest);
 
+        // clouding 注释: 2021/9/20 15:31
+        //          每次申请，都有一个 allocationId，用来标识唯一的一次申请。
+        //          如果重复申请，那么allocationId是不一样的
         final AllocationID allocationId = new AllocationID();
         pendingRequest.setAllocationId(allocationId);
 
+        // clouding 注释: 2021/9/20 15:31
+        //          搞了个map，用来放所有发过去的请求。
         pendingRequests.put(pendingRequest.getSlotRequestId(), allocationId, pendingRequest);
 
         pendingRequest
@@ -366,6 +375,8 @@ public class SlotPoolImpl implements SlotPool {
                 pendingRequest.getResourceProfile(),
                 allocationId);
 
+        // clouding 注释: 2021/9/20 15:32
+        //          发送请求到 rm，申请slot
         CompletableFuture<Acknowledge> rmResponse =
                 resourceManagerGateway.requestSlot(
                         jobMasterId,
@@ -467,11 +478,17 @@ public class SlotPoolImpl implements SlotPool {
 
         componentMainThreadExecutor.assertRunningInMainThread();
 
+        // clouding 注释: 2021/9/20 15:26
+        //          申请slot的请求体。这里考虑是，
+        //          如果是Standalone的集群，申请的slot没有了，那么就要等着；
+        //          如果是YARN Session，如果slot没有了，那么就会去yarn申请taskManager，来补充slot资源。
         final PendingRequest pendingRequest =
                 PendingRequest.createStreamingRequest(slotRequestId, resourceProfile);
 
         if (timeout != null) {
             // register request timeout
+            // clouding 注释: 2021/9/20 15:28
+            //          如果 pendingRequest超时，就会报错 timeoutPendingSlotRequest
             FutureUtils.orTimeout(
                             pendingRequest.getAllocatedSlotFuture(),
                             timeout.toMilliseconds(),
@@ -485,6 +502,8 @@ public class SlotPoolImpl implements SlotPool {
                             });
         }
 
+        // clouding 注释: 2021/9/20 15:29
+        //          申请slot
         return requestNewAllocatedSlotInternal(pendingRequest).thenApply((Function.identity()));
     }
 
@@ -715,7 +734,7 @@ public class SlotPoolImpl implements SlotPool {
      * @param slotOffer the offered slot
      * @return True if we accept the offering
      */
-    boolean offerSlot(
+    boolean  offerSlot(
             final TaskManagerLocation taskManagerLocation,
             final TaskManagerGateway taskManagerGateway,
             final SlotOffer slotOffer) {
@@ -766,6 +785,8 @@ public class SlotPoolImpl implements SlotPool {
             }
         }
 
+        // clouding 注释: 2021/9/20 17:18
+        //          使用 AllocatedSlot 对象来管理。里面会有taskManager的连接taskManagerGateway
         final AllocatedSlot allocatedSlot =
                 new AllocatedSlot(
                         allocationID,

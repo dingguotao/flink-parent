@@ -129,6 +129,8 @@ public class ResultPartitionFactory {
         ResultSubpartition[] subpartitions = new ResultSubpartition[numberOfSubpartitions];
 
         final ResultPartition partition;
+        // clouding 注释: 2021/6/22 21:27
+        //          PIPELINED 这个是流处理
         if (type == ResultPartitionType.PIPELINED
                 || type == ResultPartitionType.PIPELINED_BOUNDED
                 || type == ResultPartitionType.PIPELINED_APPROXIMATE) {
@@ -151,11 +153,15 @@ public class ResultPartitionFactory {
                 factory = PipelinedSubpartition::new;
             }
 
+            // clouding 注释: 2021/6/22 21:30
+            //          subpartitions，pipelinedPartition就是下游task的个数
             for (int i = 0; i < subpartitions.length; i++) {
                 subpartitions[i] = factory.apply(i, pipelinedPartition);
             }
 
             partition = pipelinedPartition;
+            // clouding 注释: 2021/6/22 21:27
+            //          这个 是 批处理模式
         } else if (type == ResultPartitionType.BLOCKING
                 || type == ResultPartitionType.BLOCKING_PERSISTENT) {
             if (numberOfSubpartitions >= sortShuffleMinParallelism) {

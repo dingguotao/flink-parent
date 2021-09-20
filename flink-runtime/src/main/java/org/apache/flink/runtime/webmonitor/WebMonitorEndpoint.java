@@ -221,6 +221,8 @@ public class WebMonitorEndpoint<T extends RestfulGateway> extends RestServerEndp
     @Override
     protected List<Tuple2<RestHandlerSpecification, ChannelInboundHandler>> initializeHandlers(
             final CompletableFuture<String> localAddressFuture) {
+        // 这里有30个handler
+        // 所有的handler，就是 web 上所有的功能
         ArrayList<Tuple2<RestHandlerSpecification, ChannelInboundHandler>> handlers =
                 new ArrayList<>(30);
 
@@ -866,7 +868,13 @@ public class WebMonitorEndpoint<T extends RestfulGateway> extends RestServerEndp
 
     @Override
     public void startInternal() throws Exception {
+        // clouding 注释: 2021/9/6 17:23
+        //          选举
+        //          选举获胜的话，会调用 isLeader()，再内部调用 this.grantLeaderShip()
+        //          选举失败的话，会调用 notLeader()
         leaderElectionService.start(this);
+        // clouding 注释: 2021/9/6 17:23
+        //          启动清理的定时任务，执行 executionGraphCache::cleanup
         startExecutionGraphCacheCleanupTask();
 
         if (hasWebUI) {
@@ -932,6 +940,8 @@ public class WebMonitorEndpoint<T extends RestfulGateway> extends RestServerEndp
                 "{} was granted leadership with leaderSessionID={}",
                 getRestBaseUrl(),
                 leaderSessionID);
+        // clouding 注释: 2021/9/6 17:30
+        //          确认leader
         leaderElectionService.confirmLeadership(leaderSessionID, getRestBaseUrl());
     }
 

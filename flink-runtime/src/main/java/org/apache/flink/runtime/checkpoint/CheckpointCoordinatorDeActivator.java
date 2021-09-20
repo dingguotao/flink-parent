@@ -41,9 +41,13 @@ public class CheckpointCoordinatorDeActivator implements JobStatusListener {
             JobID jobId, JobStatus newJobStatus, long timestamp, Throwable error) {
         if (newJobStatus == JobStatus.RUNNING) {
             // start the checkpoint scheduler
+            // clouding 注释: 2021/10/16 17:25
+            //          如果job 是runnint，就触发checkpointer的调度
             coordinator.startCheckpointScheduler();
         } else {
             // anything else should stop the trigger for now
+            // clouding 注释: 2021/10/16 17:25
+            //          如果job失败，就停止job的调度
             coordinator.stopCheckpointScheduler();
         }
     }

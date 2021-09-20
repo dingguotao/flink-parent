@@ -76,6 +76,8 @@ abstract class AbstractOneInputTransformationTranslator<IN, OUT, OP extends Tran
             streamGraph.setOneInputStateKey(transformationId, stateKeySelector, keySerializer);
         }
 
+        // clouding 注释: 2021/9/19 15:49
+        //          设置了这个StreamNode的并行度
         int parallelism =
                 transformation.getParallelism() != ExecutionConfig.PARALLELISM_DEFAULT
                         ? transformation.getParallelism()
@@ -90,7 +92,7 @@ abstract class AbstractOneInputTransformationTranslator<IN, OUT, OP extends Tran
                         + parentTransformations.size());
 
         // clouding 注释: 2021/5/31 23:15
-        //          在StreamNode之间，添加StreamEdge
+        //          在StreamNode之间，添加StreamEdge。和每一个input，都构建一个edge
         for (Integer inputId : context.getStreamNodeIds(parentTransformations.get(0))) {
             streamGraph.addEdge(inputId, transformationId, 0);
         }

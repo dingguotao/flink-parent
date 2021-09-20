@@ -86,9 +86,13 @@ public class SlotManagerImpl implements SlotManager {
     private final Time taskManagerTimeout;
 
     /** Map for all registered slots. */
+    // clouding 注释: 2021/9/13 15:08
+    //          这个slots，就是所有TaskManager启动后，上报过来的所有Slot
     private final HashMap<SlotID, TaskManagerSlot> slots;
 
     /** Index of all currently free slots. */
+    // clouding 注释: 2021/9/13 15:08
+    //          当前空闲的slot
     private final LinkedHashMap<SlotID, TaskManagerSlot> freeSlots;
 
     /** All currently registered task managers. */
@@ -393,8 +397,12 @@ public class SlotManagerImpl implements SlotManager {
      */
     @Override
     public boolean registerSlotRequest(SlotRequest slotRequest) throws ResourceManagerException {
+        // clouding 注释: 2021/9/20 16:17
+        //          检测SlotManager是正常的
         checkInit();
 
+        // clouding 注释: 2021/9/20 16:17
+        //          是否重复发送的请求
         if (checkDuplicateRequest(slotRequest.getAllocationId())) {
             LOG.debug(
                     "Ignoring a duplicate slot request with allocation id {}.",
@@ -402,11 +410,17 @@ public class SlotManagerImpl implements SlotManager {
 
             return false;
         } else {
+            // clouding 注释: 2021/9/20 16:17
+            //          真正处理申请的地方
             PendingSlotRequest pendingSlotRequest = new PendingSlotRequest(slotRequest);
 
+            // clouding 注释: 2021/9/20 16:17
+            //          缓存起来，避免重复发送
             pendingSlotRequests.put(slotRequest.getAllocationId(), pendingSlotRequest);
 
             try {
+                // clouding 注释: 2021/9/20 16:18
+                //          申请slot
                 internalRequestSlot(pendingSlotRequest);
             } catch (ResourceManagerException e) {
                 // requesting the slot failed --> remove pending slot request
@@ -678,6 +692,10 @@ public class SlotManagerImpl implements SlotManager {
      */
     private Optional<TaskManagerSlot> findMatchingSlot(ResourceProfile requestResourceProfile) {
         final Optional<TaskManagerSlot> optionalMatchingSlot =
+                // clouding 注释: 2021/9/20 16:28
+                //  slotMatchingStrategy = AnyMatchingSlotMatchingStrategy
+                //  默认是 AnyMatchingSlotMatchingStrategy，就是找到一个就可以。就是当前有的，比申请的多，就认识是满足的
+                //        另外一种是LeastUtilizationSlotMatchingStrategy，也就是尽可能将负载分散到所有当前可用的 TaskManager
                 slotMatchingStrategy.findMatchingSlot(
                         requestResourceProfile,
                         freeSlots.values(),
@@ -692,6 +710,8 @@ public class SlotManagerImpl implements SlotManager {
                             taskManagerSlot.getSlotId(),
                             taskManagerSlot.getState());
 
+                    // clouding 注释: 2021/9/20 16:35
+                    //          移除 free slots
                     freeSlots.remove(taskManagerSlot.getSlotId());
                 });
 
@@ -936,14 +956,27 @@ public class SlotManagerImpl implements SlotManager {
             throws ResourceManagerException {
         final ResourceProfile resourceProfile = pendingSlotRequest.getResourceProfile();
 
+        // clouding 注释: 2021/9/20 16:20
+        //          findMatchingSlot 就是先从 FREE状态的Slot中去找找看。
+        //          如果有，就去分配。
+        //          如果没有，可能去YARN申请更多的TaskExecutor
         OptionalConsumer.of(findMatchingSlot(resourceProfile))
+                // clouding 注释: 2021/9/13 15:10
+                //          去freeSlot中申请
                 .ifPresent(taskManagerSlot -> allocateSlot(taskManagerSlot, pendingSlotRequest))
+                // clouding 注释: 2021/9/13 15:10
+                //          如果申请不到，就走这里
                 .ifNotPresent(
                         () ->
                                 fulfillPendingSlotRequestWithPendingTaskManagerSlot(
                                         pendingSlotRequest));
     }
 
+    /**
+     * 向YARN申请资源
+     * @param pendingSlotRequest
+     * @throws ResourceManagerException
+     */
     private void fulfillPendingSlotRequestWithPendingTaskManagerSlot(
             PendingSlotRequest pendingSlotRequest) throws ResourceManagerException {
         ResourceProfile resourceProfile = pendingSlotRequest.getResourceProfile();
@@ -951,6 +984,8 @@ public class SlotManagerImpl implements SlotManager {
                 findFreeMatchingPendingTaskManagerSlot(resourceProfile);
 
         if (!pendingTaskManagerSlotOptional.isPresent()) {
+            // clouding 注释: 2021/9/13 15:13
+            //          再次去申请资源。如果是YARN，就去申请新的Container
             pendingTaskManagerSlotOptional = allocateResource(resourceProfile);
         }
 
@@ -963,6 +998,8 @@ public class SlotManagerImpl implements SlotManager {
                         () -> {
                             // request can not be fulfilled by any free slot or pending slot that
                             // can be allocated,
+
+
                             // check whether it can be fulfilled by allocated slots
                             if (failUnfulfillableRequest
                                     && !isFulfillableByRegisteredOrPendingSlots(
@@ -1055,6 +1092,8 @@ public class SlotManagerImpl implements SlotManager {
             return Optional.empty();
         }
 
+        // clouding 注释: 2021/9/13 15:13
+        //          这里去申请新的资源
         if (!resourceActions.allocateResource(defaultWorkerResourceSpec)) {
             // resource cannot be allocated
             return Optional.empty();
@@ -1086,6 +1125,8 @@ public class SlotManagerImpl implements SlotManager {
      */
     private void allocateSlot(
             TaskManagerSlot taskManagerSlot, PendingSlotRequest pendingSlotRequest) {
+        // clouding 注释: 2021/9/13 15:22
+        //          确保默认状态是FREE
         Preconditions.checkState(taskManagerSlot.getState() == SlotState.FREE);
 
         TaskExecutorConnection taskExecutorConnection = taskManagerSlot.getTaskManagerConnection();
@@ -1096,6 +1137,8 @@ public class SlotManagerImpl implements SlotManager {
         final SlotID slotId = taskManagerSlot.getSlotId();
         final InstanceID instanceID = taskManagerSlot.getInstanceId();
 
+        // clouding 注释: 2021/9/13 15:22
+        //          状态修改为 SlotState.PENDING
         taskManagerSlot.assignPendingSlotRequest(pendingSlotRequest);
         pendingSlotRequest.setRequestFuture(completableFuture);
 
@@ -1111,6 +1154,12 @@ public class SlotManagerImpl implements SlotManager {
         taskManagerRegistration.markUsed();
 
         // RPC call to the task manager
+        /*********************
+         * clouding 注释: 2021/9/13 15:20
+         *   gateway： 就是taskExecutor
+         *   slotId： 这个taskExecutor对应的slot
+         *   jobId：  分配给的job，对应JobMaster
+         *********************/
         CompletableFuture<Acknowledge> requestFuture =
                 gateway.requestSlot(
                         slotId,
@@ -1134,8 +1183,12 @@ public class SlotManagerImpl implements SlotManager {
                 (Acknowledge acknowledge, Throwable throwable) -> {
                     try {
                         if (acknowledge != null) {
+                            // clouding 注释: 2021/9/13 15:23
+                            //          更新slot的状态 SlotState.ALLOCATED
                             updateSlot(slotId, allocationId, pendingSlotRequest.getJobId());
                         } else {
+                            // clouding 注释: 2021/9/13 15:23
+                            //          申请失败的异常处理
                             if (throwable instanceof SlotOccupiedException) {
                                 SlotOccupiedException exception = (SlotOccupiedException) throwable;
                                 updateSlot(

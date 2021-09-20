@@ -57,20 +57,32 @@ class DefaultExecutionSlotAllocator extends AbstractExecutionSlotAllocator {
         this.slotProviderStrategy = checkNotNull(slotProviderStrategy);
     }
 
+    /*********************
+     * clouding 注释: 2021/6/14 17:51
+     *   1. 使用 slotExecutionVertexAssignments 封装需要申请slot的描述
+     *   2. 依次遍历申请，每次申请一个 SlotExecutionVertexAssignment
+     *********************/
     @Override
     public List<SlotExecutionVertexAssignment> allocateSlotsFor(
             List<ExecutionVertexSchedulingRequirements> executionVertexSchedulingRequirements) {
 
         validateSchedulingRequirements(executionVertexSchedulingRequirements);
 
+        // clouding 注释: 2021/9/20 14:58
+        //          executionVertexSchedulingRequirements --》 SlotExecutionVertexAssignment 的转换
         List<SlotExecutionVertexAssignment> slotExecutionVertexAssignments =
                 new ArrayList<>(executionVertexSchedulingRequirements.size());
 
+        // clouding 注释: 2021/9/20 14:59
+        //          所有的 AllocationIds
         Set<AllocationID> allPreviousAllocationIds =
                 computeAllPriorAllocationIds(executionVertexSchedulingRequirements);
 
-        for (ExecutionVertexSchedulingRequirements schedulingRequirements :
-                executionVertexSchedulingRequirements) {
+        // clouding 注释: 2021/9/20 14:59
+        //          遍历所有的 executionVertexSchedulingRequirements，如果申请完成，就放入 slotExecutionVertexAssignments，
+        //          上面创建了slotExecutionVertexAssignments这个集合
+        for (ExecutionVertexSchedulingRequirements schedulingRequirements : executionVertexSchedulingRequirements) {
+
             final ExecutionVertexID executionVertexId =
                     schedulingRequirements.getExecutionVertexId();
             final SlotSharingGroupId slotSharingGroupId =
@@ -78,6 +90,11 @@ class DefaultExecutionSlotAllocator extends AbstractExecutionSlotAllocator {
 
             final SlotRequestId slotRequestId = new SlotRequestId();
 
+            // clouding 注释: 2021/6/14 17:53
+            //          异步申请，申请一个Vertex的slot，拿到了 LogicalSlot
+            //          LogicalSlot 逻辑Slot，  在JobMaster中申请体现，也就是下面这段代码
+            //          PhysicalSlot 物理Slot。 在TaskExecutor中管理
+            //          可能存在多个逻辑Slot隶属同一个物理Slot。主要是有个slot复用的情况。
             final CompletableFuture<LogicalSlot> slotFuture =
                     allocateSlot(schedulingRequirements, slotRequestId, allPreviousAllocationIds);
 
@@ -85,6 +102,8 @@ class DefaultExecutionSlotAllocator extends AbstractExecutionSlotAllocator {
                     createAndRegisterSlotExecutionVertexAssignment(
                             executionVertexId,
                             slotFuture,
+                            // clouding 注释: 2021/9/20 15:11
+                            //          这个是申请异常时，取消申请的处理
                             throwable ->
                                     slotProviderStrategy.cancelSlotRequest(
                                             slotRequestId, slotSharingGroupId, throwable));
@@ -104,6 +123,8 @@ class DefaultExecutionSlotAllocator extends AbstractExecutionSlotAllocator {
 
         LOG.debug("Allocate slot with id {} for execution {}", slotRequestId, executionVertexId);
 
+        // clouding 注释: 2021/9/20 15:09
+        //          这里是计算了这个vertex的本地性
         final CompletableFuture<SlotProfile> slotProfileFuture =
                 getSlotProfileFuture(
                         schedulingRequirements,
@@ -113,6 +134,9 @@ class DefaultExecutionSlotAllocator extends AbstractExecutionSlotAllocator {
 
         return slotProfileFuture.thenCompose(
                 slotProfile ->
+                        // clouding 注释: 2021/9/20 15:14
+                        //           slotProviderStrategy = NormalSlotProviderStrategy
+                        //          真正计算申请的地方
                         slotProviderStrategy.allocateSlot(
                                 slotRequestId,
                                 new ScheduledUnit(
