@@ -282,6 +282,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
         operatorChain.prepareSnapshotPreBarrier(metadata.getCheckpointId());
 
         // Step (2): Send the checkpoint barrier downstream
+        // clouding 注释: 2021/10/17 21:03
+        //          广播到下游
         operatorChain.broadcastEvent(
                 new CheckpointBarrier(metadata.getCheckpointId(), metadata.getTimestamp(), options),
                 options.isUnalignedCheckpoint());
@@ -570,6 +572,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
         try {
             for (StreamOperatorWrapper<?, ?> operatorWrapper :
                     operatorChain.getAllOperators(true)) {
+                // clouding 注释: 2021/10/18 0:55
+                //          如果op正常，就执行snapshot，每次一个算子
                 if (!operatorWrapper.isClosed()) {
                     operatorSnapshotsInProgress.put(
                             operatorWrapper.getStreamOperator().getOperatorID(),
@@ -607,6 +611,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
             ChannelStateWriteResult channelStateWriteResult,
             CheckpointStreamFactory storage)
             throws Exception {
+        // clouding 注释: 2021/10/18 0:56
+        //          关键
         OperatorSnapshotFutures snapshotInProgress =
                 checkpointStreamOperator(
                         op, checkpointMetaData, checkpointOptions, storage, isRunning);

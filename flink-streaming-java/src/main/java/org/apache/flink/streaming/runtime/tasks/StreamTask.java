@@ -292,7 +292,10 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
                 actionExecutor,
                 new TaskMailboxImpl(Thread.currentThread()));
     }
-
+    /*********************
+     * clouding 注释: 2021/10/17 20:28
+     *   所有task都会调用的公共父类，StreamTask
+     *********************/
     protected StreamTask(
             Environment environment,
             @Nullable TimerService timerService,
@@ -304,8 +307,13 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
         super(environment);
 
         this.configuration = new StreamConfig(getTaskConfiguration());
+        // clouding 注释: 2021/9/21 10:03
+        //          recordWriter，用来把数据写入ResultPartition
         this.recordWriter = createRecordWriterDelegate(configuration, environment);
         this.actionExecutor = Preconditions.checkNotNull(actionExecutor);
+        // clouding 注释: 2021/9/21 10:03
+        //          mailboxProcessor。所有的任务都是一个Mail，来的数据都会放进来；
+        //          processInput 处理输入
         this.mailboxProcessor = new MailboxProcessor(this::processInput, mailbox, actionExecutor);
         this.mailboxProcessor.initMetric(environment.getMetricGroup());
         this.mainMailboxExecutor = mailboxProcessor.getMainMailboxExecutor();
@@ -314,10 +322,14 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
                 Executors.newCachedThreadPool(
                         new ExecutorThreadFactory("AsyncOperations", uncaughtExceptionHandler));
 
+        // clouding 注释: 2021/9/21 10:02
+        //          状态存储
         this.stateBackend = createStateBackend();
 
         this.subtaskCheckpointCoordinator =
                 new SubtaskCheckpointCoordinatorImpl(
+                        // clouding 注释: 2021/6/6 15:10
+                        //          创建 checkpoint 目录
                         stateBackend.createCheckpointStorage(getEnvironment().getJobID()),
                         getName(),
                         actionExecutor,
@@ -330,6 +342,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
 
         // if the clock is not already set, then assign a default TimeServiceProvider
         if (timerService == null) {
+            // clouding 注释: 2021/6/6 15:13
+            //          默认创建一个 ProcessingTime的时间服务
             ThreadFactory timerThreadFactory =
                     new DispatcherThreadFactory(
                             TRIGGER_THREAD_GROUP, "Time Trigger for " + getName());
@@ -516,6 +530,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
         disposedOperators = false;
         LOG.debug("Initializing {}.", getName());
 
+        // clouding 注释: 2021/9/21 10:48
+        //          构造 OperatorChain
         operatorChain = new OperatorChain<>(this, recordWriter);
         mainOperator = operatorChain.getMainOperator();
 
@@ -542,6 +558,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
                     // jobs
                     reader.readOutputData(getEnvironment().getAllWriters(), false);
 
+                    // clouding 注释: 2021/9/21 10:49
+                    //          初始化状态
                     operatorChain.initializeStateAndOpenOperators(
                             createStreamTaskStateInitializer());
 
@@ -566,12 +584,16 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
                     }
                 });
 
+        // clouding 注释: 2021/9/21 10:48
+        //          修改状态
         isRunning = true;
     }
 
     @Override
     public final void invoke() throws Exception {
         try {
+            // clouding 注释: 2021/9/21 10:48
+            //          在启动前的准备工作
             beforeInvoke();
 
             // final check to exit early before starting to run
@@ -580,6 +602,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
             }
 
             // let the task do its work
+            // clouding 注释: 2021/9/21 10:47
+            //          一直不停循环的地方
             runMailboxLoop();
 
             // if this left the run() method cleanly despite the fact that this was canceled,
@@ -888,6 +912,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
                                             System.currentTimeMillis()
                                                     - checkpointMetaData.getTimestamp());
                     try {
+                        // clouding 注释: 2021/10/17 23:42
+                        //          触发 triggerCheckpoint
                         result.complete(triggerCheckpoint(checkpointMetaData, checkpointOptions));
                     } catch (Exception ex) {
                         // Report the failure both via the Future result but also to the mailbox
@@ -911,9 +937,13 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
                             .setAlignmentDurationNanos(0L)
                             .setBytesProcessedDuringAlignment(0L);
 
+            // clouding 注释: 2021/10/17 23:44
+            //          初始化
             subtaskCheckpointCoordinator.initCheckpoint(
                     checkpointMetaData.getCheckpointId(), checkpointOptions);
 
+            // clouding 注释: 2021/10/17 23:44
+            //          执行 performCheckpoint
             boolean success =
                     performCheckpoint(checkpointMetaData, checkpointOptions, checkpointMetrics);
             if (!success) {
@@ -1135,6 +1165,11 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
         final StateBackend fromApplication =
                 configuration.getStateBackend(getUserCodeClassLoader());
 
+        /*********************
+         * clouding 注释: 2021/6/6 15:08
+         *   根据配置获取到StateBackend
+         *   一般至少是 FsStateBackend 或者 RocksDbBackend
+         *********************/
         return StateBackendLoader.fromApplicationOrConfigOrDefault(
                 fromApplication,
                 getEnvironment().getTaskManagerInfo().getConfiguration(),
@@ -1225,6 +1260,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
                             StreamConfig configuration, Environment environment) {
         List<RecordWriter<SerializationDelegate<StreamRecord<OUT>>>> recordWrites =
                 createRecordWriters(configuration, environment);
+        // clouding 注释: 2021/10/25 20:51
+        //          区分1个还是多个
         if (recordWrites.size() == 1) {
             return new SingleRecordWriter<>(recordWrites.get(0));
         } else if (recordWrites.size() == 0) {
@@ -1245,6 +1282,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
 
         for (int i = 0; i < outEdgesInOrder.size(); i++) {
             StreamEdge edge = outEdgesInOrder.get(i);
+            // clouding 注释: 2021/9/21 10:10
+            //          createRecordWriter 这里创建了
             recordWriters.add(
                     createRecordWriter(
                             edge,

@@ -73,8 +73,12 @@ public class StreamSource<OUT, SRC extends SourceFunction<OUT>>
             final OperatorChain<?, ?> operatorChain)
             throws Exception {
 
+        // clouding 注释: 2021/9/21 14:39
+        //          时间语义
         final TimeCharacteristic timeCharacteristic = getOperatorConfig().getTimeCharacteristic();
 
+        // clouding 注释: 2021/10/25 22:03
+        //          获取配置
         final Configuration configuration =
                 this.getContainingTask().getEnvironment().getTaskManagerInfo().getConfiguration();
         final long latencyTrackingInterval =
@@ -107,6 +111,8 @@ public class StreamSource<OUT, SRC extends SourceFunction<OUT>>
                         -1);
 
         try {
+            // clouding 注释: 2021/10/25 22:04
+            //          这里调用用户的source数据源，比如kafka
             userFunction.run(ctx);
 
             // if we get here, then the user function either exited after being done (finite source)

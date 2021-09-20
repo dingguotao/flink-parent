@@ -103,6 +103,8 @@ abstract class AbstractExecutionSlotAllocator implements ExecutionSlotAllocator 
             final Set<ExecutionVertexID> producersToIgnore,
             final Set<AllocationID> allPreviousAllocationIds) {
 
+        // clouding 注释: 2021/9/20 15:07
+        //          计算这个vertex的本地性
         final CompletableFuture<Collection<TaskManagerLocation>> preferredLocationsFuture =
                 preferredLocationsRetriever.getPreferredLocations(
                         schedulingRequirements.getExecutionVertexId(), producersToIgnore);

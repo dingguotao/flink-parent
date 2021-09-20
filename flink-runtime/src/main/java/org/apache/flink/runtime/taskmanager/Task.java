@@ -338,6 +338,8 @@ public class Task
         Preconditions.checkArgument(
                 0 <= targetSlotNumber, "The target slot number must be positive.");
 
+        // clouding 注释: 2021/9/20 21:07
+        //          初始化TaskInfo
         this.taskInfo =
                 new TaskInfo(
                         taskInformation.getTaskName(),
@@ -399,6 +401,9 @@ public class Task
                 shuffleEnvironment.createShuffleIOOwnerContext(
                         taskNameWithSubtaskAndId, executionId, metrics.getIOMetricGroup());
 
+        // clouding 注释: 2021/6/22 21:08
+        //          用来做 数据的输出使用。
+        //          大部分情况，一个task，只有一个 ResultPartition
         // produced intermediate result partitions
         final ResultPartitionWriter[] resultPartitionWriters =
                 shuffleEnvironment
@@ -414,6 +419,8 @@ public class Task
                         jobId,
                         resultPartitionConsumableNotifier);
 
+        // clouding 注释: 2021/6/22 21:08
+        //          用来做这个 task 的输入
         // consumed intermediate result partitions
         final IndexedInputGate[] gates =
                 shuffleEnvironment
@@ -438,6 +445,8 @@ public class Task
         invokableHasBeenCanceled = new AtomicBoolean(false);
 
         // finally, create the executing thread, but do not start it
+        // clouding 注释: 2021/6/22 21:10
+        //          构造 执行这个task 的线程
         executingThread = new Thread(TASK_THREADS_GROUP, this, taskNameWithSubtask);
     }
 
@@ -566,6 +575,8 @@ public class Task
         executingThread.start();
     }
 
+    // clouding 注释: 2021/6/22 21:05
+    //          task 执行的run方法
     /** The core work method that bootstraps the task and executes its code. */
     @Override
     public void run() {
@@ -583,6 +594,9 @@ public class Task
         while (true) {
             ExecutionState current = this.executionState;
             if (current == ExecutionState.CREATED) {
+                // clouding 注释: 2021/6/22 21:58
+                //          初始化的时候，是 CREATED
+                //          从默认的 CREATED 转换成  ，转换完就跳出循环
                 if (transitionState(ExecutionState.CREATED, ExecutionState.DEPLOYING)) {
                     // success, we can start our work
                     break;
@@ -659,6 +673,11 @@ public class Task
 
             LOG.info("Registering task at network: {}.", this);
 
+            /*********************
+             * clouding 注释: 2021/6/22 22:03
+             *   启动 ResultPartitionWriter 和 InputGate
+             *   初始化 bufferPool
+             *********************/
             setupPartitionsAndGates(consumableNotifyingPartitionWriters, inputGates);
 
             for (ResultPartitionWriter partitionWriter : consumableNotifyingPartitionWriters) {
@@ -694,6 +713,8 @@ public class Task
             TaskKvStateRegistry kvStateRegistry =
                     kvStateService.createKvStateTaskRegistry(jobId, getJobVertexId());
 
+            // clouding 注释: 2021/6/22 22:20
+            //          上下文，里面有各种各样的信息
             Environment env =
                     new RuntimeEnvironment(
                             jobId,
@@ -728,6 +749,12 @@ public class Task
             // so that it is available to the invokable during its entire lifetime.
             executingThread.setContextClassLoader(userCodeClassLoader.asClassLoader());
 
+            /*********************
+             * clouding 注释: 2021/6/22 22:21
+             *   通过反射，实例化 StreamTask。这里可能会是 SourceStreamTask 或者 OneInputStreamTask
+             *   后面就看下 SourceStreamTask 里 带有 Environment的构造函数 {@link org.apache.flink.streaming.runtime.tasks.SourceStreamTask#SourceStreamTask(org.apache.flink.runtime.execution.Environment)}
+             *         或者看下 OneInputStreamTask 里 带有 Environment的构造函数 {@link org.apache.flink.streaming.runtime.tasks.OneInputStreamTask#OneInputStreamTask(org.apache.flink.runtime.execution.Environment)}
+             *********************/
             // now load and instantiate the task's invokable code
             invokable =
                     loadAndInstantiateInvokable(
@@ -755,6 +782,8 @@ public class Task
             executingThread.setContextClassLoader(userCodeClassLoader.asClassLoader());
 
             // run the invokable
+            // clouding 注释: 2021/9/21 10:46
+            //          开始启动
             invokable.invoke();
 
             // make sure, we enter the catch block if the task leaves the invoke() method due
@@ -917,12 +946,16 @@ public class Task
     public static void setupPartitionsAndGates(
             ResultPartitionWriter[] producedPartitions, InputGate[] inputGates) throws IOException {
 
+        // clouding 注释: 2021/9/21 9:48
+        //          setup() 主要就是完成了对partition的注册, 有个map，注册在了map里
         for (ResultPartitionWriter partition : producedPartitions) {
             partition.setup();
         }
 
         // InputGates must be initialized after the partitions, since during InputGate#setup
         // we are requesting partitions
+        // clouding 注释: 2021/9/21 9:53
+        //          这个的setup()是用来分配bufferPool使用的
         for (InputGate gate : inputGates) {
             gate.setup();
         }
@@ -1476,6 +1509,8 @@ public class Task
         Constructor<? extends AbstractInvokable> statelessCtor;
 
         try {
+            // clouding 注释: 2021/9/21 9:56
+            //          跳转到 对应class文件中带 Environment 入参的构造方法
             statelessCtor = invokableClass.getConstructor(Environment.class);
         } catch (NoSuchMethodException ee) {
             throw new FlinkException("Task misses proper constructor", ee);

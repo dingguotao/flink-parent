@@ -1001,15 +1001,15 @@ under the License.
 								<excludedGroups>org.apache.flink.testutils.junit.FailsOnJava11</excludedGroups>
 							</configuration>
 						</plugin>
-						<plugin>
-							<groupId>org.apache.maven.plugins</groupId>
-							<artifactId>maven-javadoc-plugin</artifactId>
-							<configuration>
-								<additionalJOptions>
-									<additionalJOption>--add-exports=java.base/sun.net.util=ALL-UNNAMED</additionalJOption>
-								</additionalJOptions>
-							</configuration>
-						</plugin>
+<!--						<plugin>-->
+<!--							<groupId>org.apache.maven.plugins</groupId>-->
+<!--							<artifactId>maven-javadoc-plugin</artifactId>-->
+<!--							<configuration>-->
+<!--								<additionalJOptions>-->
+<!--									<additionalJOption>&#45;&#45;add-exports=java.base/sun.net.util=ALL-UNNAMED</additionalJOption>-->
+<!--								</additionalJOptions>-->
+<!--							</configuration>-->
+<!--						</plugin>-->
 					</plugins>
 				</pluginManagement>
 

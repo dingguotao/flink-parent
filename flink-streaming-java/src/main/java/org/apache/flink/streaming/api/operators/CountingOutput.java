@@ -47,6 +47,8 @@ public class CountingOutput<OUT> implements Output<StreamRecord<OUT>> {
     @Override
     public void collect(StreamRecord<OUT> record) {
         numRecordsOut.inc();
+        // clouding 注释: 2021/9/21 14:50
+        //          output = ChainingOutput
         output.collect(record);
     }
 

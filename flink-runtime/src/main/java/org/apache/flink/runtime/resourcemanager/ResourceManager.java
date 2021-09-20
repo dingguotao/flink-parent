@@ -512,6 +512,13 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
         }
     }
 
+    /**
+     * 接收 JobMaster发过来的申请slot请求的rpc请求
+     * @param jobMasterId id of the JobMaster
+     * @param slotRequest The slot to request
+     * @param timeout
+     * @return
+     */
     @Override
     public CompletableFuture<Acknowledge> requestSlot(
             JobMasterId jobMasterId, SlotRequest slotRequest, final Time timeout) {
@@ -519,6 +526,8 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
         JobID jobId = slotRequest.getJobId();
         JobManagerRegistration jobManagerRegistration = jobManagerRegistrations.get(jobId);
 
+        // clouding 注释: 2021/9/20 16:16
+        //          保证 这个JobMaster之前已经注册过了
         if (null != jobManagerRegistration) {
             if (Objects.equals(jobMasterId, jobManagerRegistration.getJobMasterId())) {
                 log.info(
@@ -528,6 +537,8 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                         slotRequest.getAllocationId());
 
                 try {
+                    // clouding 注释: 2021/9/20 16:16
+                    //          申请slot
                     slotManager.registerSlotRequest(slotRequest);
                 } catch (ResourceManagerException e) {
                     return FutureUtils.completedExceptionally(e);
@@ -1394,6 +1405,10 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
         @Override
         public boolean allocateResource(WorkerResourceSpec workerResourceSpec) {
             validateRunsInMainThread();
+            // clouding 注释: 2021/9/13 15:14
+            //          启动新的worker
+            //          1. 如果是standalone部署，就直接返回false，不能申请。
+            //          2. 如果是yarn部署，就尝试启动新的container
             return startNewWorker(workerResourceSpec);
         }
 

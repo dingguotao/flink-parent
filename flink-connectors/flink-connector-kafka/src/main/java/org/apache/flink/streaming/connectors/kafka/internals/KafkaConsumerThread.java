@@ -164,6 +164,8 @@ public class KafkaConsumerThread<T> extends Thread {
         // This is important, because the consumer has multi-threading issues,
         // including concurrent 'close()' calls.
         try {
+            // clouding 注释: 2021/10/18 21:39
+            //          Kafka Consumer实例化，用的Kafka自带api
             this.consumer = getConsumer(kafkaProperties);
         } catch (Throwable t) {
             handover.reportError(t);
@@ -240,6 +242,8 @@ public class KafkaConsumerThread<T> extends Thread {
                         newPartitions = unassignedPartitionsQueue.getBatchBlocking();
                     }
                     if (newPartitions != null) {
+                        // clouding 注释: 2021/10/19 11:36
+                        //          分配分区
                         reassignPartitions(newPartitions);
                     }
                 } catch (AbortedReassignmentException e) {
@@ -255,6 +259,8 @@ public class KafkaConsumerThread<T> extends Thread {
                 // over
                 if (records == null) {
                     try {
+                        // clouding 注释: 2021/10/18 21:41
+                        //          拉取一批数据
                         records = consumer.poll(pollTimeout);
                     } catch (WakeupException we) {
                         continue;

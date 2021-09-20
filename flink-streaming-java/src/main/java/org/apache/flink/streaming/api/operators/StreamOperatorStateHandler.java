@@ -148,6 +148,8 @@ public class StreamOperatorStateHandler {
             CheckpointStreamFactory factory,
             boolean isUsingCustomRawKeyedState)
             throws CheckpointException {
+        // clouding 注释: 2021/10/18 0:57
+        //          根据是否是 keyed的State，来创建不同的 KeyGroupRange
         KeyGroupRange keyGroupRange =
                 null != keyedStateBackend
                         ? keyedStateBackend.getKeyGroupRange()
@@ -202,18 +204,24 @@ public class StreamOperatorStateHandler {
                             snapshotContext.getRawKeyedOperatorStateOutput(), operatorName);
                 }
             }
+            // clouding 注释: 2021/10/18 0:54
+            //          调用算子的 snapshotState
             streamOperator.snapshotState(snapshotContext);
 
             snapshotInProgress.setKeyedStateRawFuture(snapshotContext.getKeyedStateStreamFuture());
             snapshotInProgress.setOperatorStateRawFuture(
                     snapshotContext.getOperatorStateStreamFuture());
 
+            // clouding 注释: 2021/10/18 0:59
+            //          非 Keyed的state，snapshot是重点
             if (null != operatorStateBackend) {
                 snapshotInProgress.setOperatorStateManagedFuture(
                         operatorStateBackend.snapshot(
                                 checkpointId, timestamp, factory, checkpointOptions));
             }
 
+            // clouding 注释: 2021/10/18 0:59
+            //          keyed的state，snapshot是重点
             if (null != keyedStateBackend) {
                 snapshotInProgress.setKeyedStateManagedFuture(
                         keyedStateBackend.snapshot(

@@ -44,6 +44,8 @@ public class StandaloneSessionClusterEntrypoint extends SessionClusterEntrypoint
         EnvironmentInformation.logEnvironmentInfo(
                 LOG, StandaloneSessionClusterEntrypoint.class.getSimpleName(), args);
         SignalHandler.register(LOG);
+        // clouding 注释: 2021/9/6 15:29
+        //          注册一个钩子，用来关闭，集群关闭的时候，关闭服务
         JvmShutdownSafeguard.installAsShutdownHook(LOG);
 
         final EntrypointClusterConfiguration entrypointClusterConfiguration =
@@ -51,6 +53,8 @@ public class StandaloneSessionClusterEntrypoint extends SessionClusterEntrypoint
                         args,
                         new EntrypointClusterConfigurationParserFactory(),
                         StandaloneSessionClusterEntrypoint.class);
+        // clouding 注释: 2021/9/6 15:29
+        //          加载配置文件
         Configuration configuration = loadConfiguration(entrypointClusterConfiguration);
 
         StandaloneSessionClusterEntrypoint entrypoint =

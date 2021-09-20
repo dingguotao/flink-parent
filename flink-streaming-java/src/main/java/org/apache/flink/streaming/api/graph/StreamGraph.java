@@ -264,6 +264,8 @@ public class StreamGraph implements Pipeline {
                 inTypeInfo,
                 outTypeInfo,
                 operatorName,
+                // clouding 注释: 2021/10/23 16:09
+                //          这个类，很重要，是后续的task的入口
                 SourceOperatorStreamTask.class);
         sources.add(vertexID);
     }
@@ -341,8 +343,12 @@ public class StreamGraph implements Pipeline {
             TypeInformation<IN> inTypeInfo,
             TypeInformation<OUT> outTypeInfo,
             String operatorName,
+            // clouding 注释: 2021/10/23 16:09
+            //          invokableClass 是task启动后，反射的入口
             Class<? extends AbstractInvokable> invokableClass) {
 
+        // clouding 注释: 2021/9/19 15:48
+        //          添加StreamNode
         addNode(
                 vertexID,
                 slotSharingGroup,
@@ -456,6 +462,8 @@ public class StreamGraph implements Pipeline {
                         coLocationGroup,
                         operatorFactory,
                         operatorName,
+                        // clouding 注释: 2021/10/23 16:08
+                        //          vertexClass 是后续task的入口
                         vertexClass);
 
         // clouding 注释: 2021/5/31 22:48
@@ -565,6 +573,7 @@ public class StreamGraph implements Pipeline {
             OutputTag outputTag,
             ShuffleMode shuffleMode) {
 
+        // todo 这里是虚拟节点。
         if (virtualSideOutputNodes.containsKey(upStreamVertexID)) {
             int virtualId = upStreamVertexID;
             upStreamVertexID = virtualSideOutputNodes.get(virtualId).f0;
@@ -603,7 +612,9 @@ public class StreamGraph implements Pipeline {
             // operator matches use forward partitioning, use rebalance otherwise.
             /*********************
              * clouding 注释: 2021/5/31 23:17
-             *   如果并行度一样，那么就是Forward
+             *   如果没有显示设置 partitioner，那么
+             *      如果并行度一样，那么就是 ForwardPartitioner，一对一的传输
+             *      如果并行度不一样，就是 RebalancePartitioner，轮训下游并行度的传输
              *********************/
             if (partitioner == null
                     && upstreamNode.getParallelism() == downstreamNode.getParallelism()) {
@@ -614,6 +625,7 @@ public class StreamGraph implements Pipeline {
                 partitioner = new RebalancePartitioner<Object>();
             }
 
+            // 异常处理
             if (partitioner instanceof ForwardPartitioner) {
                 if (upstreamNode.getParallelism() != downstreamNode.getParallelism()) {
                     throw new UnsupportedOperationException(

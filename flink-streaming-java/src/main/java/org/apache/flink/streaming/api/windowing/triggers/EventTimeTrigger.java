@@ -41,11 +41,15 @@ public class EventTimeTrigger extends Trigger<Object, TimeWindow> {
             // if the watermark is already past the window fire immediately
             return TriggerResult.FIRE;
         } else {
+            // clouding 注释: 2021/6/21 10:51
+            //          增加了定时器，把窗口的最大边界放进去
             ctx.registerEventTimeTimer(window.maxTimestamp());
             return TriggerResult.CONTINUE;
         }
     }
 
+    // clouding 注释: 2021/6/21 10:52
+    //          定时器到了，就会触发这个
     @Override
     public TriggerResult onEventTime(long time, TimeWindow window, TriggerContext ctx) {
         return time == window.maxTimestamp() ? TriggerResult.FIRE : TriggerResult.CONTINUE;

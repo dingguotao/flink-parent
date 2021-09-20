@@ -91,7 +91,7 @@ public enum ClientUtils {
         final ClassLoader userCodeClassLoader = program.getUserCodeClassLoader();
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         try {
-            // TODO 这个还使用了个类加载器？？？是要干什么
+            // TODO 使用代码的类加载器，加载代码，牛逼
             Thread.currentThread().setContextClassLoader(userCodeClassLoader);
 
             LOG.info(

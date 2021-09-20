@@ -76,6 +76,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -161,6 +162,8 @@ public class StreamingJobGraphGenerator {
         preValidate();
 
         // make sure that all vertices start immediately
+        // clouding 注释: 2021/10/23 15:28
+        //          设置streamGraph的mode过来，stream的话，就是 earge 模式
         jobGraph.setScheduleMode(streamGraph.getScheduleMode());
         jobGraph.enableApproximateLocalRecovery(
                 streamGraph.getCheckpointConfig().isApproximateLocalRecoveryEnabled());
@@ -176,12 +179,16 @@ public class StreamingJobGraphGenerator {
             legacyHashes.add(hasher.traverseStreamGraphAndGenerateHashes(streamGraph));
         }
 
+        // clouding 注释: 2021/6/29 22:41
+        //          生成 JobVertex，JobEdge, 并尽可能的把多个节点chain在一起
         setChaining(hashes, legacyHashes);
 
         setPhysicalEdges();
 
         setSlotSharingAndCoLocation();
 
+        // clouding 注释: 2021/10/23 15:46
+        //          内存配置
         setManagedMemoryFraction(
                 Collections.unmodifiableMap(jobVertices),
                 Collections.unmodifiableMap(vertexConfigs),
@@ -189,6 +196,8 @@ public class StreamingJobGraphGenerator {
                 id -> streamGraph.getStreamNode(id).getManagedMemoryOperatorScopeUseCaseWeights(),
                 id -> streamGraph.getStreamNode(id).getManagedMemorySlotScopeUseCases());
 
+        // clouding 注释: 2021/10/16 11:20
+        //          配置checkpoint的地方
         configureCheckpointing();
 
         jobGraph.setSavepointRestoreSettings(streamGraph.getSavepointRestoreSettings());
@@ -363,7 +372,7 @@ public class StreamingJobGraphGenerator {
 
     private List<StreamEdge> createChain(
             final Integer currentNodeId,
-            final int chainIndex,
+            final int chainIndex, // 标识chain的数量， 0 标识chain的source节点，非chain的都是1开始
             final OperatorChainInfo chainInfo,
             final Map<Integer, OperatorChainInfo> chainEntryPoints) {
 
@@ -378,6 +387,8 @@ public class StreamingJobGraphGenerator {
             StreamNode currentNode = streamGraph.getStreamNode(currentNodeId);
 
             for (StreamEdge outEdge : currentNode.getOutEdges()) {
+                // clouding 注释: 2021/10/23 15:53
+                //          区分能不能chain在一起，后续会对chain在一起的创建一个JobVertex
                 if (isChainable(outEdge, streamGraph)) {
                     chainableOutputs.add(outEdge);
                 } else {
@@ -432,6 +443,8 @@ public class StreamingJobGraphGenerator {
 
             StreamConfig config =
                     currentNodeId.equals(startNodeId)
+                            // clouding 注释: 2021/10/23 15:56
+                            //          创建 JobVertex
                             ? createJobVertex(startNodeId, chainInfo)
                             : new StreamConfig(new Configuration());
 
@@ -585,6 +598,8 @@ public class StreamingJobGraphGenerator {
         jobVertex.setResources(
                 chainedMinResources.get(streamNodeId), chainedPreferredResources.get(streamNodeId));
 
+        // clouding 注释: 2021/10/23 15:57
+        //          重要！ invokableClass，是后面task运行的入口
         jobVertex.setInvokableClass(streamNode.getJobVertexClass());
 
         int parallelism = streamNode.getParallelism();
@@ -851,6 +866,8 @@ public class StreamingJobGraphGenerator {
     public static boolean isChainable(StreamEdge edge, StreamGraph streamGraph) {
         StreamNode downStreamVertex = streamGraph.getTargetVertex(edge);
 
+        // clouding 注释: 2021/10/23 15:53
+        //          判断是否可以chain在一起
         return downStreamVertex.getInEdges().size() == 1 && isChainableInput(edge, streamGraph);
     }
 
@@ -1208,14 +1225,20 @@ public class StreamingJobGraphGenerator {
 
         // collect the vertices that receive "trigger checkpoint" messages.
         // currently, these are all the sources
+        // clouding 注释: 2021/10/16 16:50
+        //          triggerVertices 是包含所有的Source节点，这里还只是JobGraph的Vertex
         List<JobVertexID> triggerVertices = new ArrayList<>();
 
         // collect the vertices that need to acknowledge the checkpoint
         // currently, these are all vertices
+        // clouding 注释: 2021/10/16 16:51
+        //          ackVertices 包含所有的算子节点
         List<JobVertexID> ackVertices = new ArrayList<>(jobVertices.size());
 
         // collect the vertices that receive "commit checkpoint" messages
         // currently, these are all vertices
+        // clouding 注释: 2021/10/16 16:51
+        //          commitVertices 所有的算子节点
         List<JobVertexID> commitVertices = new ArrayList<>(jobVertices.size());
 
         for (JobVertex vertex : jobVertices.values()) {

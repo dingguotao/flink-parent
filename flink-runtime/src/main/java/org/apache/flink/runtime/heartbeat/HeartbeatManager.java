@@ -23,7 +23,7 @@ import org.apache.flink.runtime.clusterframework.types.ResourceID;
 /**
  * A heartbeat manager has to be able to start/stop monitoring a {@link HeartbeatTarget}, and report
  * heartbeat timeouts for this target.
- *
+ * clouding： 心跳的管理者，使用start和stop监控对象
  * @param <I> Type of the incoming payload
  * @param <O> Type of the outgoing payload
  */
@@ -32,7 +32,7 @@ public interface HeartbeatManager<I, O> extends HeartbeatTarget<I> {
     /**
      * Start monitoring a {@link HeartbeatTarget}. Heartbeat timeouts for this target are reported
      * to the {@link HeartbeatListener} associated with this heartbeat manager.
-     *
+     * clouding: 开始监控一个目标，吃目标的心跳超时会报告给吃心跳管理者关联的目标
      * @param resourceID Resource ID identifying the heartbeat target
      * @param heartbeatTarget Interface to send heartbeat requests and responses to the heartbeat
      *     target
@@ -51,7 +51,7 @@ public interface HeartbeatManager<I, O> extends HeartbeatTarget<I> {
 
     /**
      * Returns the last received heartbeat from the given target.
-     *
+     * clouding： 获取目标的最后一次心跳
      * @param resourceId for which to return the last heartbeat
      * @return Last heartbeat received from the given target or -1 if the target is not being
      *     monitored.

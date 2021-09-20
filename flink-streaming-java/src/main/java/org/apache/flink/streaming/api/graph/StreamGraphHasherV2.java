@@ -94,7 +94,7 @@ public class StreamGraphHasherV2 implements StreamGraphHasher {
         //
         // Traverse the graph in a breadth-first manner. Keep in mind that
         // the graph is not a tree and multiple paths to nodes can exist.
-        //
+        // TODO 这里有一个广度优先的遍历！！！
 
         // Start with source nodes
         for (Integer sourceNodeId : sources) {

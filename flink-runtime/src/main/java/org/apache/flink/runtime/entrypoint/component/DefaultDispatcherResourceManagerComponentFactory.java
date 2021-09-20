@@ -92,6 +92,8 @@ public class DefaultDispatcherResourceManagerComponentFactory
             @Nonnull DispatcherRunnerFactory dispatcherRunnerFactory,
             @Nonnull ResourceManagerFactory<?> resourceManagerFactory,
             @Nonnull RestEndpointFactory<?> restEndpointFactory) {
+        // clouding 注释: 2021/10/28 21:45
+        //          赋值
         this.dispatcherRunnerFactory = dispatcherRunnerFactory;
         this.resourceManagerFactory = resourceManagerFactory;
         this.restEndpointFactory = restEndpointFactory;
@@ -111,6 +113,8 @@ public class DefaultDispatcherResourceManagerComponentFactory
             FatalErrorHandler fatalErrorHandler)
             throws Exception {
 
+        // clouding 注释: 2021/10/28 21:51
+        //          重要的 5 个服务
         LeaderRetrievalService dispatcherLeaderRetrievalService = null;
         LeaderRetrievalService resourceManagerRetrievalService = null;
         WebMonitorEndpoint<?> webMonitorEndpoint = null;
@@ -157,6 +161,9 @@ public class DefaultDispatcherResourceManagerComponentFactory
                                     dispatcherGatewayRetriever,
                                     executor);
 
+            // clouding 注释: 2021/10/28 22:40
+            //          restEndpointFactory = SessionRestEndpointFactory
+            //          webMonitorEndpoint 用来接受请求。webMonitorEndpoint就是DispatcherEndPoint
             webMonitorEndpoint =
                     restEndpointFactory.createRestEndpoint(
                             configuration,
@@ -280,6 +287,8 @@ public class DefaultDispatcherResourceManagerComponentFactory
     public static DefaultDispatcherResourceManagerComponentFactory createSessionComponentFactory(
             ResourceManagerFactory<?> resourceManagerFactory) {
         return new DefaultDispatcherResourceManagerComponentFactory(
+                // clouding 注释: 2021/10/28 21:45
+                //          单例创建
                 DefaultDispatcherRunnerFactory.createSessionRunner(
                         SessionDispatcherFactory.INSTANCE),
                 resourceManagerFactory,
