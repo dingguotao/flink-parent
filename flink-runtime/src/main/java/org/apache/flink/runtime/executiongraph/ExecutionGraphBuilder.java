@@ -171,6 +171,8 @@ public class ExecutionGraphBuilder {
             executionGraph =
                     (prior != null)
                             ? prior
+                            // clouding 注释: 2021/9/19 22:08
+                            //          核心的new ExecutionGraph
                             : new ExecutionGraph(
                                     jobInformation,
                                     futureExecutor,
@@ -194,6 +196,8 @@ public class ExecutionGraphBuilder {
         // set the basic properties
 
         try {
+            // clouding 注释: 2021/9/19 22:09
+            //          把 jobGraph 转成JSON 放进来
             executionGraph.setJsonPlan(JsonPlanGenerator.generatePlan(jobGraph));
         } catch (Throwable t) {
             log.warn("Cannot create JSON plan for job", t);
@@ -207,6 +211,8 @@ public class ExecutionGraphBuilder {
         final long initMasterStart = System.nanoTime();
         log.info("Running initialization on master for job {} ({}).", jobName, jobId);
 
+        // clouding 注释: 2021/9/19 22:27
+        //          处理 JobGraph中的每一个Vertex，把JobVertex初始化
         for (JobVertex vertex : jobGraph.getVertices()) {
             String executableClass = vertex.getInvokableClassName();
             if (executableClass == null || executableClass.isEmpty()) {
@@ -242,6 +248,8 @@ public class ExecutionGraphBuilder {
                     jobName,
                     jobId);
         }
+        // clouding 注释: 2021/9/19 22:16
+        //          把JobGraph转换成ExecutionGraph。
         executionGraph.attachJobGraph(sortedTopology);
 
         if (log.isDebugEnabled()) {

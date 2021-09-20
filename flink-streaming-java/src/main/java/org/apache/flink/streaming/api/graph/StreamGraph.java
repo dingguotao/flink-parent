@@ -330,6 +330,8 @@ public class StreamGraph implements Pipeline {
             String operatorName,
             Class<? extends AbstractInvokable> invokableClass) {
 
+        // clouding 注释: 2021/9/19 15:48
+        //          添加StreamNode
         addNode(
                 vertexID,
                 slotSharingGroup,
@@ -578,6 +580,7 @@ public class StreamGraph implements Pipeline {
             OutputTag outputTag,
             ShuffleMode shuffleMode) {
 
+        // todo 这里是虚拟节点。
         if (virtualSideOutputNodes.containsKey(upStreamVertexID)) {
             int virtualId = upStreamVertexID;
             upStreamVertexID = virtualSideOutputNodes.get(virtualId).f0;
@@ -631,7 +634,9 @@ public class StreamGraph implements Pipeline {
             // operator matches use forward partitioning, use rebalance otherwise.
             /*********************
              * clouding 注释: 2021/5/31 23:17
-             *   如果并行度一样，那么就是Forward
+             *   如果没有显示设置 partitioner，那么
+             *      如果并行度一样，那么就是 ForwardPartitioner，一对一的传输
+             *      如果并行度不一样，就是 RebalancePartitioner，轮训下游并行度的传输
              *********************/
             if (partitioner == null
                     && upstreamNode.getParallelism() == downstreamNode.getParallelism()) {
@@ -642,6 +647,7 @@ public class StreamGraph implements Pipeline {
                 partitioner = new RebalancePartitioner<Object>();
             }
 
+            // 异常处理
             if (partitioner instanceof ForwardPartitioner) {
                 if (upstreamNode.getParallelism() != downstreamNode.getParallelism()) {
                     throw new UnsupportedOperationException(

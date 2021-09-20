@@ -119,6 +119,8 @@ public class ResultPartitionFactory {
         }
 
         ResultSubpartition[] subpartitions = new ResultSubpartition[numberOfSubpartitions];
+        // clouding 注释: 2021/6/22 21:27
+        //          PIPELINED 这个是流处理
         ResultPartition partition =
                 forcePartitionReleaseOnConsumption || !type.isBlocking()
                         ? new ReleaseOnConsumptionResultPartition(

@@ -118,6 +118,10 @@ public class HighAvailabilityServicesUtils {
                 BlobStoreService blobStoreService =
                         BlobUtils.createBlobStoreFromConfig(configuration);
 
+                /*********************
+                 * clouding 注释: 2021/9/6 16:43
+                 *   包装了zk的代码，做选举
+                 *********************/
                 return new ZooKeeperHaServices(
                         ZooKeeperUtils.startCuratorFramework(configuration),
                         executor,

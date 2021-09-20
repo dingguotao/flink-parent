@@ -177,6 +177,8 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
                 "Starting scheduling with scheduling strategy [{}]",
                 schedulingStrategy.getClass().getName());
         prepareExecutionGraphForNgScheduling();
+        // clouding 注释: 2021/9/20 14:53
+        //          schedulingStrategy = EargeSchedulingStrategy
         schedulingStrategy.startScheduling();
     }
 
@@ -340,6 +342,8 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
 
         transitionToScheduled(verticesToDeploy);
 
+        // clouding 注释: 2021/6/5 21:19
+        //          申请所有的slot资源
         final List<SlotExecutionVertexAssignment> slotExecutionVertexAssignments =
                 allocateSlots(executionVertexDeploymentOptions);
 
@@ -349,6 +353,8 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
                         deploymentOptionsByVertex,
                         slotExecutionVertexAssignments);
 
+        // clouding 注释: 2021/6/5 21:20
+        //          等待资源申请就绪后，去部署
         waitForAllSlotsAndDeploy(deploymentHandles);
     }
 
@@ -379,6 +385,8 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
 
     private List<SlotExecutionVertexAssignment> allocateSlots(
             final List<ExecutionVertexDeploymentOption> executionVertexDeploymentOptions) {
+        // clouding 注释: 2021/9/20 14:57
+        //          ExecutionVertexDeploymentOption -》 ExecutionVertexSchedulingRequirements 的类型转换
         return executionSlotAllocator.allocateSlotsFor(
                 executionVertexDeploymentOptions.stream()
                         .map(ExecutionVertexDeploymentOption::getExecutionVertexId)
@@ -436,6 +444,8 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
                 checkState(slotAssigned.isDone());
 
                 FutureUtils.assertNoException(
+                        // clouding 注释: 2021/9/13 16:36
+                        //          deployOrHandleError 真正部署的地方
                         slotAssigned.handle(deployOrHandleError(deploymentHandle)));
             }
             return null;

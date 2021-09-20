@@ -63,6 +63,7 @@ public class AbstractSessionClusterExecutor<
         /*********************
          * clouding 注释: 2021/5/31 23:24
          *   从StreamGraph 构建JobGraph
+         *   这个pipeline 就是streamGraph
          *********************/
         final JobGraph jobGraph = PipelineExecutorUtils.getJobGraph(pipeline, configuration);
 
@@ -80,6 +81,8 @@ public class AbstractSessionClusterExecutor<
                     clusterDescriptor.retrieve(clusterID);
             ClusterClient<ClusterID> clusterClient = clusterClientProvider.getClusterClient();
             return clusterClient
+                    // clouding 注释: 2021/9/19 16:11
+                    //          提交JobGraph
                     .submitJob(jobGraph)
                     .thenApplyAsync(
                             jobID ->

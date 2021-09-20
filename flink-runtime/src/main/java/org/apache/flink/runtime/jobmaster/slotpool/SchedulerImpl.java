@@ -147,6 +147,8 @@ public class SchedulerImpl implements Scheduler {
             ScheduledUnit scheduledUnit,
             SlotProfile slotProfile,
             Time allocationTimeout) {
+        // clouding 注释: 2021/6/14 18:33
+        //          申请 slot
         CompletableFuture<LogicalSlot> allocationFuture =
                 scheduledUnit.getSlotSharingGroupId() == null
                         ? allocateSingleSlot(slotRequestId, slotProfile, allocationTimeout)
@@ -231,6 +233,8 @@ public class SchedulerImpl implements Scheduler {
             return slotPool.requestNewAllocatedBatchSlot(
                     slotRequestId, slotProfile.getPhysicalSlotResourceProfile());
         } else {
+            // clouding 注释: 2021/9/20 15:25
+            //          一般是有超时时间的
             return slotPool.requestNewAllocatedSlot(
                     slotRequestId, slotProfile.getPhysicalSlotResourceProfile(), allocationTimeout);
         }
@@ -263,6 +267,8 @@ public class SchedulerImpl implements Scheduler {
     private Optional<SlotAndLocality> tryAllocateFromAvailable(
             @Nonnull SlotRequestId slotRequestId, @Nonnull SlotProfile slotProfile) {
 
+        // clouding 注释: 2021/9/20 15:22
+        //          从slotPool中申请
         Collection<SlotSelectionStrategy.SlotInfoAndResources> slotInfoList =
                 slotPool.getAvailableSlotsInformation().stream()
                         .map(SlotSelectionStrategy.SlotInfoAndResources::fromSingleSlot)
@@ -504,9 +510,13 @@ public class SchedulerImpl implements Scheduler {
         final SlotRequestId allocatedSlotRequestId = new SlotRequestId();
         final SlotRequestId multiTaskSlotRequestId = new SlotRequestId();
 
+        // clouding 注释: 2021/9/20 15:22
+        //          这里是尝试从 JobMaster的SlotPool中申请
         Optional<SlotAndLocality> optionalPoolSlotAndLocality =
                 tryAllocateFromAvailable(allocatedSlotRequestId, slotProfile);
 
+        // clouding 注释: 2021/9/20 15:24
+        //          如果在slotPool申请到了，就走这里。
         if (optionalPoolSlotAndLocality.isPresent()) {
             SlotAndLocality poolSlotAndLocality = optionalPoolSlotAndLocality.get();
             if (poolSlotAndLocality.getLocality() == Locality.LOCAL
@@ -551,6 +561,8 @@ public class SchedulerImpl implements Scheduler {
         if (multiTaskSlot == null) {
             // it seems as if we have to request a new slot from the resource manager, this is
             // always the last resort!!!
+            // clouding 注释: 2021/9/20 15:20
+            //          向 ResourceManager申请slot
             final CompletableFuture<PhysicalSlot> slotAllocationFuture =
                     requestNewAllocatedSlot(allocatedSlotRequestId, slotProfile, allocationTimeout);
 

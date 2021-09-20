@@ -78,8 +78,13 @@ public final class JobSubmitHandler
         this.configuration = configuration;
     }
 
-    // clouding 注释: 2022/3/12 18:54
-    //          处理客户端请求.
+    /**
+     * 用来处理提交请求
+     * @param request request that should be handled
+     * @param gateway leader gateway
+     * @return
+     * @throws RestHandlerException
+     */
     @Override
     protected CompletableFuture<JobSubmitResponseBody> handleRequest(
             @Nonnull HandlerRequest<JobSubmitRequestBody, EmptyMessageParameters> request,
@@ -116,10 +121,16 @@ public final class JobSubmitHandler
         //          加载JobGraph文件
         CompletableFuture<JobGraph> jobGraphFuture = loadJobGraph(requestBody, nameToFile);
 
-        // clouding 注释: 2022/3/12 19:00
-        //          获取jar文件
+        /*********************
+         * clouding 注释: 2021/9/6 17:19
+         *   主程序的jar包
+         *********************/
         Collection<Path> jarFiles = getJarFilesToUpload(requestBody.jarFileNames, nameToFile);
 
+        /*********************
+         * clouding 注释: 2021/9/6 17:19
+         *   获取依赖jar包
+         *********************/
         Collection<Tuple2<String, Path>> artifacts =
                 getArtifactFilesToUpload(requestBody.artifactFileNames, nameToFile);
 
@@ -128,8 +139,11 @@ public final class JobSubmitHandler
         CompletableFuture<JobGraph> finalizedJobGraphFuture =
                 uploadJobGraphFiles(gateway, jobGraphFuture, jarFiles, artifacts, configuration);
 
-        // clouding 注释: 2022/3/12 19:02
-        //          提交任务
+
+        /*********************
+         * clouding 注释: 2021/9/6 17:20
+         *   提交任务入口
+         *********************/
         CompletableFuture<Acknowledge> jobSubmissionFuture =
                 finalizedJobGraphFuture.thenCompose(
                         // clouding 注释: 2022/3/12 19:02

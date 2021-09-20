@@ -85,6 +85,7 @@ public class DispatcherRestEndpoint extends WebMonitorEndpoint<DispatcherGateway
     @Override
     protected List<Tuple2<RestHandlerSpecification, ChannelInboundHandler>> initializeHandlers(
             final CompletableFuture<String> localAddressFuture) {
+        // 调用父类的 initializeHandlers
         List<Tuple2<RestHandlerSpecification, ChannelInboundHandler>> handlers =
                 super.initializeHandlers(localAddressFuture);
 

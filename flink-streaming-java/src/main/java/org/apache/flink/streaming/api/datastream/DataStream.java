@@ -636,9 +636,10 @@ public class DataStream<T> {
             FlatMapFunction<T, R> flatMapper, TypeInformation<R> outputType) {
         // clouding 注释: 2021/5/31 21:45
         //    flatMapper 是这个function
-        //          StreamFlatMap是一个Function，也是一个StreamOperator
+        //          StreamFlatMap是一个Function，也是一个 AbstractUdfStreamOperator
         //   在使用transform，把StreamFlatMap 转换成Transformation
         //  最终都会加入到 StreamExecutionEnvironment的transformations的集合中
+        //  transform 就是把 Operator 转换成 Transformation的函数
         //
         return transform("Flat Map", outputType, new StreamFlatMap<>(clean(flatMapper)));
     }
@@ -1199,6 +1200,7 @@ public class DataStream<T> {
 
         OneInputTransformation<T, R> resultTransform =
                 new OneInputTransformation<>(
+                        // todo 上游的transformation
                         this.transformation,
                         operatorName,
                         operatorFactory,

@@ -310,6 +310,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
 
         this.subtaskCheckpointCoordinator =
                 new SubtaskCheckpointCoordinatorImpl(
+                        // clouding 注释: 2021/6/6 15:10
+                        //          创建 checkpoint 目录
                         stateBackend.createCheckpointStorage(getEnvironment().getJobID()),
                         getName(),
                         actionExecutor,
@@ -322,6 +324,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
 
         // if the clock is not already set, then assign a default TimeServiceProvider
         if (timerService == null) {
+            // clouding 注释: 2021/6/6 15:13
+            //          默认创建一个 ProcessingTime的时间服务
             ThreadFactory timerThreadFactory =
                     new DispatcherThreadFactory(
                             TRIGGER_THREAD_GROUP, "Time Trigger for " + getName());
@@ -1132,6 +1136,11 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
         final StateBackend fromApplication =
                 configuration.getStateBackend(getUserCodeClassLoader());
 
+        /*********************
+         * clouding 注释: 2021/6/6 15:08
+         *   根据配置获取到StateBackend
+         *   一般至少是 FsStateBackend 或者 RocksDbBackend
+         *********************/
         return StateBackendLoader.fromApplicationOrConfigOrDefault(
                 fromApplication,
                 getEnvironment().getTaskManagerInfo().getConfiguration(),

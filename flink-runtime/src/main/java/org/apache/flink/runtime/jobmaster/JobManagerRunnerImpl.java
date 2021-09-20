@@ -280,6 +280,10 @@ public class JobManagerRunnerImpl
     // Leadership methods
     // ----------------------------------------------------------------------------------------------
 
+    /**
+     * 选举获胜时，走这个
+     * @param leaderSessionID New leader session ID
+     */
     @Override
     public void grantLeadership(final UUID leaderSessionID) {
         synchronized (lock) {
@@ -292,6 +296,10 @@ public class JobManagerRunnerImpl
             leadershipOperation =
                     leadershipOperation.thenCompose(
                             (ignored) -> {
+                                            /*********************
+                                             * clouding 注释: 2021/9/19 22:47
+                                             *   启动 JobManager
+                                             *********************/
                                 synchronized (lock) {
                                     return verifyJobSchedulingStatusAndStartJobManager(
                                             leaderSessionID);
@@ -312,6 +320,8 @@ public class JobManagerRunnerImpl
                     if (jobSchedulingStatus == JobSchedulingStatus.DONE) {
                         return jobAlreadyDone();
                     } else {
+                        // clouding 注释: 2021/9/19 22:47
+                        //          启动的地方
                         return startJobMaster(leaderSessionId);
                     }
                 });
@@ -338,6 +348,8 @@ public class JobManagerRunnerImpl
 
         final CompletableFuture<Acknowledge> startFuture;
         try {
+            // clouding 注释: 2021/9/19 22:47
+            //          启动的地方
             startFuture = jobMasterService.start(new JobMasterId(leaderSessionId));
         } catch (Exception e) {
             return FutureUtils.completedExceptionally(

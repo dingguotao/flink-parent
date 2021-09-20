@@ -843,6 +843,8 @@ public class ExecutionGraph implements AccessExecutionGraph {
                 new ArrayList<>(topologiallySorted.size());
         final long createTimestamp = System.currentTimeMillis();
 
+        // clouding 注释: 2021/9/19 22:33
+        //          把 JobVertex 转换成了 ExecutionJobVertex
         for (JobVertex jobVertex : topologiallySorted) {
 
             if (jobVertex.isInputVertex() && !jobVertex.isStoppable()) {

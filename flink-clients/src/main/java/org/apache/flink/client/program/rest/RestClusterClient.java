@@ -371,8 +371,10 @@ public class RestClusterClient<T> implements ClusterClient<T> {
 
                             // clouding 注释: 2021/5/31 23:32
                             //          构建一个调用rest接口的 body对象，发送请求
+                            //          请求体放的都是些名字，路径类的，具体东西在hdfs上
                             final JobSubmitRequestBody requestBody =
                                     new JobSubmitRequestBody(
+                                            // jobGraphFile 是个Path类
                                             jobGraphFile.getFileName().toString(),
                                             jarFileNames,
                                             artifactFileNames);

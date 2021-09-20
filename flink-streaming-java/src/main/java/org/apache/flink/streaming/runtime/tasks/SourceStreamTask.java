@@ -79,6 +79,8 @@ public class SourceStreamTask<
                 FatalExitExceptionHandler.INSTANCE,
                 StreamTaskActionExecutor.synchronizedExecutor(lock));
         this.lock = Preconditions.checkNotNull(lock);
+        // clouding 注释: 2021/6/22 22:25
+        //          这里就是对接Source的task，就是使用 sourceThread 接受数据。
         this.sourceThread = new LegacySourceFunctionThread();
     }
 
