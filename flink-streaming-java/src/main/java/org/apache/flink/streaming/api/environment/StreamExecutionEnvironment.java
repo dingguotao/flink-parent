@@ -1686,6 +1686,7 @@ public class StreamExecutionEnvironment {
 
         clean(function);
 
+        // todo StreamSource
         final StreamSource<OUT, ?> sourceOperator = new StreamSource<>(function);
         // clouding 注释: 2021/5/31 21:43
         //          返回DataStreamSource
@@ -1993,6 +1994,9 @@ public class StreamExecutionEnvironment {
                     "No operators defined in streaming topology. Cannot execute.");
         }
 
+        /**
+         * @see: org.apache.flink.api.common.RuntimeExecutionMode#STREAMING
+         */
         final RuntimeExecutionMode executionMode = configuration.get(ExecutionOptions.RUNTIME_MODE);
 
         return new StreamGraphGenerator(transformations, config, checkpointCfg, getConfiguration())

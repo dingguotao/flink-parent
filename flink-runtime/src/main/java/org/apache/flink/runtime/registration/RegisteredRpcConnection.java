@@ -102,6 +102,8 @@ public abstract class RegisteredRpcConnection<
                 !isConnected() && pendingRegistration == null,
                 "The RPC connection is already started");
 
+        // clouding 注释: 2021/9/19 23:26
+        //          创建了一个注册对象。
         final RetryingRegistration<F, G, S, R> newRegistration = createNewRegistration();
 
         if (REGISTRATION_UPDATER.compareAndSet(this, null, newRegistration)) {

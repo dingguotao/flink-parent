@@ -572,6 +572,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     public CompletableFuture<Acknowledge> submitTask(
             TaskDeploymentDescriptor tdd, JobMasterId jobMasterId, Time timeout) {
 
+        // clouding 注释: 2021/6/22 20:56
+        //          tdd 里面有这个任务的所有信息
         try {
             final JobID jobId = tdd.getJobId();
             final ExecutionAttemptID executionAttemptID = tdd.getExecutionAttemptId();
@@ -590,6 +592,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                                         return new TaskSubmissionException(message);
                                     });
 
+            // clouding 注释: 2021/6/22 20:57
+            //          校验 jobMaster的Id，这个是但是去RM申请资源的
             if (!Objects.equals(jobManagerConnection.getJobMasterId(), jobMasterId)) {
                 final String message =
                         "Rejecting the task submission because the job manager leader id "
@@ -704,6 +708,11 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 throw new TaskSubmissionException("Could not submit task.", e);
             }
 
+            // clouding 注释: 2021/6/22 20:58
+            //          构造 Task对象。
+            //          Task内部会初始化好一个执行线程，
+            //          一个Task，就是一个线程。
+            //          把tdd，转换成了 Task
             Task task =
                     new Task(
                             jobInformation,
@@ -753,6 +762,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             }
 
             if (taskAdded) {
+                // clouding 注释: 2021/6/22 21:00
+                //          启动了Task的线程
                 task.startTaskThread();
 
                 setupResultPartitionBookkeeping(
@@ -1031,6 +1042,18 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     // Slot allocation RPCs
     // ----------------------------------------------------------------------
 
+    /**
+     * ResourceManager为JobMaster分配Slot的接口，通知TaskExecutor来分配slot资源
+     * @param slotId slot id for the request
+     * @param jobId for which to request a slot
+     * @param allocationId id for the request
+     * @param resourceProfile of requested slot, used only for dynamic slot allocation and will be
+     *     ignored otherwise
+     * @param targetAddress to which to offer the requested slots
+     * @param resourceManagerId current leader id of the ResourceManager
+     * @param timeout for the operation
+     * @return
+     */
     @Override
     public CompletableFuture<Acknowledge> requestSlot(
             final SlotID slotId,
@@ -1049,6 +1072,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 jobId,
                 resourceManagerId);
 
+        // clouding 注释: 2021/9/13 15:26
+        //          判断当前发来请求的 rm 是否是当时注册的 rm，只能接收active resourcemanager的请求
         if (!isConnectedToResourceManager(resourceManagerId)) {
             final String message =
                     String.format(
@@ -1059,6 +1084,9 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         }
 
         try {
+            // clouding 注释: 2021/9/13 15:27
+            //          标记下这个slot被这个job使用了。
+            //          就是弄了很多个map，来记录这个slot被分配走了，分配给了谁
             allocateSlot(slotId, jobId, allocationId, resourceProfile);
         } catch (SlotAllocationException sae) {
             return FutureUtils.completedExceptionally(sae);
@@ -1067,10 +1095,14 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         final JobTable.Job job;
 
         try {
+            // clouding 注释: 2021/9/20 17:09
+            //          创建Job对象
             job =
                     jobTable.getOrCreateJob(
                             jobId, () -> registerNewJobAndCreateServices(jobId, targetAddress));
         } catch (Exception e) {
+            // clouding 注释: 2021/9/20 17:09
+            //          出错的话，就释放资源
             // free the allocated slot
             try {
                 taskSlotTable.freeSlot(allocationId);
@@ -1093,6 +1125,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         }
 
         if (job.isConnected()) {
+            // clouding 注释: 2021/9/13 15:53
+            //          把当前的job信息汇报给JobMaster
             offerSlotsToJobManager(jobId);
         }
 
@@ -1101,6 +1135,10 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     private TaskExecutorJobServices registerNewJobAndCreateServices(
             JobID jobId, String targetAddress) throws Exception {
+        /*********************
+         * clouding 注释: 2021/9/13 15:50
+         *   存储该Job运行时的资源
+         *********************/
         jobLeaderService.addJob(jobId, targetAddress);
         final PermanentBlobCache permanentBlobService = blobCacheService.getPermanentBlobService();
         permanentBlobService.registerJob(jobId);
@@ -1113,7 +1151,11 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     private void allocateSlot(
             SlotID slotId, JobID jobId, AllocationID allocationId, ResourceProfile resourceProfile)
             throws SlotAllocationException {
+        // clouding 注释: 2021/9/13 15:30
+        //          判断这个slot的状态
         if (taskSlotTable.isSlotFree(slotId.getSlotNumber())) {
+            // clouding 注释: 2021/9/13 15:31
+            //          分配slot
             if (taskSlotTable.allocateSlot(
                     slotId.getSlotNumber(),
                     jobId,
@@ -1478,6 +1520,10 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         jobTable.getConnection(jobId).ifPresent(this::internalOfferSlotsToJobManager);
     }
 
+    /**
+     * 通知JobMaster slot准备好了
+     * @param jobManagerConnection
+     */
     private void internalOfferSlotsToJobManager(JobTable.Connection jobManagerConnection) {
         final JobID jobId = jobManagerConnection.getJobId();
 
@@ -1492,11 +1538,15 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
             final Collection<SlotOffer> reservedSlots = new HashSet<>(2);
 
+            // clouding 注释: 2021/9/20 17:13
+            //          把TaskSlot转换成SlotOffer对象，发送给JobManager
             while (reservedSlotsIterator.hasNext()) {
                 SlotOffer offer = reservedSlotsIterator.next().generateSlotOffer();
                 reservedSlots.add(offer);
             }
 
+            // clouding 注释: 2021/9/13 15:54
+            //          这里就是给JobMaster发送自己的slot信息。
             CompletableFuture<Collection<SlotOffer>> acceptedSlotsFuture =
                     jobMasterGateway.offerSlots(
                             getResourceID(), reservedSlots, taskManagerConfiguration.getTimeout());
@@ -1517,12 +1567,16 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             Collection<SlotOffer> offeredSlots) {
         return (Iterable<SlotOffer> acceptedSlots, Throwable throwable) -> {
             if (throwable != null) {
+                // clouding 注释: 2021/9/13 15:55
+                //          超时就去重试
                 if (throwable instanceof TimeoutException) {
                     log.info(
                             "Slot offering to JobManager did not finish in time. Retrying the slot offering.");
                     // We ran into a timeout. Try again.
                     offerSlotsToJobManager(jobId);
                 } else {
+                    // clouding 注释: 2021/9/13 15:56
+                    //          其它异常就去释放资源
                     log.warn(
                             "Slot offering to JobManager failed. Freeing the slots "
                                     + "and returning them to the ResourceManager.",
@@ -1534,12 +1588,16 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                     }
                 }
             } else {
+                // clouding 注释: 2021/9/13 15:56
+                //          如果没有异常
                 // check if the response is still valid
                 if (isJobManagerConnectionValid(jobId, jobMasterId)) {
                     // mark accepted slots active
                     for (SlotOffer acceptedSlot : acceptedSlots) {
                         final AllocationID allocationId = acceptedSlot.getAllocationId();
                         try {
+                            // clouding 注释: 2021/9/13 15:59
+                            //          在slotTable中修改状态
                             if (!taskSlotTable.markSlotActive(allocationId)) {
                                 // the slot is either free or releasing at the moment
                                 final String message =

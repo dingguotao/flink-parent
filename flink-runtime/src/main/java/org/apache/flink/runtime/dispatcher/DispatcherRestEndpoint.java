@@ -85,6 +85,7 @@ public class DispatcherRestEndpoint extends WebMonitorEndpoint<DispatcherGateway
     @Override
     protected List<Tuple2<RestHandlerSpecification, ChannelInboundHandler>> initializeHandlers(
             final CompletableFuture<String> localAddressFuture) {
+        // 调用父类的 initializeHandlers
         List<Tuple2<RestHandlerSpecification, ChannelInboundHandler>> handlers =
                 super.initializeHandlers(localAddressFuture);
 
@@ -92,6 +93,10 @@ public class DispatcherRestEndpoint extends WebMonitorEndpoint<DispatcherGateway
 
         final Time timeout = restConfiguration.getTimeout();
 
+        /*********************
+         * clouding 注释: 2021/9/6 17:16
+         *   加入了一个 JobSubmitHandler
+         *********************/
         JobSubmitHandler jobSubmitHandler =
                 new JobSubmitHandler(
                         leaderRetriever, timeout, responseHeaders, executor, clusterConfiguration);

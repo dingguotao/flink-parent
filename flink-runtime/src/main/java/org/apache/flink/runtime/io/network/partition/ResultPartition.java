@@ -148,6 +148,10 @@ public abstract class ResultPartition implements ResultPartitionWriter {
                 "Bug in result partition setup logic: Already registered buffer pool.");
 
         this.bufferPool = checkNotNull(bufferPoolFactory.get());
+        /*********************
+         * clouding 注释: 2021/6/22 22:09
+         *   一个TaskManager -> TaskExecutor -> ResultPartition
+         *********************/
         partitionManager.registerResultPartition(this);
     }
 

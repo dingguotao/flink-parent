@@ -166,8 +166,20 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
 
         try {
             replaceGracefulExitWithHaltIfConfigured(configuration);
+            /*********************
+             * clouding 注释: 2021/9/6 15:30
+             *   插件管理器。一般用不上。
+             *********************/
             PluginManager pluginManager =
                     PluginUtils.createPluginManagerFromRootFolder(configuration);
+            /*********************
+             * clouding 注释: 2021/9/6 15:31
+             *   初始化文件系统
+             *   三个东西：
+             *   1. 本地文件系统
+             *   2. hdfs
+             *
+             *********************/
             configureFileSystems(configuration, pluginManager);
 
             SecurityContext securityContext = installSecurityContext(configuration);
@@ -221,16 +233,30 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
     private void runCluster(Configuration configuration, PluginManager pluginManager)
             throws Exception {
         synchronized (lock) {
+            /*********************
+             * clouding 注释: 2021/9/6 16:25
+             *   初始化很多服务，比如 ha，心跳，metric
+             *   1. commonRcpService
+             *   2. haService：高可用服务
+             *   3. blobServer：
+             *   4. heartbeatServices：心跳服务
+             *   5. metricRegistry：跟踪已注册的Metric
+             *   6. archivedExecutionGroupStore：存储ExecutionGraph的
+             *********************/
             initializeServices(configuration, pluginManager);
 
             // write host information into configuration
             configuration.setString(JobManagerOptions.ADDRESS, commonRpcService.getAddress());
             configuration.setInteger(JobManagerOptions.PORT, commonRpcService.getPort());
 
+            // clouding 注释: 2021/9/6 16:07
+            //          dispatcherResourceManagerComponentFactory 这里面有三个组件的工厂
+            //          dispatcher，resourceManager，webMonitor
             final DispatcherResourceManagerComponentFactory
                     dispatcherResourceManagerComponentFactory =
                             createDispatcherResourceManagerComponentFactory(configuration);
 
+            // 创建了 dispatcher，resourceManager，webMonitor
             clusterComponent =
                     dispatcherResourceManagerComponentFactory.create(
                             configuration,
@@ -289,14 +315,37 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
             configuration.setString(JobManagerOptions.ADDRESS, commonRpcService.getAddress());
             configuration.setInteger(JobManagerOptions.PORT, commonRpcService.getPort());
 
+            /*********************
+             * clouding 注释: 2021/9/6 16:32
+             *   初始化了一个ioExecutor，用来做io
+             *   默认是当前机器 CPU * 4
+             *********************/
             ioExecutor =
                     Executors.newFixedThreadPool(
                             ClusterEntrypointUtils.getPoolSize(configuration),
                             new ExecutorThreadFactory("cluster-io"));
+            /*********************
+             * clouding 注释: 2021/9/6 16:33
+             *   ha服务
+             *********************/
             haServices = createHaServices(configuration, ioExecutor);
+            /*********************
+             * clouding 注释: 2021/9/6 16:44
+             *   用来管理大文件。上传下载
+             *   Blob：Binary Large Object
+             *********************/
             blobServer = new BlobServer(configuration, haServices.createBlobStore());
+            // 启动
             blobServer.start();
+            /*********************
+             * clouding 注释: 2021/9/6 16:45
+             *   心跳服务，用来提供心跳服务
+             *********************/
             heartbeatServices = createHeartbeatServices(configuration);
+            /*********************
+             * clouding 注释: 2021/9/6 16:46
+             *   性能监控
+             *********************/
             metricRegistry = createMetricRegistry(configuration, pluginManager);
 
             final RpcService metricQueryServiceRpcService =
@@ -313,6 +362,10 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
                             ConfigurationUtils.getSystemResourceMetricsProbingInterval(
                                     configuration));
 
+            /*********************
+             * clouding 注释: 2021/9/6 16:47
+             *
+             *********************/
             archivedExecutionGraphStore =
                     createSerializableExecutionGraphStore(
                             configuration, commonRpcService.getScheduledExecutor());

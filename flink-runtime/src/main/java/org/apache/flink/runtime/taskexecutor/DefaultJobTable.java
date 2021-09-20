@@ -56,6 +56,8 @@ public final class DefaultJobTable implements JobTable {
         JobOrConnection job = jobs.get(jobId);
 
         if (job == null) {
+            // clouding 注释: 2021/9/13 15:51
+            //          创建Job对象，这个Job
             job = new JobOrConnection(jobId, jobServicesSupplier.get());
             jobs.put(jobId, job);
         }

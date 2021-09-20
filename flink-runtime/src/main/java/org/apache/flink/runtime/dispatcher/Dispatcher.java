@@ -396,6 +396,8 @@ public abstract class Dispatcher extends PermanentlyFencedRpcEndpoint<Dispatcher
     private void runJob(JobGraph jobGraph, ExecutionType executionType) {
         Preconditions.checkState(!runningJobs.containsKey(jobGraph.getJobID()));
         long initializationTimestamp = System.currentTimeMillis();
+        // clouding 注释: 2021/9/19 22:40
+        //          这里创建了JobManager(JobMaster)实例。并且在创建的时候，会把JobGraph构建成ExecutionGraph
         CompletableFuture<JobManagerRunner> jobManagerRunnerFuture =
                 createJobManagerRunner(jobGraph, initializationTimestamp);
 

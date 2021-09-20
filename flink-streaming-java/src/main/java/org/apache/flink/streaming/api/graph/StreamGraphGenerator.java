@@ -263,7 +263,7 @@ public class StreamGraphGenerator {
         streamGraph = new StreamGraph(executionConfig, checkpointConfig, savepointRestoreSettings);
         shouldExecuteInBatchMode = shouldExecuteInBatchMode(runtimeExecutionMode);
         // clouding 注释: 2021/5/31 22:34
-        //          设置streamGraph
+        //          设置streamGraph, 把streamGraphGenerator的都设置在了StreamGraph中
         configureStreamGraph(streamGraph);
 
         // clouding 注释: 2021/5/31 22:34
@@ -419,7 +419,7 @@ public class StreamGraphGenerator {
         Collection<Integer> transformedIds;
         if (translator != null) {
             // clouding 注释: 2021/5/31 22:41
-            //          如果在translatorMap集合里，那么就是内置的
+            //          如果在translatorMap集合里，那么就是内置的，大部分走的都是这个
             transformedIds = translate(translator, transform);
         } else {
             transformedIds = legacyTransform(transform);
@@ -669,6 +669,8 @@ public class StreamGraphGenerator {
         checkNotNull(translator);
         checkNotNull(transform);
 
+        // clouding 注释: 2021/9/19 15:34
+        //          拿到所有的父transform
         final List<Collection<Integer>> allInputIds = getParentInputIds(transform.getInputs());
 
         // the recursive call might have already transformed this
