@@ -510,6 +510,8 @@ public class FsStateBackend extends AbstractFileStateBackend implements Configur
     @Override
     public CheckpointStorage createCheckpointStorage(JobID jobId) throws IOException {
         checkNotNull(jobId, "jobId");
+        // clouding 注释: 2021/6/6 15:11
+        //          会生成的目录格式： 配置的目录 + "/job_id/checkpoint_id"
         return new FsCheckpointStorage(
                 getCheckpointPath(),
                 getSavepointPath(),

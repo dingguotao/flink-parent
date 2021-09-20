@@ -96,6 +96,8 @@ public class ExecutionVertex
     private CoLocationConstraint locationConstraint;
 
     /** The current or latest execution attempt of this vertex's task. */
+    // clouding 注释: 2021/10/16 19:17
+    //          ？？？
     private Execution currentExecution; // this field must never be null
 
     private final ArrayList<InputSplit> inputSplits;
@@ -729,6 +731,10 @@ public class ExecutionVertex
     }
 
     public void deploy() throws JobException {
+        /*********************
+         * clouding 注释: 2021/9/20 20:53
+         *   由于 deploy()可能会失败，所以每次deploy()都封装了一下，每次都是新的 currentExecution
+         *********************/
         currentExecution.deploy();
     }
 

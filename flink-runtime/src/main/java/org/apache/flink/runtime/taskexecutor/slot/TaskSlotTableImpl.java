@@ -56,6 +56,12 @@ import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 /** Default implementation of {@link TaskSlotTable}. */
+/*********************
+ * clouding 注释: 2021/6/5 19:28
+ *   维护这个TaskManager上所有的TaskSlot和Task、Job的关系
+ *   通过TimeoutService做task的超时检测
+ *   当slot被调度执行一个Task，就会生成一个TaskSlot对象
+ *********************/
 public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTable<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(TaskSlotTableImpl.class);
@@ -294,12 +300,16 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
 
         Preconditions.checkArgument(index < numberSlots);
 
+        // clouding 注释: 2021/9/20 16:47
+        //          校验这个slot是否被分配过
         TaskSlot<T> taskSlot = allocatedSlots.get(allocationId);
         if (taskSlot != null) {
             LOG.info("Allocation ID {} is already allocated in {}.", allocationId, taskSlot);
             return false;
         }
 
+        // clouding 注释: 2021/9/20 16:49
+        //          重复的slot申请
         if (taskSlots.containsKey(index)) {
             TaskSlot<T> duplicatedTaskSlot = taskSlots.get(index);
             LOG.info(
@@ -310,12 +320,13 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
                     duplicatedTaskSlot.getAllocationId());
             return duplicatedTaskSlot.getJobId().equals(jobId)
                     && duplicatedTaskSlot.getAllocationId().equals(allocationId);
+            // clouding 注释: 2021/9/20 16:50
+            //          下面这个if，和上面判断不是一样吗？？为啥又要判断一次
         } else if (allocatedSlots.containsKey(allocationId)) {
             return true;
         }
 
         resourceProfile = index >= 0 ? defaultSlotResourceProfile : resourceProfile;
-
         if (!budgetManager.reserve(resourceProfile)) {
             LOG.info(
                     "Cannot allocate the requested resources. Trying to allocate {}, "
@@ -326,6 +337,10 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
             return false;
         }
 
+        // clouding 注释: 2021/9/13 15:35
+        //          封装slot对象。
+        //          每分配一个Slot，都会封装对应的TaskSlot对象。
+        //          TaskSlot对象里包含了这个Task的JobId，allocationId，资源信息
         taskSlot =
                 new TaskSlot<>(
                         index,

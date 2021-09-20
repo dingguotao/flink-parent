@@ -173,6 +173,14 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
                     PluginUtils.createPluginManagerFromRootFolder(configuration);
             // clouding 注释: 2022/1/22 17:37
             //          初始化文件系统
+            /*********************
+             * clouding 注释: 2021/9/6 15:31
+             *   初始化文件系统
+             *   三个东西：
+             *   1. 本地文件系统
+             *   2. hdfs
+             *
+             *********************/
             configureFileSystems(configuration, pluginManager);
 
             // clouding 注释: 2022/3/12 16:48
@@ -319,6 +327,11 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
             // clouding 注释: 2022/3/12 18:37
             //          创建io线程池
             //          默认 cluster.io-pool.size = 4 * cpu 核数
+            /*********************
+             * clouding 注释: 2021/9/6 16:32
+             *   初始化了一个ioExecutor，用来做io
+             *   默认是当前机器 CPU * 4
+             *********************/
             ioExecutor =
                     Executors.newFixedThreadPool(
                             ClusterEntrypointUtils.getPoolSize(configuration),
@@ -331,12 +344,21 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
             //          - client上传的jar包,
             //          - 节点间进行的文件传输
             blobServer = new BlobServer(configuration, haServices.createBlobStore());
+            // 启动
             blobServer.start();
             // clouding 注释: 2022/3/12 18:41
             //          心跳检测服务
+            /*********************
+             * clouding 注释: 2021/9/6 16:45
+             *   心跳服务，用来提供心跳服务
+             *********************/
             heartbeatServices = createHeartbeatServices(configuration);
             // clouding 注释: 2022/3/12 18:42
             //          metric相关服务
+            /*********************
+             * clouding 注释: 2021/9/6 16:46
+             *   性能监控
+             *********************/
             metricRegistry = createMetricRegistry(configuration, pluginManager);
 
             final RpcService metricQueryServiceRpcService =

@@ -1574,6 +1574,7 @@ public class StreamExecutionEnvironment {
 
         clean(function);
 
+        // todo StreamSource
         final StreamSource<OUT, ?> sourceOperator = new StreamSource<>(function);
         // clouding 注释: 2021/5/31 21:43
         //          返回DataStreamSource

@@ -70,6 +70,8 @@ public class EagerSchedulingStrategy implements SchedulingStrategy {
     }
 
     private void allocateSlotsAndDeploy(final Set<ExecutionVertexID> verticesToDeploy) {
+        // clouding 注释: 2021/9/20 14:54
+        //          ExecutionVertexDeploymentOption 就是后续申请调度的封装类。
         final List<ExecutionVertexDeploymentOption> executionVertexDeploymentOptions =
                 SchedulingStrategyUtils.createExecutionVertexDeploymentOptionsInTopologicalOrder(
                         schedulingTopology, verticesToDeploy, id -> deploymentOption);

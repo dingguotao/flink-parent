@@ -167,6 +167,8 @@ public class SingleInputGateFactory {
             ShuffleDescriptor shuffleDescriptor,
             ChannelStatistics channelStatistics,
             InputChannelMetrics metrics) {
+        // clouding 注释: 2021/6/22 21:41
+        //          这里有 两种 ， UnknownInputChannel KnownInputChannel
         return applyWithShuffleTypeCheck(
                 NettyShuffleDescriptor.class,
                 shuffleDescriptor,

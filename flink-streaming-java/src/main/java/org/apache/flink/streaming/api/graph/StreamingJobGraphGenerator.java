@@ -169,6 +169,8 @@ public class StreamingJobGraphGenerator {
             legacyHashes.add(hasher.traverseStreamGraphAndGenerateHashes(streamGraph));
         }
 
+        // clouding 注释: 2021/6/29 22:41
+        //          生成 JobVertex，JobEdge, 并尽可能的把多个节点chain在一起
         setChaining(hashes, legacyHashes);
 
         setPhysicalEdges();

@@ -261,6 +261,8 @@ public class TimeWindow extends Window {
      * @param windowSize The size of the generated windows.
      * @return window start
      */
+    // clouding 注释: 2021/6/21 10:00
+    //          计算窗口的方法
     public static long getWindowStartWithOffset(long timestamp, long offset, long windowSize) {
         return timestamp - (timestamp - offset + windowSize) % windowSize;
     }

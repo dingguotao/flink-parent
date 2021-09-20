@@ -152,6 +152,11 @@ public class ResultPartition implements ResultPartitionWriter, BufferPoolOwner {
                 "Bug in result partition setup logic: Buffer pool has not enough guaranteed buffers for this result partition.");
 
         this.bufferPool = bufferPool;
+        /*********************
+         * clouding 注释: 2021/6/22 22:09
+         *   一个TaskManager -> TaskExecutor -> ResultPartition
+         *   partitionManager 负责管理所有的 ResultPartition，就是个map
+         *********************/
         partitionManager.registerResultPartition(this);
     }
 

@@ -395,6 +395,9 @@ public class Task
                 shuffleEnvironment.createShuffleIOOwnerContext(
                         taskNameWithSubtaskAndId, executionId, metrics.getIOMetricGroup());
 
+        // clouding 注释: 2021/6/22 21:08
+        //          用来做 数据的输出使用。
+        //          大部分情况，一个task，只有一个 ResultPartition
         // produced intermediate result partitions
         final ResultPartitionWriter[] resultPartitionWriters =
                 shuffleEnvironment
@@ -410,6 +413,8 @@ public class Task
                         jobId,
                         resultPartitionConsumableNotifier);
 
+        // clouding 注释: 2021/6/22 21:08
+        //          用来做这个 task 的输入
         // consumed intermediate result partitions
         final IndexedInputGate[] gates =
                 shuffleEnvironment
@@ -434,6 +439,8 @@ public class Task
         invokableHasBeenCanceled = new AtomicBoolean(false);
 
         // finally, create the executing thread, but do not start it
+        // clouding 注释: 2021/6/22 21:10
+        //          构造 执行这个task 的线程
         executingThread = new Thread(TASK_THREADS_GROUP, this, taskNameWithSubtask);
     }
 
@@ -562,6 +569,8 @@ public class Task
         executingThread.start();
     }
 
+    // clouding 注释: 2021/6/22 21:05
+    //          task 执行的run方法
     /** The core work method that bootstraps the task and executes its code. */
     @Override
     public void run() {
@@ -579,6 +588,9 @@ public class Task
         while (true) {
             ExecutionState current = this.executionState;
             if (current == ExecutionState.CREATED) {
+                // clouding 注释: 2021/6/22 21:58
+                //          初始化的时候，是 CREATED
+                //          从默认的 CREATED 转换成 DEPLOYING，转换完就跳出循环
                 if (transitionState(ExecutionState.CREATED, ExecutionState.DEPLOYING)) {
                     // success, we can start our work
                     break;
@@ -655,6 +667,11 @@ public class Task
 
             LOG.info("Registering task at network: {}.", this);
 
+            /*********************
+             * clouding 注释: 2021/6/22 22:03
+             *   启动 ResultPartitionWriter 和 InputGate
+             *   初始化 bufferPool
+             *********************/
             setupPartitionsAndGates(consumableNotifyingPartitionWriters, inputGates);
 
             for (ResultPartitionWriter partitionWriter : consumableNotifyingPartitionWriters) {
@@ -690,6 +707,8 @@ public class Task
             TaskKvStateRegistry kvStateRegistry =
                     kvStateService.createKvStateTaskRegistry(jobId, getJobVertexId());
 
+            // clouding 注释: 2021/6/22 22:20
+            //          上下文
             Environment env =
                     new RuntimeEnvironment(
                             jobId,
@@ -724,6 +743,12 @@ public class Task
             // so that it is available to the invokable during its entire lifetime.
             executingThread.setContextClassLoader(userCodeClassLoader);
 
+            /*********************
+             * clouding 注释: 2021/6/22 22:21
+             *   通过反射，实例化 StreamTask。这里可能会是 SourceStreamTask 或者 OneInputStreamTask
+             *   后面就看下 SourceStreamTask 里 带有 Environment的构造函数 {@link org.apache.flink.streaming.runtime.tasks.SourceStreamTask#SourceStreamTask(org.apache.flink.runtime.execution.Environment)}
+             *         或者看下 OneInputStreamTask 里 带有 Environment的构造函数 {@link org.apache.flink.streaming.runtime.tasks.OneInputStreamTask#OneInputStreamTask(org.apache.flink.runtime.execution.Environment)}
+             *********************/
             // now load and instantiate the task's invokable code
             invokable = loadAndInstantiateInvokable(userCodeClassLoader, nameOfInvokableClass, env);
 

@@ -233,6 +233,8 @@ public class CliFrontend {
         // 核心配置，是可以打印出来的
         LOG.debug("Effective executor configuration: {}", effectiveConfiguration);
 
+        // clouding 注释: 2021/9/19 14:35
+        //          PackagedProgram 就是把提交应用的jar包信息封装了一下
         try (PackagedProgram program = getPackagedProgram(programOptions, effectiveConfiguration)) {
             // TODO 这个是执行程序
             executeProgram(effectiveConfiguration, program);
@@ -1068,6 +1070,9 @@ public class CliFrontend {
         }
     }
 
+    /**
+     * 提交程序的入口
+     */
     /** Submits the job based on the arguments. */
     public static void main(final String[] args) {
         EnvironmentInformation.logEnvironmentInfo(LOG, "Command Line Client", args);
@@ -1090,6 +1095,7 @@ public class CliFrontend {
 
             SecurityUtils.install(new SecurityConfiguration(cli.configuration));
             // TODO 解析输入参数，并且运行
+            // 提交程序运行的时候，args[0] 就是 run
             int retCode =
                     SecurityUtils.getInstalledContext().runSecured(() -> cli.parseParameters(args));
             System.exit(retCode);

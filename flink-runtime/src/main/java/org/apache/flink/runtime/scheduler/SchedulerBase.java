@@ -238,6 +238,11 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
         this.executionVertexVersioner = checkNotNull(executionVertexVersioner);
         this.legacyScheduling = legacyScheduling;
 
+        /*********************
+         * clouding 注释: 2021/9/19 21:57
+         *   这里把JobGraph转换成了 ExecutionGraph。
+         *   ExecutionGraph就是并行化的 JobGraph
+         *********************/
         this.executionGraph =
                 createAndRestoreExecutionGraph(
                         jobManagerJobMetricGroup,
@@ -289,6 +294,8 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
                         ? FailoverStrategyLoader.loadFailoverStrategy(jobMasterConfiguration, log)
                         : new NoOpFailoverStrategy.Factory();
 
+        // clouding 注释: 2021/9/19 22:07
+        //          构建 ExecutionGraph
         return ExecutionGraphBuilder.buildGraph(
                 null,
                 jobGraph,
@@ -593,6 +600,8 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
         mainThreadExecutor.assertRunningInMainThread();
         registerJobMetrics();
         startAllOperatorCoordinators();
+        // clouding 注释: 2021/9/20 14:51
+        //          申请调度执行
         startSchedulingInternal();
     }
 

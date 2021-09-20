@@ -42,6 +42,10 @@ public class StandaloneSessionClusterEntrypoint extends SessionClusterEntrypoint
                 StandaloneResourceManagerFactory.getInstance());
     }
 
+    /*********************
+     * clouding 注释: 2021/9/6 15:28
+     *   启动程序入口
+     *********************/
     public static void main(String[] args) {
         // startup checks and logging
         // clouding 注释: 2022/1/22 17:16

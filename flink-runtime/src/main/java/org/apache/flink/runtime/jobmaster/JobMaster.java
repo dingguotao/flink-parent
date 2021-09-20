@@ -278,6 +278,8 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
         this.shuffleMaster = checkNotNull(shuffleMaster);
 
         this.jobManagerJobMetricGroup = jobMetricGroupFactory.create(jobGraph);
+        // clouding 注释: 2021/10/17 21:45
+        //          重要，创建调度器，初始化了很多东西， jobGraph -> executionGraph转换的入口
         this.schedulerNG = createScheduler(jobManagerJobMetricGroup);
         this.jobStatusListener = null;
 
@@ -324,6 +326,8 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
         // make sure we receive RPC and async calls
         start();
 
+        // clouding 注释: 2021/9/19 22:48
+        //          启动的地方 startJobExecution，开始调度执行
         return callAsyncWithoutFencing(
                 () -> startJobExecution(newJobMasterId), RpcUtils.INF_TIMEOUT);
     }
@@ -551,6 +555,13 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
         }
     }
 
+    /**
+     * TaskExecutor 在准备好slot的以后，会通知JobMaster自己的slot情况。
+     * @param taskManagerId identifying the task manager
+     * @param slots to offer to the job manager
+     * @param timeout for the rpc call
+     * @return
+     */
     @Override
     public CompletableFuture<Collection<SlotOffer>> offerSlots(
             final ResourceID taskManagerId, final Collection<SlotOffer> slots, final Time timeout) {
@@ -831,6 +842,8 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
 
         setNewFencingToken(newJobMasterId);
 
+        // clouding 注释: 2021/9/19 22:48
+        //          初始化一些服务组件。比如
         startJobMasterServices();
 
         log.info(
@@ -839,12 +852,19 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
                 jobGraph.getJobID(),
                 newJobMasterId);
 
+        // clouding 注释: 2021/9/19 22:48
+        //          开始调度执行。调度StreamTask执行。
+        //          1. slot的申请， ---> allocateSlots
+        //          2. task的部署运行 --> deploySlots
         resetAndStartScheduler();
 
         return Acknowledge.get();
     }
 
     private void startJobMasterServices() throws Exception {
+        // clouding 注释: 2021/9/19 22:49
+        //          jobMaster的心跳服务
+        //          1. jobMaster和resourceManager的心跳 2. jobmaster和taskmanager的心跳
         startHeartbeatServices();
 
         // start the slot pool make sure the slot pool now accepts messages for this leader
@@ -853,6 +873,10 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
 
         // TODO: Remove once the ZooKeeperLeaderRetrieval returns the stored address upon start
         // try to reconnect to previously known leader
+        /*********************
+         * clouding 注释: 2021/9/19 23:22
+         *   连接ResourceManager，注册这个JobMaster，申请slot
+         *********************/
         reconnectToResourceManager(new FlinkException("Starting JobMaster component."));
 
         // job is ready to go, try to establish connection with resource manager
@@ -998,6 +1022,8 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
                                     });
         }
 
+        // clouding 注释: 2021/9/20 14:48
+        //          开始调度，也就是申请slot和部署job
         FutureUtils.assertNoException(schedulerAssignedFuture.thenRun(this::startScheduling));
     }
 
@@ -1007,6 +1033,8 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
         jobStatusListener = new JobManagerJobStatusListener();
         schedulerNG.registerJobStatusListener(jobStatusListener);
 
+        // clouding 注释: 2021/9/20 14:49
+        //          schedulerNG =
         schedulerNG.startScheduling();
     }
 

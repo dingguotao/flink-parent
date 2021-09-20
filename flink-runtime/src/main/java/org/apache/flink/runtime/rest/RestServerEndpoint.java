@@ -269,6 +269,8 @@ public abstract class RestServerEndpoint implements AutoCloseableAsync {
             restAddressFuture.complete(restBaseUrl);
 
             state = State.RUNNING;
+            // clouding 注释: 2021/9/6 17:22
+            //          到这里就把netty启动好了
 
             // clouding 注释: 2022/3/12 21:23
             //          启动清理的定时任务和选举

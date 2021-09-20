@@ -1001,15 +1001,15 @@ under the License.
 								<excludedGroups>org.apache.flink.testutils.junit.FailsOnJava11</excludedGroups>
 							</configuration>
 						</plugin>
-						<plugin>
-							<groupId>org.apache.maven.plugins</groupId>
-							<artifactId>maven-javadoc-plugin</artifactId>
-							<configuration>
-								<additionalJOptions>
-									<additionalJOption>--add-exports=java.base/sun.net.util=ALL-UNNAMED</additionalJOption>
-								</additionalJOptions>
-							</configuration>
-						</plugin>
+<!--						<plugin>-->
+<!--							<groupId>org.apache.maven.plugins</groupId>-->
+<!--							<artifactId>maven-javadoc-plugin</artifactId>-->
+<!--							<configuration>-->
+<!--								<additionalJOptions>-->
+<!--									<additionalJOption>&#45;&#45;add-exports=java.base/sun.net.util=ALL-UNNAMED</additionalJOption>-->
+<!--								</additionalJOptions>-->
+<!--							</configuration>-->
+<!--						</plugin>-->
 					</plugins>
 				</pluginManagement>
 
@@ -1852,18 +1852,18 @@ under the License.
 				</plugin>
 				-->
 
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-javadoc-plugin</artifactId>
-					<version>2.9.1</version><!--$NO-MVN-MAN-VER$-->
-					<configuration>
-						<quiet>true</quiet>
-						<detectOfflineLinks>false</detectOfflineLinks>
-						<additionalJOptions combine.children="append">
-							<additionalJOption>-Xdoclint:none</additionalJOption>
-						</additionalJOptions>
-					</configuration>
-				</plugin>
+<!--				<plugin>-->
+<!--					<groupId>org.apache.maven.plugins</groupId>-->
+<!--					<artifactId>maven-javadoc-plugin</artifactId>-->
+<!--					<version>2.9.1</version>&lt;!&ndash;$NO-MVN-MAN-VER$&ndash;&gt;-->
+<!--					<configuration>-->
+<!--						<quiet>true</quiet>-->
+<!--						<detectOfflineLinks>false</detectOfflineLinks>-->
+<!--						<additionalJOptions combine.children="append">-->
+<!--							<additionalJOption>-Xdoclint:none</additionalJOption>-->
+<!--						</additionalJOptions>-->
+<!--					</configuration>-->
+<!--				</plugin>-->
 
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>

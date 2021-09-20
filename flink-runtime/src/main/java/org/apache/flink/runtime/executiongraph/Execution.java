@@ -749,6 +749,8 @@ public class Execution
         // note: the transition from CREATED to DEPLOYING is for testing purposes only
         ExecutionState previous = this.state;
         if (previous == SCHEDULED || previous == CREATED) {
+            // clouding 注释: 2021/9/20 20:56
+            //          修改状态成 DEPLOYING
             if (!transitionState(previous, DEPLOYING)) {
                 // race condition, someone else beat us to the deploying call.
                 // this should actually not happen and indicates a race somewhere else
@@ -771,6 +773,8 @@ public class Execution
         try {
 
             // race double check, did we fail/cancel and do we need to release the slot?
+            // clouding 注释: 2021/9/20 20:56
+            //          如果状态不对，就报错，取消部署，释放slot
             if (this.state != DEPLOYING) {
                 slot.releaseSlot(
                         new FlinkException(
@@ -791,6 +795,8 @@ public class Execution
                                 getAssignedResourceLocation()));
             }
 
+            // clouding 注释: 2021/9/20 20:58
+            //          封装部署的对象： TaskDeploymentDescriptor
             final TaskDeploymentDescriptor deployment =
                     TaskDeploymentDescriptorFactory.fromExecutionVertex(vertex, attemptNumber)
                             .createDeploymentDescriptor(
@@ -810,6 +816,10 @@ public class Execution
             // We run the submission in the future executor so that the serialization of large TDDs
             // does not block
             // the main thread and sync back to the main thread once submission is completed.
+            /*********************
+             * clouding 注释: 2021/9/20 20:55
+             *   利用taskManager的代理的对象，去提交job
+             *********************/
             CompletableFuture.supplyAsync(
                             () -> taskManagerGateway.submitTask(deployment, rpcTimeout), executor)
                     .thenCompose(Function.identity())
@@ -1142,6 +1152,7 @@ public class Execution
         if (slot != null) {
             final TaskManagerGateway taskManagerGateway = slot.getTaskManagerGateway();
 
+            // attemptId 是这个Execution的id，每重试一次自增1
             taskManagerGateway.triggerCheckpoint(
                     attemptId, getVertex().getJobId(), checkpointId, timestamp, checkpointOptions);
         } else {
