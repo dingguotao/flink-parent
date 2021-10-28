@@ -258,8 +258,12 @@ public class ExecutionGraphBuilder {
         }
 
         // configure the state checkpointing
+        // clouding 注释: 2021/10/16 16:55
+        //          配置checkpoint的
         JobCheckpointingSettings snapshotSettings = jobGraph.getCheckpointingSettings();
         if (snapshotSettings != null) {
+            // clouding 注释: 2021/10/16 16:55
+            //          这里把JobGraph的Vertex，转换成了ExecutionJobVertex
             List<ExecutionJobVertex> triggerVertices =
                     idToVertex(snapshotSettings.getVerticesToTrigger(), executionGraph);
 
@@ -368,6 +372,8 @@ public class ExecutionGraphBuilder {
             final CheckpointCoordinatorConfiguration chkConfig =
                     snapshotSettings.getCheckpointCoordinatorConfiguration();
 
+            // clouding 注释: 2021/10/16 16:56
+            //          这里开启了 CheckpointCoordinator
             executionGraph.enableCheckpointing(
                     chkConfig,
                     triggerVertices,

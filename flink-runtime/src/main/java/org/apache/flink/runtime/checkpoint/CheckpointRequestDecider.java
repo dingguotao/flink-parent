@@ -111,7 +111,11 @@ class CheckpointRequestDecider {
             newRequest.completeExceptionally(new CheckpointException(TOO_MANY_CHECKPOINT_REQUESTS));
             return Optional.empty();
         } else {
+            // clouding 注释: 2021/10/16 19:13
+            //          刚开始，肯定可以入队
             queuedRequests.add(newRequest);
+            // clouding 注释: 2021/10/16 19:14
+            //          满了的话，就报错
             if (queuedRequests.size() > maxQueuedRequests) {
                 queuedRequests
                         .pollLast()

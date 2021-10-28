@@ -364,6 +364,8 @@ public abstract class AbstractStreamOperator<OUT>
             CheckpointOptions checkpointOptions,
             CheckpointStreamFactory factory)
             throws Exception {
+        // clouding 注释: 2021/10/18 0:57
+        //          关键
         return stateHandler.snapshotState(
                 this,
                 Optional.ofNullable(timeServiceManager),

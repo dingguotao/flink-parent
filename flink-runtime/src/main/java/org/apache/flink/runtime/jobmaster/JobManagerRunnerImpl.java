@@ -143,6 +143,8 @@ public class JobManagerRunnerImpl
         this.leaderGatewayFuture = new CompletableFuture<>();
 
         // now start the JobManager
+            // clouding 注释: 2021/10/17 21:36
+            //          创建JobMaster
         this.jobMasterService =
                 jobMasterFactory.createJobMasterService(jobGraph, this, userCodeLoader);
     }

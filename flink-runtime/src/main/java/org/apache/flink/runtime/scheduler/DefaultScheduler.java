@@ -347,6 +347,8 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
         final List<SlotExecutionVertexAssignment> slotExecutionVertexAssignments =
                 allocateSlots(executionVertexDeploymentOptions);
 
+        // clouding 注释: 2021/9/20 18:23
+        //          把slotExecutionVertexAssignments 转换成 DeploymentHandle对象，后续做部署使用
         final List<DeploymentHandle> deploymentHandles =
                 createDeploymentHandles(
                         requiredVersionByVertex,
@@ -414,6 +416,11 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
     }
 
     private void waitForAllSlotsAndDeploy(final List<DeploymentHandle> deploymentHandles) {
+        /*********************
+         * clouding 注释: 2021/9/20 18:25
+         *   assignAllResources： 分配slot
+         *   deployAll：部署执行任务
+         *********************/
         FutureUtils.assertNoException(
                 assignAllResources(deploymentHandles).handle(deployAll(deploymentHandles)));
     }
@@ -533,6 +540,8 @@ public class DefaultScheduler extends SchedulerBase implements SchedulerOperatio
             }
 
             if (throwable == null) {
+                // clouding 注释: 2021/9/20 20:51
+                //          部署对应的 ExecutionVertex
                 deployTaskSafe(executionVertexId);
             } else {
                 handleTaskDeploymentFailure(executionVertexId, throwable);

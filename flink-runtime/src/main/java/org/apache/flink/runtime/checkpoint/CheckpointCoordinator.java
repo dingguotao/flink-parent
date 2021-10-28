@@ -113,6 +113,8 @@ public class CheckpointCoordinator {
     private final Executor executor;
 
     /** Tasks who need to be sent a message when a checkpoint is started. */
+    // clouding 注释: 2021/10/16 19:15
+    //          存放source的ExecutionVertex
     private final ExecutionVertex[] tasksToTrigger;
 
     /** Tasks who need to acknowledge a checkpoint before it succeeds. */
@@ -515,6 +517,8 @@ public class CheckpointCoordinator {
 
         CheckpointTriggerRequest request =
                 new CheckpointTriggerRequest(props, externalSavepointLocation, isPeriodic);
+        // clouding 注释: 2021/10/16 19:10
+        //          开始执行checkpoint
         chooseRequestToExecute(request).ifPresent(this::startTriggeringCheckpoint);
         return request.onCompletionPromise;
     }
@@ -612,6 +616,8 @@ public class CheckpointCoordinator {
                                                                 checkpoint.getFailureCause()));
                                             } else {
                                                 // no exception, no discarding, everything is OK
+                                                // clouding 注释: 2021/10/17 23:22
+                                                //          触发ck的地方！！
                                                 final long checkpointId =
                                                         checkpoint.getCheckpointId();
                                                 snapshotTaskState(
@@ -672,6 +678,8 @@ public class CheckpointCoordinator {
                         // this must happen outside the coordinator-wide lock, because it
                         // communicates
                         // with external services (in HA mode) and may block for a while.
+                        // clouding 注释: 2021/10/16 19:20
+                        //          拿到ck的id
                         long checkpointID = checkpointIdCounter.getAndIncrement();
 
                         CheckpointStorageLocation checkpointStorageLocation =
@@ -831,9 +839,13 @@ public class CheckpointCoordinator {
 
         // send the messages to the tasks that trigger their checkpoint
         for (Execution execution : executions) {
+            // clouding 注释: 2021/10/17 23:23
+            //          savePoint的操作
             if (props.isSynchronous()) {
                 execution.triggerSynchronousSavepoint(checkpointID, timestamp, checkpointOptions);
             } else {
+                // clouding 注释: 2021/10/17 23:23
+                //          执行ck的操作
                 execution.triggerCheckpoint(checkpointID, timestamp, checkpointOptions);
             }
         }
@@ -1057,6 +1069,8 @@ public class CheckpointCoordinator {
 
             if (checkpoint != null && !checkpoint.isDiscarded()) {
 
+                // clouding 注释: 2021/10/18 1:14
+                //          判断是否结束
                 switch (checkpoint.acknowledgeTask(
                         message.getTaskExecutionId(),
                         message.getSubtaskState(),
@@ -1069,6 +1083,8 @@ public class CheckpointCoordinator {
                                 message.getJob(),
                                 taskManagerLocationInfo);
 
+                        // clouding 注释: 2021/10/18 1:17
+                        //          notYetAcknowledgedTasks 为空就全部结束了
                         if (checkpoint.isFullyAcknowledged()) {
                             completePendingCheckpoint(checkpoint);
                         }
@@ -1695,6 +1711,8 @@ public class CheckpointCoordinator {
     //  Periodic scheduling of checkpoints
     // --------------------------------------------------------------------------------------------
 
+    // clouding 注释: 2021/10/16 17:25
+    //          周期调度执行checkpoint的入口
     public void startCheckpointScheduler() {
         synchronized (lock) {
             if (shutdown) {
@@ -1816,6 +1834,8 @@ public class CheckpointCoordinator {
         @Override
         public void run() {
             try {
+                // clouding 注释: 2021/10/16 17:26
+                //          触发checkpoint的地方
                 triggerCheckpoint(true);
             } catch (Exception e) {
                 LOG.error("Exception while triggering checkpoint for job {}.", job, e);

@@ -278,6 +278,8 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
         this.shuffleMaster = checkNotNull(shuffleMaster);
 
         this.jobManagerJobMetricGroup = jobMetricGroupFactory.create(jobGraph);
+        // clouding 注释: 2021/10/17 21:45
+        //          重要，创建调度器，初始化了很多东西， jobGraph -> executionGraph转换的入口
         this.schedulerNG = createScheduler(jobManagerJobMetricGroup);
         this.jobStatusListener = null;
 
