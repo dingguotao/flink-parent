@@ -500,6 +500,12 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
         return CompletableFuture.completedFuture(Acknowledge.get());
     }
 
+    /**
+     * todo: 某个taskManager挂机后的流程
+     * @param resourceID identifying the TaskManager to disconnect
+     * @param cause for the disconnection of the TaskManager
+     * @return
+     */
     @Override
     public CompletableFuture<Acknowledge> disconnectTaskManager(
             final ResourceID resourceID, final Exception cause) {
@@ -1020,9 +1026,15 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
     }
 
     private void startHeartbeatServices() {
+        /*********************
+        * clouding 注释: 2022/1/9 22:43
+        *  	     创建TaskManager的心跳管理，执行HeartbeatManagerSenderImpl
+        *********************/
         taskManagerHeartbeatManager =
                 heartbeatServices.createHeartbeatManagerSender(
                         resourceId,
+                        // clouding 注释: 2022/1/9 22:49
+                        //          心跳管理监听器
                         new TaskManagerHeartbeatListener(),
                         getMainThreadExecutor(),
                         log);
@@ -1440,6 +1452,10 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
             implements HeartbeatListener<
                     TaskExecutorToJobManagerHeartbeatPayload, AllocatedSlotReport> {
 
+        /**
+         * TODO: 连接超时
+         * @param resourceID Resource ID of the machine whose heartbeat has timed out
+         */
         @Override
         public void notifyHeartbeatTimeout(ResourceID resourceID) {
             validateRunsInMainThread();

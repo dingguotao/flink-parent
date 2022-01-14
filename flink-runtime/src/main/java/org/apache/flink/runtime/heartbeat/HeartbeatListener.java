@@ -38,7 +38,7 @@ public interface HeartbeatListener<I, O> {
     /**
      * Callback which is called if a heartbeat for the machine identified by the given resource ID
      * times out.
-     *
+     * clouding： 心跳超时通知
      * @param resourceID Resource ID of the machine whose heartbeat has timed out
      */
     void notifyHeartbeatTimeout(ResourceID resourceID);
@@ -46,7 +46,7 @@ public interface HeartbeatListener<I, O> {
     /**
      * Callback which is called whenever a heartbeat with an associated payload is received. The
      * carried payload is given to this method.
-     *
+     * clouding： 接收到心跳的payload，执行的方法
      * @param resourceID Resource ID identifying the sender of the payload
      * @param payload Payload of the received heartbeat
      */
@@ -54,7 +54,7 @@ public interface HeartbeatListener<I, O> {
 
     /**
      * Retrieves the payload value for the next heartbeat message.
-     *
+     * cluoding: 下一个心跳的payload
      * @param resourceID Resource ID identifying the receiver of the payload
      * @return The payload for the next heartbeat
      */
