@@ -118,6 +118,8 @@ public class TaskStateManagerImpl implements TaskStateManager {
 
         localStateStore.storeLocalState(checkpointId, localState);
 
+        // clouding 注释: 2022/1/11 21:19
+        //          ck完毕汇报
         checkpointResponder.acknowledgeCheckpoint(
                 jobId, executionAttemptID, checkpointId, checkpointMetrics, acknowledgedState);
     }

@@ -351,6 +351,7 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
             /*********************
              * clouding 注释: 2021/9/6 16:45
              *   心跳服务，用来提供心跳服务
+             *   心跳间隔：10秒，超时时间：50秒
              *********************/
             heartbeatServices = createHeartbeatServices(configuration);
             // clouding 注释: 2022/3/12 18:42

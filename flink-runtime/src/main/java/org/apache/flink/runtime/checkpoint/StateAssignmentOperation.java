@@ -83,6 +83,8 @@ public class StateAssignmentOperation {
     public void assignStates() {
         Map<OperatorID, OperatorState> localOperators = new HashMap<>(operatorStates);
 
+        // clouding 注释: 2022/1/11 17:03
+        //          校验本次是否可以从checkpoint恢复的逻辑
         checkStateMappingCompleteness(allowNonRestoredState, operatorStates, tasks);
 
         for (ExecutionJobVertex executionJobVertex : this.tasks) {
@@ -97,6 +99,8 @@ public class StateAssignmentOperation {
                                 .getUserDefinedOperatorID()
                                 .orElse(operatorIDPair.getGeneratedOperatorID());
 
+                // clouding 注释: 2022/1/11 17:06
+                //          从operatorStates中拿到状态去恢复
                 OperatorState operatorState = localOperators.remove(operatorID);
                 if (operatorState == null) {
                     operatorState =
