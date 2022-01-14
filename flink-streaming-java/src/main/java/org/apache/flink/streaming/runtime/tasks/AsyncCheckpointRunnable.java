@@ -128,6 +128,8 @@ final class AsyncCheckpointRunnable implements Runnable, Closeable {
             if (asyncCheckpointState.compareAndSet(
                     AsyncCheckpointState.RUNNING, AsyncCheckpointState.COMPLETED)) {
 
+                // clouding 注释: 2022/1/11 23:41
+                //          ck完成汇报的地方
                 reportCompletedSnapshotStates(
                         jobManagerTaskOperatorSubtaskStates,
                         localTaskOperatorSubtaskStates,
