@@ -39,17 +39,13 @@ public class StandaloneSessionClusterEntrypoint extends SessionClusterEntrypoint
                 StandaloneResourceManagerFactory.getInstance());
     }
 
-    /*********************
-     * clouding 注释: 2021/9/6 15:28
-     *   启动程序入口
-     *********************/
     public static void main(String[] args) {
         // startup checks and logging
         EnvironmentInformation.logEnvironmentInfo(
                 LOG, StandaloneSessionClusterEntrypoint.class.getSimpleName(), args);
         SignalHandler.register(LOG);
         // clouding 注释: 2021/9/6 15:29
-        //          注册一个钩子，用来关闭
+        //          注册一个钩子，用来关闭，集群关闭的时候，关闭服务
         JvmShutdownSafeguard.installAsShutdownHook(LOG);
 
         final EntrypointClusterConfiguration entrypointClusterConfiguration =

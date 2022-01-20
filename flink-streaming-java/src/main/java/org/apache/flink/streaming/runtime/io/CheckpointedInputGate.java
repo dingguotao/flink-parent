@@ -143,6 +143,8 @@ public class CheckpointedInputGate implements PullingAsyncDataInput<BufferOrEven
         return inputGate.getAvailableFuture();
     }
 
+    // clouding 注释: 2021/10/18 0:19
+    //          ck的关键
     @Override
     public Optional<BufferOrEvent> pollNext() throws IOException, InterruptedException {
         Optional<BufferOrEvent> next = inputGate.pollNext();
@@ -154,6 +156,8 @@ public class CheckpointedInputGate implements PullingAsyncDataInput<BufferOrEven
         BufferOrEvent bufferOrEvent = next.get();
 
         if (bufferOrEvent.isEvent()) {
+            // clouding 注释: 2021/10/18 0:20
+            //          是Event事件
             return handleEvent(bufferOrEvent);
         } else if (bufferOrEvent.isBuffer()) {
             /**
@@ -176,6 +180,8 @@ public class CheckpointedInputGate implements PullingAsyncDataInput<BufferOrEven
             throws IOException, InterruptedException {
         Class<? extends AbstractEvent> eventClass = bufferOrEvent.getEvent().getClass();
         if (eventClass == CheckpointBarrier.class) {
+            // clouding 注释: 2021/10/18 0:20
+            //          CK事件
             CheckpointBarrier checkpointBarrier = (CheckpointBarrier) bufferOrEvent.getEvent();
             barrierHandler.processBarrier(checkpointBarrier, bufferOrEvent.getChannelInfo());
         } else if (eventClass == CancelCheckpointMarker.class) {

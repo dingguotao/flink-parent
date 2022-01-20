@@ -559,6 +559,8 @@ public abstract class FlinkKafkaConsumerBase<T> extends RichParallelSourceFuncti
     @Override
     public void open(Configuration configuration) throws Exception {
         // determine the offset commit mode
+        // clouding 注释: 2021/10/19 9:43
+        //          offsetCommitMode 有三种： Kafka 自己提交，CheckPoint提交和禁用，就是用户触发
         this.offsetCommitMode =
                 OffsetCommitModes.fromConfiguration(
                         getIsAutoCommitEnabled(),
@@ -571,10 +573,16 @@ public abstract class FlinkKafkaConsumerBase<T> extends RichParallelSourceFuncti
                         topicsDescriptor,
                         getRuntimeContext().getIndexOfThisSubtask(),
                         getRuntimeContext().getNumberOfParallelSubtasks());
+        // clouding 注释: 2021/10/19 9:44
+        //          实例化了KafkaConsumer
         this.partitionDiscoverer.open();
 
         subscribedPartitionsToStartOffsets = new HashMap<>();
+        // clouding 注释: 2021/10/19 9:45
+        //          获取到所有的Kafka分区
         final List<KafkaTopicPartition> allPartitions = partitionDiscoverer.discoverPartitions();
+        // clouding 注释: 2021/10/19 10:07
+        //          恢复的chcekpoint
         if (restoredState != null) {
             for (KafkaTopicPartition partition : allPartitions) {
                 if (!restoredState.containsKey(partition)) {
@@ -617,6 +625,8 @@ public abstract class FlinkKafkaConsumerBase<T> extends RichParallelSourceFuncti
                     subscribedPartitionsToStartOffsets.size(),
                     subscribedPartitionsToStartOffsets);
         } else {
+            // clouding 注释: 2021/10/19 10:12
+            //          这个分支是不从checkpoint恢复的场景
             // use the partition discoverer to fetch the initial seed partitions,
             // and set their initial offsets depending on the startup mode.
             // for SPECIFIC_OFFSETS and TIMESTAMP modes, we set the specific offsets now;
@@ -753,6 +763,10 @@ public abstract class FlinkKafkaConsumerBase<T> extends RichParallelSourceFuncti
                         getRuntimeContext(), metricGroup -> metricGroup.addGroup("user")));
     }
 
+    /*********************
+     * clouding 注释: 2021/10/18 21:22
+     *   Kafka Source 消费开始的地方
+     *********************/
     @Override
     public void run(SourceContext<T> sourceContext) throws Exception {
         if (subscribedPartitionsToStartOffsets == null) {
@@ -802,6 +816,8 @@ public abstract class FlinkKafkaConsumerBase<T> extends RichParallelSourceFuncti
         //     instead of being built from `subscribedPartitionsToStartOffsets`
         //   - 'notifyCheckpointComplete' will start to do work (i.e. commit offsets to
         //     Kafka through the fetcher, if configured to do so)
+        // clouding 注释: 2021/10/18 21:23
+        //          kafkaFetcher 拉取数据的东西
         this.kafkaFetcher =
                 createFetcher(
                         sourceContext,
@@ -823,8 +839,12 @@ public abstract class FlinkKafkaConsumerBase<T> extends RichParallelSourceFuncti
         //  2) Old state - partition discovery is disabled and only the main fetcher loop is
         // executed
         if (discoveryIntervalMillis == PARTITION_DISCOVERY_DISABLED) {
+            // clouding 注释: 2021/10/18 21:30
+            //          未开启 分区发现
             kafkaFetcher.runFetchLoop();
         } else {
+            // clouding 注释: 2021/10/18 21:30
+            //          开启了分区发现
             runWithPartitionDiscovery();
         }
     }
@@ -976,6 +996,10 @@ public abstract class FlinkKafkaConsumerBase<T> extends RichParallelSourceFuncti
     //  Checkpoint and restore
     // ------------------------------------------------------------------------
 
+    /*********************
+     * clouding 注释: 2021/10/19 10:07
+     *   恢复数据
+     *********************/
     @Override
     public final void initializeState(FunctionInitializationContext context) throws Exception {
 
@@ -988,6 +1012,8 @@ public abstract class FlinkKafkaConsumerBase<T> extends RichParallelSourceFuncti
                                 createStateSerializer(getRuntimeContext().getExecutionConfig())));
 
         if (context.isRestored()) {
+            // clouding 注释: 2021/10/19 10:03
+            //          恢复状态
             restoredState = new TreeMap<>(new KafkaTopicPartition.Comparator());
 
             // populate actual holder for restored state

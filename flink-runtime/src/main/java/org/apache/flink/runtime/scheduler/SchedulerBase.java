@@ -249,6 +249,7 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
          * clouding 注释: 2021/9/19 21:57
          *   这里把JobGraph转换成了 ExecutionGraph。
          *   ExecutionGraph就是并行化的 JobGraph
+         *   checkpoint的初始化地方，也在里面
          *********************/
         this.executionGraph =
                 createAndRestoreExecutionGraph(
@@ -319,6 +320,8 @@ public abstract class SchedulerBase implements SchedulerNG, CheckpointScheduling
                     }
                 };
 
+        // clouding 注释: 2021/10/19 22:10
+        //          Failover的策略
         final FailoverStrategy.Factory failoverStrategy =
                 legacyScheduling
                         ? FailoverStrategyLoader.loadFailoverStrategy(jobMasterConfiguration, log)

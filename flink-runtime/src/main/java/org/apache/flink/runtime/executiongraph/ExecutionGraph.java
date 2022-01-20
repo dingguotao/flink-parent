@@ -511,6 +511,8 @@ public class ExecutionGraph implements AccessExecutionGraph {
                                 Thread.currentThread().getThreadGroup(), "Checkpoint Timer"));
 
         // create the coordinator that triggers and commits checkpoints and holds the state
+        // clouding 注释: 2021/10/16 16:58
+        //          核心的 checkpointCoordinator
         checkpointCoordinator =
                 new CheckpointCoordinator(
                         jobInformation.getJobId(),
@@ -545,6 +547,8 @@ public class ExecutionGraph implements AccessExecutionGraph {
         if (chkConfig.getCheckpointInterval() != Long.MAX_VALUE) {
             // the periodic checkpoint scheduler is activated and deactivated as a result of
             // job status changes (running -> on, all other states -> off)
+            // clouding 注释: 2021/10/16 17:24
+            //          Job状态变化的回调
             registerJobStatusListener(checkpointCoordinator.createActivatorDeactivator());
         }
 
@@ -902,6 +906,8 @@ public class ExecutionGraph implements AccessExecutionGraph {
         }
 
         // the topology assigning should happen before notifying new vertices to failoverStrategy
+        // clouding 注释: 2021/10/20 11:38
+        //          failoverStrategy 时候使用
         executionTopology = DefaultExecutionTopology.fromExecutionGraph(this);
 
         failoverStrategy.notifyNewVertices(newExecJobVertices);

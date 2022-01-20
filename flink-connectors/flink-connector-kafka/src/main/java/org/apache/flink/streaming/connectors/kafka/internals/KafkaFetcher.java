@@ -103,6 +103,8 @@ public class KafkaFetcher<T> extends AbstractFetcher<T, TopicPartition> {
         this.deserializer = deserializer;
         this.handover = new Handover();
 
+        // clouding 注释: 2021/10/18 21:33
+        //          consumer线程
         this.consumerThread =
                 new KafkaConsumerThread(
                         LOG,
@@ -125,20 +127,28 @@ public class KafkaFetcher<T> extends AbstractFetcher<T, TopicPartition> {
     public void runFetchLoop() throws Exception {
         try {
             // kick off the actual Kafka consumer
+            // clouding 注释: 2021/10/18 21:32
+            //          启动 consumer线程
             consumerThread.start();
 
             while (running) {
                 // this blocks until we get the next records
                 // it automatically re-throws exceptions encountered in the consumer thread
+                // clouding 注释: 2021/10/19 11:28
+                //          ConsumerRecords 用于保存特定主题的每个分区的ConsumerRecord列表
                 final ConsumerRecords<byte[], byte[]> records = handover.pollNext();
 
                 // get the records for each topic partition
                 for (KafkaTopicPartitionState<T, TopicPartition> partition :
                         subscribedPartitionStates()) {
 
+                    // clouding 注释: 2021/10/19 11:31
+                    //          获取这个指定partition的分区数据
                     List<ConsumerRecord<byte[], byte[]>> partitionRecords =
                             records.records(partition.getKafkaPartitionHandle());
 
+                    // clouding 注释: 2021/10/19 11:29
+                    //          发送这个分区的record
                     partitionConsumerRecordsHandler(partitionRecords, partition);
                 }
             }

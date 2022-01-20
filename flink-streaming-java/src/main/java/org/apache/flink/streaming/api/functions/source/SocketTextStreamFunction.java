@@ -117,6 +117,8 @@ public class SocketTextStreamFunction implements SourceFunction<String> {
                             if (delimiter.equals("\n") && record.endsWith("\r")) {
                                 record = record.substring(0, record.length() - 1);
                             }
+                            // clouding 注释: 2021/9/21 14:46
+                            //          交接下游的operator
                             ctx.collect(record);
                             buffer.delete(0, delimPos + delimiter.length());
                         }

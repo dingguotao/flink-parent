@@ -568,6 +568,13 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     // Task lifecycle RPCs
     // ----------------------------------------------------------------------
 
+    /**
+     * TaskExecutor中，用来接收提交过来的task的rpc接口
+     * @param tdd describing the task to submit
+     * @param jobMasterId identifying the submitting JobMaster
+     * @param timeout of the submit operation
+     * @return
+     */
     @Override
     public CompletableFuture<Acknowledge> submitTask(
             TaskDeploymentDescriptor tdd, JobMasterId jobMasterId, Time timeout) {
@@ -593,7 +600,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                                     });
 
             // clouding 注释: 2021/6/22 20:57
-            //          校验 jobMaster的Id，这个是但是去RM申请资源的
+            //          校验 jobMaster的Id，这个是当时去RM申请资源的
             if (!Objects.equals(jobManagerConnection.getJobMasterId(), jobMasterId)) {
                 final String message =
                         "Rejecting the task submission because the job manager leader id "
@@ -659,6 +666,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                             tdd.getSubtaskIndex(),
                             tdd.getAttemptNumber());
 
+            // clouding 注释: 2021/9/20 21:04
+            //          用来做输入的
             InputSplitProvider inputSplitProvider =
                     new RpcInputSplitProvider(
                             jobManagerConnection.getJobManagerGateway(),
@@ -693,6 +702,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
             final JobManagerTaskRestore taskRestore = tdd.getTaskRestore();
 
+            // clouding 注释: 2021/9/20 21:05
+            //          task的状态管理
             final TaskStateManager taskStateManager =
                     new TaskStateManagerImpl(
                             jobId,
@@ -713,6 +724,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             //          Task内部会初始化好一个执行线程，
             //          一个Task，就是一个线程。
             //          把tdd，转换成了 Task
+            //          task 在构造的时候，会初始化输入 InputGate和输出ResultPartition，以及一个线程executingThread
             Task task =
                     new Task(
                             jobInformation,
@@ -961,9 +973,13 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                     "Only synchronous savepoints are allowed to advance the watermark to MAX.");
         }
 
+        // clouding 注释: 2021/10/17 23:33
+        //          根据Execution的Id，找到对应的task
         final Task task = taskSlotTable.getTask(executionAttemptID);
 
         if (task != null) {
+            // clouding 注释: 2021/10/17 23:34
+            //          触发ck
             task.triggerCheckpointBarrier(checkpointId, checkpointTimestamp, checkpointOptions);
 
             return CompletableFuture.completedFuture(Acknowledge.get());

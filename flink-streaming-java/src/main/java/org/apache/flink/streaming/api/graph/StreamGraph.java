@@ -264,6 +264,8 @@ public class StreamGraph implements Pipeline {
                 inTypeInfo,
                 outTypeInfo,
                 operatorName,
+                // clouding 注释: 2021/10/23 16:09
+                //          这个类，很重要，是后续的task的入口
                 SourceOperatorStreamTask.class);
         sources.add(vertexID);
     }
@@ -341,6 +343,8 @@ public class StreamGraph implements Pipeline {
             TypeInformation<IN> inTypeInfo,
             TypeInformation<OUT> outTypeInfo,
             String operatorName,
+            // clouding 注释: 2021/10/23 16:09
+            //          invokableClass 是task启动后，反射的入口
             Class<? extends AbstractInvokable> invokableClass) {
 
         // clouding 注释: 2021/9/19 15:48
@@ -458,6 +462,8 @@ public class StreamGraph implements Pipeline {
                         coLocationGroup,
                         operatorFactory,
                         operatorName,
+                        // clouding 注释: 2021/10/23 16:08
+                        //          vertexClass 是后续task的入口
                         vertexClass);
 
         // clouding 注释: 2021/5/31 22:48

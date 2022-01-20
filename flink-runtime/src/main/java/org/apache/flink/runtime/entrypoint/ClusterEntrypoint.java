@@ -177,7 +177,8 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
              *   初始化文件系统
              *   三个东西：
              *   1. 本地文件系统
-             *   2. hdfs
+             *   2. hdfs    FileSystem(DistributedFileSystem)
+             *   3. 封装对象 HadoopFileSystem
              *
              *********************/
             configureFileSystems(configuration, pluginManager);
@@ -187,6 +188,8 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
             securityContext.runSecured(
                     (Callable<Void>)
                             () -> {
+                        // clouding 注释: 2021/10/28 21:40
+                        //          核心启动流程
                                 runCluster(configuration, pluginManager);
 
                                 return null;
@@ -256,7 +259,8 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
                     dispatcherResourceManagerComponentFactory =
                             createDispatcherResourceManagerComponentFactory(configuration);
 
-            // 创建了 dispatcher，resourceManager，webMonitor
+            // clouding 注释: 2021/10/28 21:51
+            //          创建了 dispatcher，resourceManager，webMonitor
             clusterComponent =
                     dispatcherResourceManagerComponentFactory.create(
                             configuration,
@@ -301,6 +305,9 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
         LOG.info("Initializing cluster services.");
 
         synchronized (lock) {
+            // clouding 注释: 2021/10/28 22:03
+            //          初始化了ActorSystem
+            //
             commonRpcService =
                     AkkaRpcServiceUtils.createRemoteRpcService(
                             configuration,
@@ -366,7 +373,7 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
 
             /*********************
              * clouding 注释: 2021/9/6 16:47
-             *
+             *  用来存储 jobGraph的
              *********************/
             archivedExecutionGraphStore =
                     createSerializableExecutionGraphStore(
