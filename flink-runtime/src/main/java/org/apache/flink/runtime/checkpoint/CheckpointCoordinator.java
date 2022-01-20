@@ -541,6 +541,8 @@ public class CheckpointCoordinator {
 
     private void startTriggeringCheckpoint(CheckpointTriggerRequest request) {
         try {
+            // clouding 注释: 2022/1/11 20:33
+            //          检查参数是否可以执行ck
             synchronized (lock) {
                 preCheckGlobalState(request.isPeriodic);
             }
@@ -559,6 +561,8 @@ public class CheckpointCoordinator {
                     initializeCheckpoint(request.props, request.externalSavepointLocation)
                             .thenApplyAsync(
                                     (checkpointIdAndStorageLocation) ->
+                                            // clouding 注释: 2022/1/11 20:31
+                                            //          创建pending ck
                                             createPendingCheckpoint(
                                                     timestamp,
                                                     request.props,
@@ -646,6 +650,10 @@ public class CheckpointCoordinator {
                                                 // It is possible that the tasks has finished
                                                 // checkpointing at this point.
                                                 // So we need to complete this pending checkpoint.
+                                                /*********************
+                                                * clouding 注释: 2022/1/11
+                                                *  	     checkPoint 结束的地方
+                                                *********************/
                                                 if (!maybeCompleteCheckpoint(checkpoint)) {
                                                     return null;
                                                 }
@@ -1567,6 +1575,8 @@ public class CheckpointCoordinator {
             // re-assign the task states
             final Map<OperatorID, OperatorState> operatorStates = latest.getOperatorStates();
 
+            // clouding 注释: 2022/1/11 17:04
+            //          恢复流程
             StateAssignmentOperation stateAssignmentOperation =
                     new StateAssignmentOperation(
                             latest.getCheckpointID(), tasks, operatorStates, allowNonRestoredState);

@@ -43,12 +43,18 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HeartbeatManagerImpl<I, O> implements HeartbeatManager<I, O> {
 
     /** Heartbeat timeout interval in milli seconds. */
+    // clouding 注释: 2022/1/9 23:05
+    //          心跳超时时间间隔
     private final long heartbeatTimeoutIntervalMs;
 
     /** Resource ID which is used to mark one own's heartbeat signals. */
+    // clouding 注释: 2022/1/9 23:15
+    //          资源id，也就是心跳者的id
     private final ResourceID ownResourceID;
 
     /** Heartbeat listener with which the heartbeat manager has been associated. */
+    // clouding 注释: 2022/1/9 23:15
+    //          监听器
     private final HeartbeatListener<I, O> heartbeatListener;
 
     /** Executor service used to run heartbeat timeout notifications. */

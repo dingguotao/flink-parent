@@ -296,6 +296,10 @@ public class PendingCheckpoint implements Checkpoint {
         return onCompletionPromise;
     }
 
+    /*********************
+    * clouding 注释: 2022/1/11 16:18
+    *  	     结束chekcpoint的地方
+    *********************/
     public CompletedCheckpoint finalizeCheckpoint(
             CheckpointsCleaner checkpointsCleaner, Runnable postCleanup, Executor executor)
             throws IOException {
@@ -309,6 +313,11 @@ public class PendingCheckpoint implements Checkpoint {
             // make sure we fulfill the promise with an exception if something fails
             try {
                 // write out the metadata
+                // clouding 注释: 2022/1/11 16:18
+                //          todo: 修改的地方
+                for (OperatorState value : operatorStates.values()) {
+
+                }
                 final CheckpointMetadata savepoint =
                         new CheckpointMetadata(checkpointId, operatorStates.values(), masterStates);
                 final CompletedCheckpointStorageLocation finalizedLocation;
