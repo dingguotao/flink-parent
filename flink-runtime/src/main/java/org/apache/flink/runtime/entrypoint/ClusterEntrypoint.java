@@ -165,8 +165,14 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
 
         try {
             replaceGracefulExitWithHaltIfConfigured(configuration);
+            /*********************
+            * clouding 注释: 2022/1/22 17:36
+            *  	       加载插件管理器
+            *********************/
             PluginManager pluginManager =
                     PluginUtils.createPluginManagerFromRootFolder(configuration);
+            // clouding 注释: 2022/1/22 17:37
+            //          初始化文件系统
             configureFileSystems(configuration, pluginManager);
 
             SecurityContext securityContext = installSecurityContext(configuration);
@@ -174,6 +180,8 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
             securityContext.runSecured(
                     (Callable<Void>)
                             () -> {
+                                // clouding 注释: 2022/1/22 17:37
+                                //          启动集群的入口
                                 runCluster(configuration, pluginManager);
 
                                 return null;
@@ -219,17 +227,37 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
 
     private void runCluster(Configuration configuration, PluginManager pluginManager)
             throws Exception {
+        // clouding 注释: 2022/1/22 17:38
+        //          加锁!
         synchronized (lock) {
+            /*********************
+            * clouding 注释: 2022/1/22 17:38
+            *  	       初始化服务
+             *  	   1. commonRpcService: 用以rpc
+             *  	   2. haServices: 高可用,分布式计数器, leader选举
+             *  	   3. blobServer: 侦听传入的请求生成对应线程来处理
+             *  	   4. heartbeatServices: 心跳服务
+             *  	   5. metricRegistry: 注册自己的Metric
+             *  	   6. archivedExecutionGraphStore: 存储ExecutionGraph的序列化文件
+            *********************/
             initializeServices(configuration, pluginManager);
 
             // write host information into configuration
+            // clouding 注释: 2022/1/22 17:42
+            //          JobManager的地址
             configuration.setString(JobManagerOptions.ADDRESS, commonRpcService.getAddress());
             configuration.setInteger(JobManagerOptions.PORT, commonRpcService.getPort());
 
+            // clouding 注释: 2022/1/22 17:51
+            //          创建工厂
             final DispatcherResourceManagerComponentFactory
                     dispatcherResourceManagerComponentFactory =
                             createDispatcherResourceManagerComponentFactory(configuration);
 
+            /*********************
+            * clouding 注释: 2022/1/22 17:56
+            *  	       重要, 启动核心组件: ResourceManager, Dispatcher, webMonitorEndpoint
+            *********************/
             clusterComponent =
                     dispatcherResourceManagerComponentFactory.create(
                             configuration,
@@ -547,6 +575,8 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
         final Configuration dynamicProperties =
                 ConfigurationUtils.createConfiguration(
                         entrypointClusterConfiguration.getDynamicProperties());
+        // clouding 注释: 2022/1/22 17:26
+        //          从 flink-conf.yaml 加载配置文件
         final Configuration configuration =
                 GlobalConfiguration.loadConfiguration(
                         entrypointClusterConfiguration.getConfigDir(), dynamicProperties);
