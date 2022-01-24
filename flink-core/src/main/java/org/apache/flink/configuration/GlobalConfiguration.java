@@ -132,6 +132,8 @@ public final class GlobalConfiguration {
                             + ") does not exist.");
         }
 
+        // clouding 注释: 2022/1/22 17:27
+        //          加载yaml文件
         Configuration configuration = loadYAMLResource(yamlConfigFile);
 
         if (dynamicProperties != null) {

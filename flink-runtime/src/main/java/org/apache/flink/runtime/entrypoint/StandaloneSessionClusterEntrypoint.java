@@ -36,15 +36,24 @@ public class StandaloneSessionClusterEntrypoint extends SessionClusterEntrypoint
     @Override
     protected DefaultDispatcherResourceManagerComponentFactory
             createDispatcherResourceManagerComponentFactory(Configuration configuration) {
+        // clouding 注释: 2022/1/22 17:52
+        //          组件工厂
         return DefaultDispatcherResourceManagerComponentFactory.createSessionComponentFactory(
                 StandaloneResourceManagerFactory.getInstance());
     }
 
     public static void main(String[] args) {
         // startup checks and logging
+        // clouding 注释: 2022/1/22 17:16
+        //          打印环境信息,启动的版本信息
         EnvironmentInformation.logEnvironmentInfo(
                 LOG, StandaloneSessionClusterEntrypoint.class.getSimpleName(), args);
+        // clouding 注释: 2022/1/22 17:16
+        //          注册一些信号处理程序
+        //          HUP 中断信号,让程序挂起,睡眠, INT 中断信号 是正常关闭所有进程
         SignalHandler.register(LOG);
+        // clouding 注释: 2022/1/22 17:19
+        //          注册关闭的钩子
         JvmShutdownSafeguard.installAsShutdownHook(LOG);
 
         EntrypointClusterConfiguration entrypointClusterConfiguration = null;
@@ -52,6 +61,10 @@ public class StandaloneSessionClusterEntrypoint extends SessionClusterEntrypoint
                 new CommandLineParser<>(new EntrypointClusterConfigurationParserFactory());
 
         try {
+            /*********************
+            * clouding 注释: 2022/1/22 17:19
+            *  	     解析启动的参数
+            *********************/
             entrypointClusterConfiguration = commandLineParser.parse(args);
         } catch (FlinkParseException e) {
             LOG.error("Could not parse command line arguments {}.", args, e);
@@ -59,11 +72,17 @@ public class StandaloneSessionClusterEntrypoint extends SessionClusterEntrypoint
             System.exit(1);
         }
 
+        // clouding 注释: 2022/1/22 17:25
+        //          解析 flink-conf.ymal 配置文件
         Configuration configuration = loadConfiguration(entrypointClusterConfiguration);
 
         StandaloneSessionClusterEntrypoint entrypoint =
                 new StandaloneSessionClusterEntrypoint(configuration);
 
+        /*********************
+        * clouding 注释: 2022/1/22 17:36
+        *  	       启动
+        *********************/
         ClusterEntrypoint.runClusterEntrypoint(entrypoint);
     }
 }

@@ -52,8 +52,12 @@ public class ClusterConfigurationParserFactory
 
     @Override
     public ClusterConfiguration createResult(@Nonnull CommandLine commandLine) {
+        // clouding 注释: 2022/1/22 17:23
+        //          解析 --configDir -c
         final String configDir = commandLine.getOptionValue(CONFIG_DIR_OPTION.getOpt());
 
+        // clouding 注释: 2022/1/22 17:24
+        //          解析 property=value
         final Properties dynamicProperties =
                 commandLine.getOptionProperties(DYNAMIC_PROPERTY_OPTION.getOpt());
 

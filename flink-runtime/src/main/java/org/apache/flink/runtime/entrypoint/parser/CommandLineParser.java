@@ -39,6 +39,7 @@ public class CommandLineParser<T> {
 
     public T parse(@Nonnull String[] args) throws FlinkParseException {
         final DefaultParser parser = new DefaultParser();
+        // parserResultFactory = EntrypointClusterConfigurationParserFactory
         final Options options = parserResultFactory.getOptions();
 
         final CommandLine commandLine;
