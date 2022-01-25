@@ -90,6 +90,8 @@ class ChainingOutput<T> implements WatermarkGaugeExposingOutput<StreamRecord<T>>
             return;
         }
 
+        // clouding 注释: 2021/10/25 22:08
+        //          跳转到下一个Operator来处理record
         pushToOperator(record);
     }
 
@@ -109,6 +111,11 @@ class ChainingOutput<T> implements WatermarkGaugeExposingOutput<StreamRecord<T>>
 
             numRecordsIn.inc();
             input.setKeyContextElement(castRecord);
+            /*********************
+             * clouding 注释: 2021/10/25 22:09
+             *   调用Operator的processElement来处理数据记录
+             *   如果是keyby算子，跳转到 KeyedProcessOperator
+             *********************/
             input.processElement(castRecord);
         } catch (Exception e) {
             throw new ExceptionInChainedOperatorException(e);

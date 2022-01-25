@@ -46,6 +46,8 @@ public class KafkaTopicPartitionAssigner {
      * @param numParallelSubtasks total number of parallel subtasks
      * @return index of the target subtask that the Kafka partition should be assigned to.
      */
+    // clouding 注释: 2021/10/19 10:09
+    //          分区规则
     public static int assign(KafkaTopicPartition partition, int numParallelSubtasks) {
         int startIndex =
                 ((partition.getTopic().hashCode() * 31) & 0x7FFFFFFF) % numParallelSubtasks;

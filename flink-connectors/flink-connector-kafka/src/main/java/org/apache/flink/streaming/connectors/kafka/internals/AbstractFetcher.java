@@ -173,6 +173,8 @@ public abstract class AbstractFetcher<T, KPH> {
         this.unassignedPartitionsQueue = new ClosableBlockingQueue<>();
 
         // initialize subscribed partition states with seed partitions
+        // clouding 注释: 2021/10/19 11:09
+        //          初始化 partition 和 对应的数据
         this.subscribedPartitionStates =
                 createPartitionStateHolders(
                         seedPartitionsWithInitialOffsets,
@@ -190,6 +192,8 @@ public abstract class AbstractFetcher<T, KPH> {
 
         // all seed partitions are not assigned yet, so should be added to the unassigned partitions
         // queue
+        // clouding 注释: 2021/10/19 11:16
+        //          放在unassignedPartitionsQueue队列里
         for (KafkaTopicPartitionState<T, KPH> partition : subscribedPartitionStates) {
             unassignedPartitionsQueue.add(partition);
         }
@@ -391,11 +395,15 @@ public abstract class AbstractFetcher<T, KPH> {
         List<KafkaTopicPartitionState<T, KPH>> partitionStates = new CopyOnWriteArrayList<>();
 
         switch (timestampWatermarkMode) {
+            // clouding 注释: 2021/10/19 11:10
+            //          一般是这种
             case NO_TIMESTAMPS_WATERMARKS:
                 {
                     for (Map.Entry<KafkaTopicPartition, Long> partitionEntry :
                             partitionsToInitialOffsets.entrySet()) {
                         // create the kafka version specific partition handle
+                        // clouding 注释: 2021/10/19 11:12
+                        //          kafkaHandle 里存了这个partition的开始消费offset
                         KPH kafkaHandle = createKafkaPartitionHandle(partitionEntry.getKey());
 
                         KafkaTopicPartitionState<T, KPH> partitionState =

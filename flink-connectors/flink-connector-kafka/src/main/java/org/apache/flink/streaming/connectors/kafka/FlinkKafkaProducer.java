@@ -335,6 +335,8 @@ public class FlinkKafkaProducer<IN>
                 serializationSchema,
                 producerConfig,
                 customPartitioner.orElse(null),
+                // clouding 注释: 2021/10/29 20:53
+                //          默认的语义
                 Semantic.AT_LEAST_ONCE,
                 DEFAULT_KAFKA_PRODUCERS_POOL_SIZE);
     }

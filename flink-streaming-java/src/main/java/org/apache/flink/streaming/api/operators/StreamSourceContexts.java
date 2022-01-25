@@ -104,6 +104,12 @@ public class StreamSourceContexts {
         @Override
         public void collect(T element) {
             synchronized (lock) {
+                /*********************
+                 * clouding 注释: 2021/9/21 14:47
+                 *   element 就是一条数据
+                 *   reuse.replace() 执行序列化
+                 *   output = CountingOutPut
+                 *********************/
                 output.collect(reuse.replace(element));
             }
         }

@@ -77,6 +77,8 @@ public final class Handover implements Closeable {
             if (n != null) {
                 next = null;
                 lock.notifyAll();
+                // clouding 注释: 2021/10/19 11:24
+                //          把有的next数据返回
                 return n;
             } else {
                 ExceptionUtils.rethrowException(error, error.getMessage());
@@ -109,6 +111,8 @@ public final class Handover implements Closeable {
         checkNotNull(element);
 
         synchronized (lock) {
+            // clouding 注释: 2021/10/19 11:21
+            //          如果有数据，next就阻塞，等这个数据消费完
             while (next != null && !wakeupProducer) {
                 lock.wait();
             }

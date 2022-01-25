@@ -66,11 +66,15 @@ public class SourceStreamTask<
      */
     private volatile boolean wasStoppedExternally = false;
 
+    // clouding 注释: 2021/9/21 9:57
+    //          这个是SourceTask
     public SourceStreamTask(Environment env) throws Exception {
         this(env, new Object());
     }
 
     private SourceStreamTask(Environment env, Object lock) throws Exception {
+        // clouding 注释: 2021/9/21 9:58
+        //          调用父类的构造方法
         super(
                 env,
                 null,
@@ -147,6 +151,8 @@ public class SourceStreamTask<
     @Override
     protected void processInput(MailboxDefaultAction.Controller controller) throws Exception {
 
+        // clouding 注释: 2021/9/21 10:23
+        //          第一次进来，会阻塞在这里，等待任务启动成功
         controller.suspendDefaultAction();
 
         // Against the usual contract of this method, this implementation is not step-wise but
@@ -234,6 +240,8 @@ public class SourceStreamTask<
     public Future<Boolean> triggerCheckpointAsync(
             CheckpointMetaData checkpointMetaData, CheckpointOptions checkpointOptions) {
         if (!externallyInducedCheckpoints) {
+            // clouding 注释: 2021/10/26 16:22
+            //          checkpoint
             return super.triggerCheckpointAsync(checkpointMetaData, checkpointOptions);
         } else {
             // we do not trigger checkpoints here, we simply state whether we can trigger them
@@ -259,6 +267,8 @@ public class SourceStreamTask<
             this.completionFuture = new CompletableFuture<>();
         }
 
+        // clouding 注释: 2021/9/21 14:37
+        //         Source 的主循环
         @Override
         public void run() {
             try {
