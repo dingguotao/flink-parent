@@ -380,6 +380,8 @@ public class StateAssignmentOperation {
                                         .get(gateIndex)
                                         .getUpstreamSubtaskStateMapper(),
                                 "No channel rescaler found during rescaling of channel state");
+                // clouding 注释: 2022/1/25 17:35
+                //          获取下游和上游分区的mapping关系
                 final Map<Integer, Set<Integer>> mapping =
                         mapper.getNewToOldSubtasksMapping(
                                 outputOperatorState.size(), executionJobVertex.getParallelism());

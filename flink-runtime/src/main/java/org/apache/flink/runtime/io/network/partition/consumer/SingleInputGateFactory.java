@@ -104,6 +104,8 @@ public class SingleInputGateFactory {
             @Nonnull InputGateDeploymentDescriptor igdd,
             @Nonnull PartitionProducerStateProvider partitionProducerStateProvider,
             @Nonnull InputChannelMetrics metrics) {
+        // clouding 注释: 2022/1/25 16:36
+        //          bufferPoolFactory
         SupplierWithException<BufferPool, IOException> bufferPoolFactory =
                 createBufferPoolFactory(
                         networkBufferPool,
@@ -112,6 +114,8 @@ public class SingleInputGateFactory {
                         igdd.getShuffleDescriptors().length,
                         igdd.getConsumedPartitionType());
 
+        // clouding 注释: 2022/1/25 16:38
+        //          是否需要使用解压缩, 和 resultPartition是对应的
         BufferDecompressor bufferDecompressor = null;
         if (igdd.getConsumedPartitionType().isBlocking() && blockingShuffleCompressionEnabled) {
             bufferDecompressor = new BufferDecompressor(networkBufferSize, compressionCodec);
@@ -148,6 +152,8 @@ public class SingleInputGateFactory {
 
         ChannelStatistics channelStatistics = new ChannelStatistics();
 
+        // clouding 注释: 2022/1/25 16:43
+        //          创建inputChannels
         for (int i = 0; i < inputChannels.length; i++) {
             inputChannels[i] =
                     createInputChannel(
@@ -203,7 +209,11 @@ public class SingleInputGateFactory {
             NettyShuffleDescriptor inputChannelDescriptor,
             ChannelStatistics channelStatistics,
             InputChannelMetrics metrics) {
+        // clouding 注释: 2022/1/25 16:46
+        //          每个resultPartitionID创建一个inputChannel
         ResultPartitionID partitionId = inputChannelDescriptor.getResultPartitionID();
+        // clouding 注释: 2022/1/25 16:47
+        //          判断是否在同一个TaskManager,创建不同的inputChannel
         if (inputChannelDescriptor.isLocalTo(taskExecutorResourceId)) {
             // Consuming task is deployed to the same TaskManager as the partition => local
             channelStatistics.numLocalChannels++;

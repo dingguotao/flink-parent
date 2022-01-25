@@ -61,6 +61,11 @@ class CreditBasedSequenceNumberingViewReader
     private boolean isRegisteredAsAvailable = false;
 
     /** The number of available buffers for holding data on the consumer side. */
+    /*********************
+     * clouding 注释: 2022/1/25 17:52
+     *  	    下游的inputChannel中可用的buffer个数
+     *  	    如果是0,表示没有buffer可用了,就不往下游发数据了.
+     *********************/
     private int numCreditsAvailable;
 
     CreditBasedSequenceNumberingViewReader(

@@ -73,11 +73,16 @@ public class PipelinedSubpartition extends ResultSubpartition
     // ------------------------------------------------------------------------
 
     /** All buffers of this subpartition. Access to the buffers is synchronized on this object. */
+    // clouding 注释: 2022/1/25 17:47
+    //          包括Checkpoint的事件, 支持优先级
     final PrioritizedDeque<BufferConsumerWithPartialRecordLength> buffers =
             new PrioritizedDeque<>();
 
     /** The number of non-event buffers currently in this subpartition. */
     @GuardedBy("buffers")
+    // clouding 注释: 2022/1/25 17:48
+    //          记录当前buffers中剩余的buffer, add的时候会++, poll的时候会--
+    //          下游会在获取buffer时查看该buffersInBacklog，如果达到阈值会触发反压，这时isBlockedByCheckpoint设置为ture
     private int buffersInBacklog;
 
     /** The read view to consume this subpartition. */
@@ -152,10 +157,14 @@ public class PipelinedSubpartition extends ResultSubpartition
             }
 
             // Add the bufferConsumer and update the stats
+            // clouding 注释: 2022/1/25 18:01
+            //          添加到buffers的队列中.如果有优先级,就放在对头
             if (addBuffer(bufferConsumer, partialRecordLength)) {
                 prioritySequenceNumber = sequenceNumber;
             }
             updateStatistics(bufferConsumer);
+            // clouding 注释: 2022/1/25 18:02
+            //          backlog ++
             increaseBuffersInBacklog(bufferConsumer);
             notifyDataAvailable = finish || shouldNotifyDataAvailable();
 

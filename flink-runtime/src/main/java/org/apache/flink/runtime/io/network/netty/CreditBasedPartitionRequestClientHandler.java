@@ -357,6 +357,9 @@ class CreditBasedPartitionRequestClientHandler extends ChannelInboundHandlerAdap
      * callback in previous input channel, or the channel writability changed event.
      */
     private void writeAndFlushNextMessageIfPossible(Channel channel) {
+
+        // clouding 注释: 2022/1/25 14:33
+        //          WRITE_BUFFER_HIGH_WATER_MARK 实现流量控制
         if (channelError.get() != null || !channel.isWritable()) {
             return;
         }

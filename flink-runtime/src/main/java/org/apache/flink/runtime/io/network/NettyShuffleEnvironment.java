@@ -232,6 +232,8 @@ public class NettyShuffleEnvironment
             InputChannelMetrics inputChannelMetrics =
                     new InputChannelMetrics(networkInputGroup, ownerContext.getParentGroup());
 
+            // clouding 注释: 2022/1/25 16:33
+            //          串讲SingleInputGate
             SingleInputGate[] inputGates =
                     new SingleInputGate[inputGateDeploymentDescriptors.size()];
             for (int gateIndex = 0; gateIndex < inputGates.length; gateIndex++) {

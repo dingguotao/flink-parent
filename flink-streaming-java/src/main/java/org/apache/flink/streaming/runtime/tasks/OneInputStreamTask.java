@@ -86,8 +86,12 @@ public class OneInputStreamTask<IN, OUT> extends StreamTask<OUT, OneInputStreamO
         int numberOfInputs = configuration.getNumberOfNetworkInputs();
 
         if (numberOfInputs > 0) {
+            // clouding 注释: 2022/1/25 16:24
+            //          接收上游数据
             CheckpointedInputGate inputGate = createCheckpointedInputGate();
             Counter numRecordsIn = setupNumRecordsInCounter(mainOperator);
+            // clouding 注释: 2022/1/25 16:25
+            //          输出output, 输入input
             DataOutput<IN> output = createDataOutput(numRecordsIn);
             StreamTaskInput<IN> input = createTaskInput(inputGate);
 
