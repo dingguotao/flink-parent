@@ -279,12 +279,18 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
         targetPartition.addBufferConsumer(consumer, targetChannel);
     }
 
+    /*********************
+     * clouding 注释: 2022/1/26 14:59
+     *  	    尝试去获取bufferBuilder, 如果获取不到,会阻塞线程,会引起反压
+     *********************/
     /** Requests a new {@link BufferBuilder} for the target channel and returns it. */
     public BufferBuilder requestNewBufferBuilder(int targetChannel)
             throws IOException, InterruptedException {
-        BufferBuilder builder = targetPartition.tryGetBufferBuilder(targetChannel);
+        BufferBuilder builder = targetPartition.tryGetBufferBuilder(targetChannel); // todo 尝试去获取bufferBuilder
         if (builder == null) {
             long start = System.currentTimeMillis();
+            // clouding 注释: 2022/1/26 15:00
+            //          阻塞获取,会引起反压
             builder = targetPartition.getBufferBuilder(targetChannel);
             idleTimeMsPerSecond.markEvent(System.currentTimeMillis() - start);
         }
