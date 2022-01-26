@@ -1774,6 +1774,8 @@ under the License.
 					</configuration>
 				</plugin>
 
+				<!-- 去掉-->
+<!--
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-checkstyle-plugin</artifactId>
@@ -1782,7 +1784,7 @@ under the License.
 						<dependency>
 							<groupId>com.puppycrawl.tools</groupId>
 							<artifactId>checkstyle</artifactId>
-							<!-- Note: match version with docs/flinkDev/ide_setup.md -->
+							&lt;!&ndash; Note: match version with docs/flinkDev/ide_setup.md &ndash;&gt;
 							<version>8.14</version>
 						</dependency>
 					</dependencies>
@@ -1815,7 +1817,6 @@ under the License.
 								<style>AOSP</style>
 							</googleJavaFormat>
 
-							<!-- \# refers to the static imports -->
 							<importOrder>
 								<order>org.apache.flink,org.apache.flink.shaded,,javax,java,scala,\#</order>
 							</importOrder>
@@ -1833,7 +1834,7 @@ under the License.
 						</execution>
 					</executions>
 				</plugin>
-
+				-->
 
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
