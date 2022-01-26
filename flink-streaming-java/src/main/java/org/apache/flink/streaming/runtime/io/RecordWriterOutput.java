@@ -102,6 +102,8 @@ public class RecordWriterOutput<OUT>
             return;
         }
 
+        // clouding 注释: 2022/1/26 14:38
+        //          写入到 writer
         pushToRecordWriter(record);
     }
 

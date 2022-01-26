@@ -275,6 +275,8 @@ class LocalBufferPool implements BufferPool {
     @Override
     public BufferBuilder requestBufferBuilderBlocking(int targetChannel)
             throws IOException, InterruptedException {
+        // clouding 注释: 2022/1/26 15:01
+        //          requestMemorySegmentBlocking 阻塞获取buffer
         return toBufferBuilder(requestMemorySegmentBlocking(targetChannel), targetChannel);
     }
 

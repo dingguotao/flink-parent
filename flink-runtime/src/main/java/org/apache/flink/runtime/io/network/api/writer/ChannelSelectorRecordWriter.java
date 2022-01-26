@@ -58,6 +58,8 @@ public final class ChannelSelectorRecordWriter<T extends IOReadableWritable>
 
     @Override
     public void emit(T record) throws IOException, InterruptedException {
+        // clouding 注释: 2022/1/26 14:34
+        //          选择下一个channel
         emit(record, channelSelector.selectChannel(record));
     }
 
