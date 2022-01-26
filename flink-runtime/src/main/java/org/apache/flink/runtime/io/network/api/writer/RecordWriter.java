@@ -67,8 +67,12 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
 
     private static final Logger LOG = LoggerFactory.getLogger(RecordWriter.class);
 
+    // clouding 注释: 2022/1/26 15:10
+    //          这个就是ResultPartitionWriter,是上游写出数据的
     private final ResultPartitionWriter targetPartition;
 
+    // clouding 注释: 2022/1/26 15:10
+    //          下游有多少的chennel需要写入的总数.
     protected final int numberOfChannels;
 
     protected final RecordSerializer<T> serializer;
@@ -84,6 +88,8 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
     private final boolean flushAlways;
 
     /** The thread that periodically flushes the output, to give an upper latency bound. */
+    // clouding 注释: 2022/1/26 15:12
+    //          定时数据刷新器. 是一个单独的线程, 定时刷新数据到buffer
     @Nullable private final OutputFlusher outputFlusher;
 
     /**
@@ -108,6 +114,8 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
                             ? DEFAULT_OUTPUT_FLUSH_THREAD_NAME
                             : DEFAULT_OUTPUT_FLUSH_THREAD_NAME + " for " + taskName;
 
+            // clouding 注释: 2022/1/26 15:13
+            //          刷新数据
             outputFlusher = new OutputFlusher(threadName, timeout);
             outputFlusher.start();
         }

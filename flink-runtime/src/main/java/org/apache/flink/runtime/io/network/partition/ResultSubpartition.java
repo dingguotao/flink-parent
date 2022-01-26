@@ -36,6 +36,8 @@ public abstract class ResultSubpartition {
     protected final ResultSubpartitionInfo subpartitionInfo;
 
     /** The parent partition this subpartition belongs to. */
+    // clouding 注释: 2022/1/26 15:28
+    //          父ResultPartition
     protected final ResultPartition parent;
 
     // - Statistics ----------------------------------------------------------

@@ -38,6 +38,8 @@ import static org.apache.flink.util.Preconditions.checkState;
 public final class ChannelSelectorRecordWriter<T extends IOReadableWritable>
         extends RecordWriter<T> {
 
+    // clouding 注释: 2022/1/26 15:11
+    //          通道选择器, 决定数据发往哪一个下游任务
     private final ChannelSelector<T> channelSelector;
 
     /** Every subpartition maintains a separate buffer builder which might be null. */
@@ -60,6 +62,8 @@ public final class ChannelSelectorRecordWriter<T extends IOReadableWritable>
     public void emit(T record) throws IOException, InterruptedException {
         // clouding 注释: 2022/1/26 14:34
         //          选择下一个channel
+        System.out.println("----------");
+        System.out.println(channelSelector.getClass());
         emit(record, channelSelector.selectChannel(record));
     }
 
