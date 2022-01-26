@@ -65,18 +65,26 @@ public class PipelinedSubpartition extends ResultSubpartition {
     // ------------------------------------------------------------------------
 
     /** All buffers of this subpartition. Access to the buffers is synchronized on this object. */
+    // clouding 注释: 2022/1/26 15:29
+    //          用来缓冲数据的buffer
     private final ArrayDeque<BufferConsumer> buffers = new ArrayDeque<>();
 
     /** The number of non-event buffers currently in this subpartition. */
+    // clouding 注释: 2022/1/26 15:30
+    //          buffer积压的数量
     @GuardedBy("buffers")
     private int buffersInBacklog;
 
     /** The read view to consume this subpartition. */
+    // clouding 注释: 2022/1/26 15:33
+    //          消费buffer的reader, netty读取数据的
     private PipelinedSubpartitionView readView;
 
     /** Flag indicating whether the subpartition has been finished. */
     private boolean isFinished;
 
+    // clouding 注释: 2022/1/26 15:32
+    //          当生成数据慢的时候, 用这个标识去刷新数据
     @GuardedBy("buffers")
     private boolean flushRequested;
 
