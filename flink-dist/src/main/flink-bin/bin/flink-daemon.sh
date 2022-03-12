@@ -31,6 +31,7 @@ bin=`cd "$bin"; pwd`
 
 case $DAEMON in
     (taskexecutor)
+        # clouding taskManager 真正启动的主类
         CLASS_TO_RUN=org.apache.flink.runtime.taskexecutor.TaskManagerRunner
     ;;
 
@@ -43,6 +44,7 @@ case $DAEMON in
     ;;
 
     (standalonesession)
+        # clouding JobManager真正启动的主类
         CLASS_TO_RUN=org.apache.flink.runtime.entrypoint.StandaloneSessionClusterEntrypoint
     ;;
 

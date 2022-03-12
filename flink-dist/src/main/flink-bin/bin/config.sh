@@ -387,6 +387,7 @@ rotateLogFile() {
     fi
 }
 
+# clouding 读取master配置
 readMasters() {
     MASTERS_FILE="${FLINK_CONF_DIR}/masters"
 
@@ -398,6 +399,7 @@ readMasters() {
     MASTERS=()
     WEBUIPORTS=()
 
+    # clouding 是否本地启动
     MASTERS_ALL_LOCALHOST=true
     GOON=true
     while $GOON; do
@@ -422,6 +424,7 @@ readMasters() {
     done < "$MASTERS_FILE"
 }
 
+# clouding 读取所有的tm
 readWorkers() {
     WORKERS_FILE="${FLINK_CONF_DIR}/workers"
 
@@ -448,11 +451,13 @@ readWorkers() {
 
 # starts or stops TMs on all workers
 # TMWorkers start|stop
+# clouding 启动/停止TaskManager
 TMWorkers() {
     CMD=$1
 
     readWorkers
 
+    # clouding 本地启动
     if [ ${WORKERS_ALL_LOCALHOST} = true ] ; then
         # all-local setup
         for worker in ${WORKERS[@]}; do

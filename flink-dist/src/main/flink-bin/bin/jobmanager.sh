@@ -24,6 +24,7 @@ STARTSTOP=$1
 HOST=$2 # optional when starting multiple instances
 WEBUIPORT=$3 # optional when starting multiple instances
 
+# clouding 参数校验
 if [[ $STARTSTOP != "start" ]] && [[ $STARTSTOP != "start-foreground" ]] && [[ $STARTSTOP != "stop" ]] && [[ $STARTSTOP != "stop-all" ]]; then
   echo $USAGE
   exit 1
@@ -32,8 +33,10 @@ fi
 bin=`dirname "$0"`
 bin=`cd "$bin"; pwd`
 
+# clouding 读取配置
 . "$bin"/config.sh
 
+# clouding JobManager启动的主类
 ENTRYPOINT=standalonesession
 
 if [[ $STARTSTOP == "start" ]] || [[ $STARTSTOP == "start-foreground" ]]; then
@@ -56,5 +59,6 @@ fi
 if [[ $STARTSTOP == "start-foreground" ]]; then
     exec "${FLINK_BIN_DIR}"/flink-console.sh $ENTRYPOINT "${args[@]}"
 else
+    # clouding 启动jobManager
     "${FLINK_BIN_DIR}"/flink-daemon.sh $STARTSTOP $ENTRYPOINT "${args[@]}"
 fi
