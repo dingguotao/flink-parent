@@ -34,6 +34,7 @@ bin=`cd "$bin"; pwd`
 
 . "$bin"/config.sh
 
+# clouding TaskManager启动的主类
 ENTRYPOINT=taskexecutor
 
 if [[ $STARTSTOP == "start" ]] || [[ $STARTSTOP == "start-foreground" ]]; then
@@ -81,6 +82,7 @@ if [[ $STARTSTOP == "start-foreground" ]]; then
 else
     if [[ $FLINK_TM_COMPUTE_NUMA == "false" ]]; then
         # Start a single TaskManager
+        # clouding 最终启动的地方
         "${FLINK_BIN_DIR}"/flink-daemon.sh $STARTSTOP $ENTRYPOINT "${ARGS[@]}"
     else
         # Example output from `numactl --show` on an AWS c4.8xlarge:

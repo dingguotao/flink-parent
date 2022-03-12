@@ -17,15 +17,19 @@
 # limitations under the License.
 ################################################################################
 
+# todo 集群的启动脚本
+
 bin=`dirname "$0"`
 bin=`cd "$bin"; pwd`
 
+# clouding 加载配置
 . "$bin"/config.sh
 
 # Start the JobManager instance(s)
 shopt -s nocasematch
 if [[ $HIGH_AVAILABILITY == "zookeeper" ]]; then
     # HA Mode
+    # clouding config.sh文件中的方法
     readMasters
 
     echo "Starting HA cluster with ${#MASTERS[@]} masters."
@@ -33,7 +37,7 @@ if [[ $HIGH_AVAILABILITY == "zookeeper" ]]; then
     for ((i=0;i<${#MASTERS[@]};++i)); do
         master=${MASTERS[i]}
         webuiport=${WEBUIPORTS[i]}
-
+        # clouding 是否本地启动.这个变量在readMasters 中声明和赋值
         if [ ${MASTERS_ALL_LOCALHOST} = true ] ; then
             "${FLINK_BIN_DIR}"/jobmanager.sh start "${master}" "${webuiport}"
         else
@@ -50,4 +54,5 @@ fi
 shopt -u nocasematch
 
 # Start TaskManager instance(s)
+# clouding 执行config.sh文件中的TMWorkers,启动TaskManager
 TMWorkers start
