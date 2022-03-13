@@ -285,6 +285,8 @@ public class SlotPoolImpl implements SlotPool {
         this.resourceManagerGateway = checkNotNull(resourceManagerGateway);
 
         // work on all slots waiting for this connection
+        // clouding 注释: 2022/2/20 16:47
+        //          链接上ResourceManager后,会去检查时候有pendingRequest,有的话就去请求
         for (PendingRequest pendingRequest : waitingForResourceManager.values()) {
             requestSlotFromResourceManager(resourceManagerGateway, pendingRequest);
         }
@@ -315,14 +317,21 @@ public class SlotPoolImpl implements SlotPool {
             PendingRequest pendingRequest) {
 
         if (resourceManagerGateway == null) {
+            // clouding 注释: 2022/2/20 16:39
+            //          没有连接上ResourceManager,就等待,放入waitingForResourceManager,
+            //          等待连接上后,会去重新处理
             stashRequestWaitingForResourceManager(pendingRequest);
         } else {
+            // clouding 注释: 2022/2/20 16:40
+            //          连接上了,申请slot
             requestSlotFromResourceManager(resourceManagerGateway, pendingRequest);
         }
 
         return pendingRequest.getAllocatedSlotFuture();
     }
 
+    // clouding 注释: 2022/2/20 16:47
+    //          向ResourceManager请求Slot
     private void requestSlotFromResourceManager(
             final ResourceManagerGateway resourceManagerGateway,
             final PendingRequest pendingRequest) {
@@ -335,10 +344,16 @@ public class SlotPoolImpl implements SlotPool {
                 pendingRequest.getSlotRequestId(),
                 pendingRequest.getResourceProfile());
 
+        // clouding 注释: 2022/2/20 16:47
+        //          生成本次申请的唯一id, 后面会携带这个id去ResourceManager以及TaskExecutor
         final AllocationID allocationId = new AllocationID();
 
+        // clouding 注释: 2022/2/20 16:48
+        //          待分配的请求列表
         pendingRequests.put(pendingRequest.getSlotRequestId(), allocationId, pendingRequest);
 
+        // clouding 注释: 2022/2/20 16:49
+        //          监控本次slot分配的结果,并处理
         pendingRequest
                 .getAllocatedSlotFuture()
                 .whenComplete(
@@ -348,10 +363,14 @@ public class SlotPoolImpl implements SlotPool {
                                 // cancel the slot request if there is a failure or if the pending
                                 // request has
                                 // been completed with another allocated slot
+                                // clouding 注释: 2022/2/20 16:50
+                                //          申请slot失败,或者slot被占用
                                 resourceManagerGateway.cancelSlotRequest(allocationId);
                             }
                         });
 
+        // clouding 注释: 2022/2/20 16:50
+        //          向ResourceManager发送slot请求
         CompletableFuture<Acknowledge> rmResponse =
                 resourceManagerGateway.requestSlot(
                         jobMasterId,
@@ -368,6 +387,8 @@ public class SlotPoolImpl implements SlotPool {
                 (Acknowledge ignored, Throwable failure) -> {
                     // on failure, fail the request future
                     if (failure != null) {
+                        // clouding 注释: 2022/2/20 16:50
+                        //          请求异常,就发送异常部分
                         slotRequestToResourceManagerFailed(
                                 pendingRequest.getSlotRequestId(), failure);
                     }
@@ -403,6 +424,9 @@ public class SlotPoolImpl implements SlotPool {
                         + "Adding as pending request [{}]",
                 pendingRequest.getSlotRequestId());
 
+        // clouding 注释: 2022/2/20 16:45
+        //          放在这个map中. 这个map在 connectToResourceManager 连接上ResourceManager后, 
+        //          会去遍历所有的pendingRequest,重新去申请
         waitingForResourceManager.put(pendingRequest.getSlotRequestId(), pendingRequest);
     }
 
@@ -444,6 +468,8 @@ public class SlotPoolImpl implements SlotPool {
         }
     }
 
+    // clouding 注释: 2022/2/20 16:33
+    //          scheduler向SlotPool发送slot申请的地方
     @Nonnull
     @Override
     public CompletableFuture<PhysicalSlot> requestNewAllocatedSlot(
@@ -451,12 +477,25 @@ public class SlotPoolImpl implements SlotPool {
             @Nonnull ResourceProfile resourceProfile,
             Time timeout) {
 
+        // clouding 注释: 2022/2/20 16:34
+        //          防止多线程访问
         componentMainThreadExecutor.assertRunningInMainThread();
 
+        /*********************
+         * clouding 注释: 2022/2/20 16:36
+         *  	    创建 StreamingRequest
+ *  	             slotRequestId 本次slot请求的id
+         *           resourceProfile slotRequest的配额
+         *           isBatchRequest 批任务还是流式
+         *           allocatedSlotFuture slot分配的完成情况
+         *           unfillableSince 用以判断批式判断的分配超时
+         *********************/
         final PendingRequest pendingRequest =
                 PendingRequest.createStreamingRequest(slotRequestId, resourceProfile);
 
         // register request timeout
+        // clouding 注释: 2022/2/20 16:38
+        //          请求的超时时间.如果超过,就会自动终止, 配置参数 slot.request.timeout 默认是300秒
         FutureUtils.orTimeout(
                         pendingRequest.getAllocatedSlotFuture(),
                         timeout.toMilliseconds(),
@@ -469,6 +508,8 @@ public class SlotPoolImpl implements SlotPool {
                             }
                         });
 
+        // clouding 注释: 2022/2/20 16:39
+        //          向ResourceManager发送申请slot的请求
         return requestNewAllocatedSlotInternal(pendingRequest).thenApply((Function.identity()));
     }
 

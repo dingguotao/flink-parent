@@ -92,6 +92,8 @@ public class DispatcherRestEndpoint extends WebMonitorEndpoint<DispatcherGateway
 
         final Time timeout = restConfiguration.getTimeout();
 
+        // clouding 注释: 2022/3/12 18:53
+        //          创建 JobSubmitHandler,用以处理任务提交
         JobSubmitHandler jobSubmitHandler =
                 new JobSubmitHandler(
                         leaderRetriever, timeout, responseHeaders, executor, clusterConfiguration);

@@ -129,6 +129,8 @@ public class DefaultExecutionGraphCache implements ExecutionGraphCache {
     public void cleanup() {
         long currentTime = System.currentTimeMillis();
 
+        // clouding 注释: 2022/3/12 21:51
+        //          定时清理缓存文件
         // remove entries which have exceeded their time to live
         cachedExecutionGraphs
                 .values()

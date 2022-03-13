@@ -141,6 +141,8 @@ public abstract class RestServerEndpoint implements AutoCloseableAsync {
             final Router router = new Router();
             final CompletableFuture<String> restAddressFuture = new CompletableFuture<>();
 
+            // clouding 注释: 2022/3/12 18:50
+            //          初始化各种handlers
             handlers = initializeHandlers(restAddressFuture);
 
             /* sort the handlers such that they are ordered the following:
@@ -153,6 +155,8 @@ public abstract class RestServerEndpoint implements AutoCloseableAsync {
             Collections.sort(handlers, RestHandlerUrlComparator.INSTANCE);
 
             checkAllEndpointsAndHandlersAreUnique(handlers);
+            // clouding 注释: 2022/3/13 18:35
+            //          注册到router
             handlers.forEach(handler -> registerHandler(router, handler, log));
 
             ChannelInitializer<SocketChannel> initializer =
@@ -160,6 +164,8 @@ public abstract class RestServerEndpoint implements AutoCloseableAsync {
 
                         @Override
                         protected void initChannel(SocketChannel ch) {
+                            // clouding 注释: 2022/3/13 18:35
+                            //          初始化处理各种channel
                             RouterHandler handler = new RouterHandler(router, responseHeaders);
 
                             // SSL should be the first handler in the pipeline
@@ -173,6 +179,13 @@ public abstract class RestServerEndpoint implements AutoCloseableAsync {
                                                         sslHandlerFactory));
                             }
 
+                            // clouding 注释: 2022/3/13 18:36
+                            //          HttpServerCodec: 负责http消息的解码和编码
+                            //          FileUploadHandler: 负责文件的上传和下载
+                            //          FlinkHttpObjectAggregator: 负责将多个http消息组装成一个
+                            //          ChunkedWriteHandler: 负责大的数据流处理,比如 查看TaskManager, JobManager的日志和标准输出
+                            //          handler: rest服务暴露的核心, 根据url路由到正确的handler逻辑部分
+                            //          PipelineErrorHandler: 负责异常日志记录,并返回http的响应
                             ch.pipeline()
                                     .addLast(new HttpServerCodec())
                                     .addLast(new FileUploadHandler(uploadDir))
@@ -192,6 +205,8 @@ public abstract class RestServerEndpoint implements AutoCloseableAsync {
                     new NioEventLoopGroup(
                             0, new ExecutorThreadFactory("flink-rest-server-netty-worker"));
 
+            // clouding 注释: 2022/3/12 21:22
+            //          netty的服务端
             bootstrap = new ServerBootstrap();
             bootstrap
                     .group(bossGroup, workerGroup)
@@ -255,6 +270,8 @@ public abstract class RestServerEndpoint implements AutoCloseableAsync {
 
             state = State.RUNNING;
 
+            // clouding 注释: 2022/3/12 21:23
+            //          启动清理的定时任务和选举
             startInternal();
         }
     }

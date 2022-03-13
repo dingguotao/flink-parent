@@ -137,6 +137,10 @@ public class ZooKeeperLeaderElectionService
 
             leaderContender = contender;
 
+            // clouding 注释: 2022/3/12 21:40
+            //          这里是通过curator框架做的.当选举结束时,会去回调.
+            //          如果选举成功,回调 isLeader(),
+            //          如果选举失败,会去回调 notLeader().
             leaderLatch.addListener(this);
             leaderLatch.start();
 
@@ -229,6 +233,10 @@ public class ZooKeeperLeaderElectionService
         return leaderLatch.hasLeadership() && leaderSessionId.equals(issuedLeaderSessionID);
     }
 
+    /*********************
+     * clouding 注释: 2022/3/12 21:42
+     *  	    选举成功时回调的方法
+     *********************/
     @Override
     public void isLeader() {
         synchronized (lock) {
@@ -243,6 +251,9 @@ public class ZooKeeperLeaderElectionService
                             issuedLeaderSessionID);
                 }
 
+                // clouding 注释: 2022/3/12 21:43
+                //          分配leaderShip. leaderContender 是最开始进行选举传进来的
+                //          @{link start()}
                 leaderContender.grantLeadership(issuedLeaderSessionID);
             } else {
                 LOG.debug(

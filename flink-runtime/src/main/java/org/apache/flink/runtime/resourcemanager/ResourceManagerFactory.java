@@ -65,6 +65,8 @@ public abstract class ResourceManagerFactory<T extends ResourceIDRetrievable> {
                         highAvailabilityServices,
                         slotManagerMetricGroup);
 
+        // clouding 注释: 2022/3/12 21:53
+        //          创建ResourceManager
         return createResourceManager(
                 configuration,
                 resourceId,

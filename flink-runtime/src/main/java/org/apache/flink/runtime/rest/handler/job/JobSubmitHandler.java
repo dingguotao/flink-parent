@@ -78,11 +78,15 @@ public final class JobSubmitHandler
         this.configuration = configuration;
     }
 
+    // clouding 注释: 2022/3/12 18:54
+    //          处理客户端请求.
     @Override
     protected CompletableFuture<JobSubmitResponseBody> handleRequest(
             @Nonnull HandlerRequest<JobSubmitRequestBody, EmptyMessageParameters> request,
             @Nonnull DispatcherGateway gateway)
             throws RestHandlerException {
+        // clouding 注释: 2022/3/12 18:58
+        //          获取传输过来的文件,也就是JobGraph文件
         final Collection<File> uploadedFiles = request.getUploadedFiles();
         final Map<String, Path> nameToFile =
                 uploadedFiles.stream()
@@ -108,20 +112,32 @@ public final class JobSubmitHandler
                     HttpResponseStatus.BAD_REQUEST);
         }
 
+        // clouding 注释: 2022/3/12 18:58
+        //          加载JobGraph文件
         CompletableFuture<JobGraph> jobGraphFuture = loadJobGraph(requestBody, nameToFile);
 
+        // clouding 注释: 2022/3/12 19:00
+        //          获取jar文件
         Collection<Path> jarFiles = getJarFilesToUpload(requestBody.jarFileNames, nameToFile);
 
         Collection<Tuple2<String, Path>> artifacts =
                 getArtifactFilesToUpload(requestBody.artifactFileNames, nameToFile);
 
+        // clouding 注释: 2022/3/12 19:02
+        //          上传JobGraph, jar, 依赖的jar 到文件系统(hdfs)
         CompletableFuture<JobGraph> finalizedJobGraphFuture =
                 uploadJobGraphFiles(gateway, jobGraphFuture, jarFiles, artifacts, configuration);
 
+        // clouding 注释: 2022/3/12 19:02
+        //          提交任务
         CompletableFuture<Acknowledge> jobSubmissionFuture =
                 finalizedJobGraphFuture.thenCompose(
+                        // clouding 注释: 2022/3/12 19:02
+                        //          提交任务
                         jobGraph -> gateway.submitJob(jobGraph, timeout));
 
+        // clouding 注释: 2022/3/12 19:03
+        //          返回id和response返回
         return jobSubmissionFuture.thenCombine(
                 jobGraphFuture,
                 (ack, jobGraph) -> new JobSubmitResponseBody("/jobs/" + jobGraph.getJobID()));
@@ -136,6 +152,8 @@ public final class JobSubmitHandler
 
         return CompletableFuture.supplyAsync(
                 () -> {
+                    // clouding 注释: 2022/3/12 19:00
+                    //          使用io流读取文件
                     JobGraph jobGraph;
                     try (ObjectInputStream objectIn =
                             new ObjectInputStream(

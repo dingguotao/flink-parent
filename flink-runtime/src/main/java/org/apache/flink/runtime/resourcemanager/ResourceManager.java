@@ -216,7 +216,10 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
     // ------------------------------------------------------------------------
     //  RPC lifecycle methods
     // ------------------------------------------------------------------------
-
+    /*********************
+     * clouding 注释: 2022/3/12 22:11
+     *  	    实例化ResourceManager之后,就会调用onStart()方法
+     *********************/
     @Override
     public void onStart() throws Exception {
         try {
@@ -238,6 +241,8 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
 
             initialize();
 
+            // clouding 注释: 2022/3/12 22:12
+            //          开始选举
             leaderElectionService.start(this);
             jobLeaderIdService.start(new JobLeaderIdActionsImpl());
 
@@ -442,6 +447,17 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                 getMainThreadExecutor());
     }
 
+    /**
+     * Slot的注册与分配
+     *      启动的TaskManager回注册到ResourceManager,同时将Slot信息汇报给ResourceManager
+     *      汇报Slot的,是由SlotManager管理的
+     *
+     * @param taskManagerResourceId
+     * @param taskManagerRegistrationId id identifying the sending TaskManager
+     * @param slotReport which is sent to the ResourceManager
+     * @param timeout for the operation
+     * @return
+     */
     @Override
     public CompletableFuture<Acknowledge> sendSlotReport(
             ResourceID taskManagerResourceId,
@@ -452,6 +468,8 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                 taskExecutors.get(taskManagerResourceId);
 
         if (workerTypeWorkerRegistration.getInstanceID().equals(taskManagerRegistrationId)) {
+            // clouding 注释: 2022/2/19 16:31
+            //          注册过的TaskManager
             if (slotManager.registerTaskManager(workerTypeWorkerRegistration, slotReport)) {
                 onTaskManagerRegistration(workerTypeWorkerRegistration);
             }
@@ -1081,13 +1099,15 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
 
     /**
      * Callback method when current resourceManager is granted leadership.
-     *
+     * clouding 选举成功后,回去调用 grantLeadership
      * @param newLeaderSessionID unique leadershipID
      */
     @Override
     public void grantLeadership(final UUID newLeaderSessionID) {
         final CompletableFuture<Boolean> acceptLeadershipFuture =
                 clearStateFuture.thenComposeAsync(
+                        // clouding 注释: 2022/3/12 22:15
+                        //          确认leader之前需要做的
                         (ignored) -> tryAcceptLeadership(newLeaderSessionID),
                         getUnfencedMainThreadExecutor());
 
@@ -1096,6 +1116,8 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                         (acceptLeadership) -> {
                             if (acceptLeadership) {
                                 // confirming the leader session ID might be blocking,
+                                // clouding 注释: 2022/3/12 22:14
+                                //          确认leader
                                 leaderElectionService.confirmLeadership(
                                         newLeaderSessionID, getAddress());
                             }
@@ -1105,6 +1127,8 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
         confirmationFuture.whenComplete(
                 (Void ignored, Throwable throwable) -> {
                     if (throwable != null) {
+                        // clouding 注释: 2022/3/12 22:14
+                        //          leader抛异常后会走异常处理逻辑
                         onFatalError(ExceptionUtils.stripCompletionException(throwable));
                     }
                 });
@@ -1112,6 +1136,8 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
 
     private CompletableFuture<Boolean> tryAcceptLeadership(final UUID newLeaderSessionID) {
         if (leaderElectionService.hasLeadership(newLeaderSessionID)) {
+            // clouding 注释: 2022/3/12 22:16
+            //          生成 id
             final ResourceManagerId newResourceManagerId =
                     ResourceManagerId.fromUuid(newLeaderSessionID);
 
@@ -1127,6 +1153,11 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
 
             setFencingToken(newResourceManagerId);
 
+            // clouding 注释: 2022/3/12 22:16
+            //          启动心跳服务,
+            //          两个定时任务,
+            //          启动SlotManager服务,
+            //          两个定时任务
             startServicesOnLeadership();
 
             return prepareLeadershipAsync().thenApply(ignored -> true);
@@ -1136,8 +1167,12 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
     }
 
     protected void startServicesOnLeadership() {
+        // clouding 注释: 2022/3/12 22:17
+        //          启动心跳服务
         startHeartbeatServices();
 
+        // clouding 注释: 2022/3/12 22:17
+        //          启动 SlotManager,里面两个定时任务
         slotManager.start(getFencingToken(), getMainThreadExecutor(), new ResourceActionsImpl());
     }
 
@@ -1160,6 +1195,13 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                 });
     }
 
+    /*********************
+     * clouding 注释: 2022/3/12 22:18
+     *  	    启动两个心跳服务.
+     *  	    1. taskManagerHeartbeatManager: 监控TaskManager
+     *  	    2. jobManagerHeartbeatManager: 监控JobManager
+     *  	    TaskManager, JobManager 都会向ResourceManager去汇报
+     *********************/
     private void startHeartbeatServices() {
         taskManagerHeartbeatManager =
                 heartbeatServices.createHeartbeatManagerSender(

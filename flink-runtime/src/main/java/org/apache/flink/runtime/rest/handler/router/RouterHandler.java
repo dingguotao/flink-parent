@@ -51,6 +51,10 @@ import static java.util.Objects.requireNonNull;
  * <p>This class is based on:
  * https://github.com/sinetja/netty-router/blob/1.10/src/main/java/io/netty/handler/codec/http/router/AbstractHandler.java
  * https://github.com/sinetja/netty-router/blob/1.10/src/main/java/io/netty/handler/codec/http/router/Handler.java
+ * clouding:
+ *          1. 通过初始化handler注册到router的信息,找到http请求对应的路由结果
+ *          2. 如果路由为空,这返回Not Found, 404
+ *          3. 如果有,则触发handler处理消息
  */
 public class RouterHandler extends SimpleChannelInboundHandler<HttpRequest> {
     private static final String ROUTER_HANDLER_NAME =
@@ -72,6 +76,8 @@ public class RouterHandler extends SimpleChannelInboundHandler<HttpRequest> {
         return ROUTER_HANDLER_NAME;
     }
 
+    // clouding 注释: 2022/3/13 18:43
+    //          处理消息
     @Override
     protected void channelRead0(
             ChannelHandlerContext channelHandlerContext, HttpRequest httpRequest) {
@@ -87,6 +93,8 @@ public class RouterHandler extends SimpleChannelInboundHandler<HttpRequest> {
         RouteResult<?> routeResult = router.route(method, qsd.path(), qsd.parameters());
 
         if (routeResult == null) {
+            // clouding 注释: 2022/3/13 18:44
+            //          404, Not Found
             respondNotFound(channelHandlerContext, httpRequest);
             return;
         }

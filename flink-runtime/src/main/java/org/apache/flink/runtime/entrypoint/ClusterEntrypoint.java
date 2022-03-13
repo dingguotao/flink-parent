@@ -175,6 +175,8 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
             //          初始化文件系统
             configureFileSystems(configuration, pluginManager);
 
+            // clouding 注释: 2022/3/12 16:48
+            //          加载安全组件配置
             SecurityContext securityContext = installSecurityContext(configuration);
 
             securityContext.runSecured(
@@ -314,14 +316,27 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
             configuration.setString(JobManagerOptions.ADDRESS, commonRpcService.getAddress());
             configuration.setInteger(JobManagerOptions.PORT, commonRpcService.getPort());
 
+            // clouding 注释: 2022/3/12 18:37
+            //          创建io线程池
+            //          默认 cluster.io-pool.size = 4 * cpu 核数
             ioExecutor =
                     Executors.newFixedThreadPool(
                             ClusterEntrypointUtils.getPoolSize(configuration),
                             new ExecutorThreadFactory("cluster-io"));
+            // clouding 注释: 2022/3/12 18:38
+            //          HA 服务,使用zk实现
             haServices = createHaServices(configuration, ioExecutor);
+            // clouding 注释: 2022/3/12 18:40
+            //          blobServer 用来处理Flink管理的二进制大文件. 比如:
+            //          - client上传的jar包,
+            //          - 节点间进行的文件传输
             blobServer = new BlobServer(configuration, haServices.createBlobStore());
             blobServer.start();
+            // clouding 注释: 2022/3/12 18:41
+            //          心跳检测服务
             heartbeatServices = createHeartbeatServices(configuration);
+            // clouding 注释: 2022/3/12 18:42
+            //          metric相关服务
             metricRegistry = createMetricRegistry(configuration, pluginManager);
 
             final RpcService metricQueryServiceRpcService =
@@ -338,6 +353,11 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
                             ConfigurationUtils.getSystemResourceMetricsProbingInterval(
                                     configuration));
 
+            // clouding 注释: 2022/3/12 18:42
+            //          archivedExecutionGraphStore: 存储ExecutionGraph的序列化形式.
+            //          存储ExecutionGraph默认有两种实现:
+            //          1. MemoryArchivedExecutionGraphStore, 基于内存的实现
+            //          2. FileArchivedExecutionGraphStore, 基于文件系统的实现, 也是默认
             archivedExecutionGraphStore =
                     createSerializableExecutionGraphStore(
                             configuration, commonRpcService.getScheduledExecutor());

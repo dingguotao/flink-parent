@@ -86,6 +86,8 @@ public class HighAvailabilityServicesUtils {
 
         HighAvailabilityMode highAvailabilityMode = HighAvailabilityMode.fromConfig(configuration);
 
+        // clouding 注释: 2022/3/12 18:39
+        //          根据ha模式匹配
         switch (highAvailabilityMode) {
             case NONE:
                 final Tuple2<String, Integer> hostnamePort = getJobManagerAddress(configuration);
@@ -111,6 +113,8 @@ public class HighAvailabilityServicesUtils {
                 return new StandaloneHaServices(
                         resourceManagerRpcUrl, dispatcherRpcUrl, webMonitorAddress);
             case ZOOKEEPER:
+                // clouding 注释: 2022/3/12 18:39
+                //          基于zk的ha
                 BlobStoreService blobStoreService =
                         BlobUtils.createBlobStoreFromConfig(configuration);
 

@@ -88,6 +88,8 @@ public class AkkaRpcServiceUtils {
 
         bindPort.ifPresent(akkaRpcServiceBuilder::withBindPort);
 
+        // clouding 注释: 2022/3/12 17:39
+        //          创建 akka system
         return akkaRpcServiceBuilder.createAndStart();
     }
 
@@ -350,6 +352,8 @@ public class AkkaRpcServiceUtils {
 
             if (externalAddress == null) {
                 // create local actor system
+                // clouding 注释: 2022/3/12 17:40
+                //          创建一个本地的actor system
                 actorSystem =
                         BootstrapTools.startLocalActorSystem(
                                 configuration,
@@ -359,6 +363,8 @@ public class AkkaRpcServiceUtils {
                                 customConfig);
             } else {
                 // create remote actor system
+                // clouding 注释: 2022/3/12 17:40
+                //          创建一个远程的actor system
                 actorSystem =
                         BootstrapTools.startRemoteActorSystem(
                                 configuration,
@@ -372,6 +378,8 @@ public class AkkaRpcServiceUtils {
                                 customConfig);
             }
 
+            // clouding 注释: 2022/3/12 17:41
+            //          创建 akkaRpcService
             return new AkkaRpcService(
                     actorSystem, AkkaRpcServiceConfiguration.fromConfiguration(configuration));
         }

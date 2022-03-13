@@ -196,9 +196,17 @@ public abstract class Dispatcher extends PermanentlyFencedRpcEndpoint<Dispatcher
     // Lifecycle methods
     // ------------------------------------------------------
 
+    /*********************
+     * clouding 注释: 2022/3/13 16:25
+     *  	    启动Dispatcher
+     *********************/
     @Override
     public void onStart() throws Exception {
         try {
+            // clouding 注释: 2022/3/13 16:25
+            //          启动Dispatcher,
+            //          1是第一次启动,
+            //          2是失败了重启,需要重启失败的作业
             startDispatcherServices();
         } catch (Throwable t) {
             final DispatcherException exception =
@@ -208,6 +216,8 @@ public abstract class Dispatcher extends PermanentlyFencedRpcEndpoint<Dispatcher
             throw exception;
         }
 
+        // clouding 注释: 2022/3/13 16:31
+        //          恢复中断的job
         startRecoveredJobs();
         this.dispatcherBootstrap =
                 this.dispatcherBootstrapFactory.create(
@@ -231,6 +241,8 @@ public abstract class Dispatcher extends PermanentlyFencedRpcEndpoint<Dispatcher
         recoveredJobs.clear();
     }
 
+    // clouding 注释: 2022/3/13 16:36
+    //          恢复job
     private void runRecoveredJob(final JobGraph recoveredJob) {
         checkNotNull(recoveredJob);
         FutureUtils.assertNoException(
@@ -401,14 +413,22 @@ public abstract class Dispatcher extends PermanentlyFencedRpcEndpoint<Dispatcher
     }
 
     private CompletableFuture<Void> runJob(JobGraph jobGraph) {
+        // clouding 注释: 2022/3/13 16:36
+        //          判断是否已经恢复过了
         Preconditions.checkState(!jobManagerRunnerFutures.containsKey(jobGraph.getJobID()));
 
+        // clouding 注释: 2022/3/13 16:37
+        //          创建JobManagerRunner
         final CompletableFuture<JobManagerRunner> jobManagerRunnerFuture =
                 createJobManagerRunner(jobGraph);
 
+        // clouding 注释: 2022/3/13 16:38
+        //          把要恢复的job,放进去jobManagerRunnerFutures
         jobManagerRunnerFutures.put(jobGraph.getJobID(), jobManagerRunnerFuture);
 
         return jobManagerRunnerFuture
+                // clouding 注释: 2022/3/13 16:39
+                //          启动 JobManagerRunner,也就是启动JobMaster
                 .thenApply(FunctionUtils.uncheckedFunction(this::startJobManagerRunner))
                 .thenApply(FunctionUtils.nullFn())
                 .whenCompleteAsync(
@@ -501,6 +521,8 @@ public abstract class Dispatcher extends PermanentlyFencedRpcEndpoint<Dispatcher
         FutureUtils.assertNoException(jobTerminationFuture);
         registerJobManagerRunnerTerminationFuture(jobId, jobTerminationFuture);
 
+        // clouding 注释: 2022/3/13 16:40
+        //          启动JobMaster
         jobManagerRunner.start();
 
         return jobManagerRunner;

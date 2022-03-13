@@ -156,6 +156,8 @@ public class DefaultDispatcherResourceManagerComponentFactory
                                     dispatcherGatewayRetriever,
                                     executor);
 
+            // clouding 注释: 2022/3/12 18:46
+            //          webMonitor服务
             webMonitorEndpoint =
                     restEndpointFactory.createRestEndpoint(
                             configuration,
@@ -167,11 +169,15 @@ public class DefaultDispatcherResourceManagerComponentFactory
                             highAvailabilityServices.getClusterRestEndpointLeaderElectionService(),
                             fatalErrorHandler);
 
+            // clouding 注释: 2022/3/12 18:46
+            //          启动webMonitor服务
             log.debug("Starting Dispatcher REST endpoint.");
             webMonitorEndpoint.start();
 
             final String hostname = RpcUtils.getHostname(rpcService);
 
+            // clouding 注释: 2022/3/12 21:52
+            //          实例化resourceManager
             resourceManager =
                     resourceManagerFactory.createResourceManager(
                             configuration,
@@ -204,6 +210,15 @@ public class DefaultDispatcherResourceManagerComponentFactory
                             historyServerArchivist,
                             metricRegistry.getMetricQueryServiceGatewayRpcAddress());
 
+            // clouding 注释: 2022/3/13 15:29
+            //          实例化 dispatcherRunner.
+            //          作用: 负载接收job的提交,对作业进行持久化,产生JobMaster执行作业,以及在Job-manager节点崩溃时恢复作业,管理JobMaster的状态.
+            //          Dispatcher 实现了 LeaderContender 用来实现leader选举;
+            //                     实现了DispatcherGateway接口,用来提供webMonitor通过rpc调用;
+            //                     实现了SubmittedJobGraphListener, 用来侦听持久化作业信息变更;
+            //          有两个子类的实现: MiniDispatcher 和 StandaloneDispatcher,
+            //          - MiniDispatcher 作为per-job的实现,
+            //          - StandaloneDispatcher作为session模式的实现
             log.debug("Starting Dispatcher.");
             dispatcherRunner =
                     dispatcherRunnerFactory.createDispatcherRunner(
@@ -215,6 +230,8 @@ public class DefaultDispatcherResourceManagerComponentFactory
                             partialDispatcherServices);
 
             log.debug("Starting ResourceManager.");
+            // clouding 注释: 2022/3/12 22:27
+            //          启动 resourceManager, 就是启动rpcServer
             resourceManager.start();
 
             resourceManagerRetrievalService.start(resourceManagerGatewayRetriever);

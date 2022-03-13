@@ -866,7 +866,12 @@ public class WebMonitorEndpoint<T extends RestfulGateway> extends RestServerEndp
 
     @Override
     public void startInternal() throws Exception {
+        // clouding 注释: 2022/3/12 21:24
+        //          选举操作, this = WebMonitorEndpoint
+        //
         leaderElectionService.start(this);
+        // clouding 注释: 2022/3/12 21:24
+        //          开启定时任务,用以删除临时文件和task执行的缓存文件
         startExecutionGraphCacheCleanupTask();
 
         if (hasWebUI) {
@@ -926,6 +931,10 @@ public class WebMonitorEndpoint<T extends RestfulGateway> extends RestServerEndp
     // LeaderContender
     // -------------------------------------------------------------------------
 
+    /*********************
+     * clouding 注释: 2022/3/12 21:46
+     *  	    确认Leader. zk选举后leader节点会近来
+     *********************/
     @Override
     public void grantLeadership(final UUID leaderSessionID) {
         log.info(

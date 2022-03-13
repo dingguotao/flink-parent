@@ -77,7 +77,13 @@ import java.util.Set;
  * router.notFound(My404Handler.class);
  * }</pre>
  */
+/*********************
+ * clouding 注释: 2022/3/13 18:31
+ *  	    将HttpMethod映射到MethodlessRouter (map封装的handlers)
+ *********************/
 public class Router<T> {
+    // clouding 注释: 2022/3/13 18:32
+    //          handler注册的信息
     private final Map<HttpMethod, MethodlessRouter<T>> routers =
             new HashMap<HttpMethod, MethodlessRouter<T>>();
 
