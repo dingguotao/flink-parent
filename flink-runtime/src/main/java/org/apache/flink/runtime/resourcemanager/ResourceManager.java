@@ -509,6 +509,10 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
         closeJobManagerConnection(jobId, cause);
     }
 
+    /*********************
+     * clouding 注释: 2022/3/13 20:19
+     *  	    申请slot
+     *********************/
     @Override
     public CompletableFuture<Acknowledge> requestSlot(
             JobMasterId jobMasterId, SlotRequest slotRequest, final Time timeout) {
@@ -525,6 +529,8 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                         slotRequest.getAllocationId());
 
                 try {
+                    // clouding 注释: 2022/3/13 20:20
+                    //          申请slot,注册请求
                     slotManager.registerSlotRequest(slotRequest);
                 } catch (ResourceManagerException e) {
                     return FutureUtils.completedExceptionally(e);
@@ -532,6 +538,8 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
 
                 return CompletableFuture.completedFuture(Acknowledge.get());
             } else {
+                // clouding 注释: 2022/3/13 20:21
+                //          JobMaster没找到,也就是没注册,直接报错
                 return FutureUtils.completedExceptionally(
                         new ResourceManagerException(
                                 "The job leader's id "

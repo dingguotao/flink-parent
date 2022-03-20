@@ -392,8 +392,12 @@ public class SlotManagerImpl implements SlotManager {
      */
     @Override
     public boolean registerSlotRequest(SlotRequest slotRequest) throws ResourceManagerException {
+        // clouding 注释: 2022/3/13 20:20
+        //          检查SlotManager是否已经启动
         checkInit();
 
+        // clouding 注释: 2022/3/13 20:20
+        //          检测是否重复提交
         if (checkDuplicateRequest(slotRequest.getAllocationId())) {
             LOG.debug(
                     "Ignoring a duplicate slot request with allocation id {}.",
@@ -401,11 +405,15 @@ public class SlotManagerImpl implements SlotManager {
 
             return false;
         } else {
+            // clouding 注释: 2022/3/13 20:22
+            //          实例化一个 pendingSlotRequest
             PendingSlotRequest pendingSlotRequest = new PendingSlotRequest(slotRequest);
 
             pendingSlotRequests.put(slotRequest.getAllocationId(), pendingSlotRequest);
 
             try {
+                // clouding 注释: 2022/3/13 20:22
+                //          执行slot请求
                 internalRequestSlot(pendingSlotRequest);
             } catch (ResourceManagerException e) {
                 // requesting the slot failed --> remove pending slot request
@@ -684,6 +692,15 @@ public class SlotManagerImpl implements SlotManager {
      *     if there is no such slot available.
      */
     private Optional<TaskManagerSlot> findMatchingSlot(ResourceProfile requestResourceProfile) {
+        /*********************
+         * clouding 注释: 2022/3/13 20:24
+         *  	    此处是slot的匹配策略, slotMatchingStrategy
+         *  	    也就是从SlotManager注册的空闲TaskManagerSlot中去找到符合要求的slot
+         *  	    slotMatchingStrategy 有两种策略:
+         *  	    1. AnyMatchingSlotMatchingStrategy: 就是从空闲的里面,任意挑一个, 这个是默认的策略.
+         *  	    2. LeastUtilizationSlotMatchingStrategy: 就是在空闲的TaskManagerSlot里面,挑空闲slot最多的一个,
+         *  	       这个策略需要配置参数 cluster.evenly-spread-out-slots=true才会生效
+         *********************/
         final Optional<TaskManagerSlot> optionalMatchingSlot =
                 slotMatchingStrategy.findMatchingSlot(
                         requestResourceProfile,
