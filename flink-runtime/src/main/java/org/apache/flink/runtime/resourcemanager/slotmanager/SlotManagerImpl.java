@@ -464,6 +464,13 @@ public class SlotManagerImpl implements SlotManager {
      * @return True if the task manager has not been registered before and is registered
      *     successfully; otherwise false
      */
+    /*********************
+     * clouding 注释: 2022/3/20 21:16
+     *  	    1. 检查SlotManager是否启动
+     *  	    2. TaskManager是否为首次注册
+     *  	        2.1 非首次注册,就更新TaskManagerSlot的状态
+     *  	        2.2 首次注册,就将TaskManager记录到已注册的TaskManager列表,遍历汇报过来的Slot
+     *********************/
     @Override
     public boolean registerTaskManager(
             final TaskExecutorConnection taskExecutorConnection, SlotReport initialSlotReport) {
@@ -480,6 +487,8 @@ public class SlotManagerImpl implements SlotManager {
         // clouding 注释: 2022/2/19 16:33
         //          判断是否注册过
         if (taskManagerRegistrations.containsKey(taskExecutorConnection.getInstanceID())) {
+            // clouding 注释: 2022/3/20 21:15
+            //         更新TaskManagerSlot的状态
             reportSlotStatus(taskExecutorConnection.getInstanceID(), initialSlotReport);
             return false;
         } else {
@@ -736,6 +745,15 @@ public class SlotManagerImpl implements SlotManager {
      * @param resourceProfile of the slot
      * @param taskManagerConnection to communicate with the remote task manager
      */
+    /*********************
+     * clouding 注释: 2022/3/20 21:17
+     *  	    处理注册slot的逻辑
+     *  	    1. 如果已经注册过,就移除掉,重新注册
+     *  	    2. 匹配是否有待分配的TaskManagerSlot的申请,有的话就分配过去
+     *  	        2.1. 如果没有匹配到,就更新TaskManager的状态,这里还有点复杂
+     *  	        2.2. 匹配到的话,就去执行分配逻辑
+     *
+     *********************/
     private void registerSlot(
             SlotID slotId,
             AllocationID allocationId,
@@ -770,7 +788,7 @@ public class SlotManagerImpl implements SlotManager {
 
         if (pendingTaskManagerSlot == null) {
             // clouding 注释: 2022/2/19 16:39
-            //          不存在待分配的slot
+            //          不存在待分配的slot, 就更新slot,这里还有点复杂
             updateSlot(slotId, allocationId, jobId);
         } else {
             pendingSlots.remove(pendingTaskManagerSlot.getTaskManagerSlotId());
@@ -882,14 +900,17 @@ public class SlotManagerImpl implements SlotManager {
     }
 
     /**
-     * Slot的状态变化过程:
-     *  1.
-     *
      * @param slot
      * @param taskManagerRegistration
      * @param allocationId
      * @param jobId
      */
+    /*********************
+     * clouding 注释: 2022/3/20 21:25
+     *  	    Slot的状态变化过程
+     *  	    如果 allocationId 为空,表示TaskManagerSlot对应的TaskExecutor还没有被分配
+     *  	    如果 allocationId 不为空, 表示TaskExecutor已经分配
+     *********************/
     private void updateSlotState(
             TaskManagerSlot slot,
             TaskManagerRegistration taskManagerRegistration,
@@ -907,6 +928,7 @@ public class SlotManagerImpl implements SlotManager {
                     PendingSlotRequest pendingSlotRequest = slot.getAssignedSlotRequest();
 
                     if (Objects.equals(pendingSlotRequest.getAllocationId(), allocationId)) {
+                        // 就把pendingSlotRequest移除掉,标记此次状态变更为ALLOCATED
                         // we can cancel the slot request because it has been fulfilled
                         cancelPendingSlotRequest(pendingSlotRequest);
 
@@ -915,6 +937,7 @@ public class SlotManagerImpl implements SlotManager {
 
                         slot.completeAllocation(allocationId, jobId);
                     } else {
+                        // 如果不一致: 就根据汇报的allocationId去匹配slot,并将状态改成ALLOCATED
                         // we first have to free the slot in order to set a new allocationId
                         slot.clearPendingSlotRequest();
                         // set the allocation id such that the slot won't be considered for the
@@ -953,7 +976,7 @@ public class SlotManagerImpl implements SlotManager {
                 case FREE:
                     // the slot is currently free --> it is stored in freeSlots
                     // clouding 注释: 2022/2/19 20:28
-                    //          如果当前的Slot已经分配占有,
+                    //          如果当前的Slot已经分配占有,且TaskManagerSlot为空闲, 那么就将它从 freeSlots 移除, 状态更新为 ALLOCATED
                     freeSlots.remove(slot.getSlotId());
                     slot.updateAllocation(allocationId, jobId);
                     taskManagerRegistration.occupySlot();
@@ -962,19 +985,25 @@ public class SlotManagerImpl implements SlotManager {
 
             fulfilledSlotRequests.put(allocationId, slot.getSlotId());
         } else {
+            // clouding 注释: 2022/3/20 21:27
+            //          此处是 allocationId 为空, TaskExecutor还未分配
             // no allocation reported
             switch (slot.getState()) {
                 case FREE:
+                    // clouding 注释: 2022/3/20 21:27
+                    //          当前的Slot未分配且TaskManagerSlot为Free
                     handleFreeSlot(slot);
                     break;
                 case PENDING:
                     // don't do anything because we still have a pending slot request
                     // clouding 注释: 2022/2/19 20:12
-                    //          5. 当前slot未分配,但是有slotRequest
+                    //          5. 当前slot未分配,但是TaskManagerSlot为待分配
                     break;
                 case ALLOCATED:
                     // clouding 注释: 2022/2/19 20:13
-                    //          6. 当前slot未分配,但是TaskManagerSlot已经分配,那么就从freeSlots列表中移除
+                    //          6. 当前slot未分配,但是TaskManagerSlot已经分配,
+                    //              a. 更正slot的状态从已分配 ALLOCATED 到  FREE 状态
+                    //              b. handleFreeSlot 去匹配或者加入freeSlots
                     AllocationID oldAllocation = slot.getAllocationId();
                     slot.freeSlot();
                     fulfilledSlotRequests.remove(oldAllocation);
@@ -1004,6 +1033,8 @@ public class SlotManagerImpl implements SlotManager {
          *  	    2. 匹配不是,就走  fulfillPendingSlotRequestWithPendingTaskManagerSlot
          *********************/
         OptionalConsumer.of(findMatchingSlot(resourceProfile))
+                // clouding 注释: 2022/3/20 20:52
+                //          匹配到了,就分配slot allocateSlot
                 .ifPresent(taskManagerSlot -> allocateSlot(taskManagerSlot, pendingSlotRequest))
                 .ifNotPresent(
                         // clouding 注释: 2022/2/19 16:17
@@ -1014,10 +1045,11 @@ public class SlotManagerImpl implements SlotManager {
     }
 
     /**
-     * 1. 执行匹配待完成的Slot资源申请或者TaskManager的过程
-     * 2. 查看待完成的资源申请的slot列表中是否存在slot未绑定slot的请求,且和本次的slot请求资源规则一致
-     *    如果存在,就直接将符合条件的slot请求和本次待分配的slot请求绑定
-     *    否则 去ResourceManager中请求资源
+     * clouding 注释
+     *  1. 执行匹配待完成的Slot资源申请或者TaskManager的过程
+     *  2. 查看待完成的资源申请的slot列表中是否存在slot未绑定slot的请求,且和本次的slot请求资源规则一致
+     *     如果存在,就直接将符合条件的slot请求和本次待分配的slot请求绑定
+     *     否则 去ResourceManager中请求资源
      *
      * @param pendingSlotRequest
      * @throws ResourceManagerException
@@ -1193,6 +1225,10 @@ public class SlotManagerImpl implements SlotManager {
 
         // clouding 注释: 2022/2/19 16:02
         //          请求的结果判断
+        //             1 acknowledge不为空时, 更新slot的状态由PEDING成ALLOCATED
+        //             2 SlotOccupiedException 标识TaskExecutor的slot已经被占用了,会拒绝本次请求
+        //             3 CancellationException 会移除SLot和slotRequest的绑定请求
+
         requestFuture.whenComplete(
                 (Acknowledge acknowledge, Throwable throwable) -> {
                     if (acknowledge != null) {
@@ -1210,6 +1246,7 @@ public class SlotManagerImpl implements SlotManager {
                         } else {
                             // clouding 注释: 2022/2/19 16:14
                             //          异常情况处理
+                            //              1. SlotOccupiedException 异常
                             if (throwable instanceof SlotOccupiedException) {
                                 SlotOccupiedException exception = (SlotOccupiedException) throwable;
                                 updateSlot(
@@ -1218,9 +1255,11 @@ public class SlotManagerImpl implements SlotManager {
                                 removeSlotRequestFromSlot(slotId, allocationId);
                             }
 
+                            // 2. CancellationException 异常
                             if (!(throwable instanceof CancellationException)) {
                                 handleFailedSlotRequest(slotId, allocationId, throwable);
                             } else {
+                                // 3. 其他类异常
                                 LOG.debug(
                                         "Slot allocation request {} has been cancelled.",
                                         allocationId,
@@ -1249,6 +1288,13 @@ public class SlotManagerImpl implements SlotManager {
      *
      * @param freeSlot to find a new slot request for
      */
+    /*********************
+     * clouding 注释: 2022/3/20 21:21
+     *  	    1. 判断Slot是空闲
+     *  	    2. 就调用findMatchingRequest是否存在待分配的slot申请
+     *  	        2.1 匹配上就去分配 allocateSlot
+     *  	        2.2 匹配不上,就放入 freeSlots
+     *********************/
     private void handleFreeSlot(TaskManagerSlot freeSlot) {
         Preconditions.checkState(freeSlot.getState() == TaskManagerSlot.State.FREE);
 

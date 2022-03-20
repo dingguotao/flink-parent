@@ -1130,6 +1130,8 @@ public class CliFrontend {
 
         //	Command line interface of the YARN session, with a special initialization here
         //	to prefix all options with y/yarn.
+        // clouding 注释: 2022/3/20 17:33
+        //          反射去实现,没有用new
         final String flinkYarnSessionCLI = "org.apache.flink.yarn.cli.FlinkYarnSessionCli";
         try {
             customCommandLines.add(

@@ -448,8 +448,9 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
     }
 
     /**
-     * Slot的注册与分配
-     *      启动的TaskManager回注册到ResourceManager,同时将Slot信息汇报给ResourceManager
+     * clouding 注释
+     *  Slot的注册与分配
+     *      启动的TaskManager会注册到ResourceManager,同时将Slot信息汇报给ResourceManager
      *      汇报Slot的,是由SlotManager管理的
      *
      * @param taskManagerResourceId
@@ -469,7 +470,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
 
         if (workerTypeWorkerRegistration.getInstanceID().equals(taskManagerRegistrationId)) {
             // clouding 注释: 2022/2/19 16:31
-            //          注册过的TaskManager
+            //          注册TaskManager,执行SlotManager的slot注册与分配逻辑
             if (slotManager.registerTaskManager(workerTypeWorkerRegistration, slotReport)) {
                 onTaskManagerRegistration(workerTypeWorkerRegistration);
             }
@@ -511,7 +512,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
 
     /*********************
      * clouding 注释: 2022/3/13 20:19
-     *  	    申请slot
+     *  	    JobMaster申请slot请求
      *********************/
     @Override
     public CompletableFuture<Acknowledge> requestSlot(
