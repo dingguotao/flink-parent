@@ -30,12 +30,18 @@ public class SlotOffer implements Serializable {
     private static final long serialVersionUID = -7067814231108250971L;
 
     /** Allocation id of this slot, this would be the only identifier for this slot offer */
+    // clouding 注释: 2022/3/25 21:24
+    //          分配是的id
     private AllocationID allocationId;
 
     /** Index of the offered slot */
+    // clouding 注释: 2022/3/25 21:24
+    //          该slot在TaskExecutor中的index
     private final int slotIndex;
 
     /** The resource profile of the offered slot */
+    // clouding 注释: 2022/3/25 21:24
+    //          该slot的配额
     private final ResourceProfile resourceProfile;
 
     public SlotOffer(

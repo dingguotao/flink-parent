@@ -555,9 +555,13 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
     public CompletableFuture<Collection<SlotOffer>> offerSlots(
             final ResourceID taskManagerId, final Collection<SlotOffer> slots, final Time timeout) {
 
+        // clouding 注释: 2022/3/25 21:14
+        //          判断taskManager 有没有注册过,没有注册的直接报错
         Tuple2<TaskManagerLocation, TaskExecutorGateway> taskManager =
                 registeredTaskManagers.get(taskManagerId);
 
+        // clouding 注释: 2022/3/25 21:15
+        //          没有注册过的,报错
         if (taskManager == null) {
             return FutureUtils.completedExceptionally(
                     new Exception("Unknown TaskManager " + taskManagerId));
@@ -569,6 +573,8 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
         final RpcTaskManagerGateway rpcTaskManagerGateway =
                 new RpcTaskManagerGateway(taskExecutorGateway, getFencingToken());
 
+        // clouding 注释: 2022/3/25 21:15
+        //          使用 slotPool 来处理接收的slots
         return CompletableFuture.completedFuture(
                 slotPool.offerSlots(taskManagerLocation, rpcTaskManagerGateway, slots));
     }

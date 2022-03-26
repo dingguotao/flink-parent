@@ -349,7 +349,7 @@ public class SlotPoolImpl implements SlotPool {
         final AllocationID allocationId = new AllocationID();
 
         // clouding 注释: 2022/2/20 16:48
-        //          待分配的请求列表
+        //          待分配的请求列表, 这个比较重要
         pendingRequests.put(pendingRequest.getSlotRequestId(), allocationId, pendingRequest);
 
         // clouding 注释: 2022/2/20 16:49
@@ -358,11 +358,12 @@ public class SlotPoolImpl implements SlotPool {
                 .getAllocatedSlotFuture()
                 .whenComplete(
                         (AllocatedSlot allocatedSlot, Throwable throwable) -> {
+                            // clouding 注释: 2022/3/25 20:51
+                            //          如果抛出异常,或者分配的allocationId和申请时的不一致,就取消本次slot请求
                             if (throwable != null
                                     || !allocationId.equals(allocatedSlot.getAllocationId())) {
                                 // cancel the slot request if there is a failure or if the pending
-                                // request has
-                                // been completed with another allocated slot
+                                // request has been completed with another allocated slot
                                 // clouding 注释: 2022/2/20 16:50
                                 //          申请slot失败,或者slot被占用
                                 resourceManagerGateway.cancelSlotRequest(allocationId);
@@ -388,7 +389,7 @@ public class SlotPoolImpl implements SlotPool {
                     // on failure, fail the request future
                     if (failure != null) {
                         // clouding 注释: 2022/2/20 16:50
-                        //          请求异常,就发送异常部分
+                        //          请求异常,就发送失败逻辑
                         slotRequestToResourceManagerFailed(
                                 pendingRequest.getSlotRequestId(), failure);
                     }
@@ -403,6 +404,8 @@ public class SlotPoolImpl implements SlotPool {
                 log.debug(
                         "Ignoring failed request to the resource manager for a batch slot request.");
             } else {
+                // clouding 注释: 2022/3/25 21:02
+                //          如果有,且是流式请求,就从pendingRequests移除掉本次slot请求
                 pendingRequests.removeKeyA(slotRequestID);
                 request.getAllocatedSlotFuture()
                         .completeExceptionally(
@@ -495,7 +498,8 @@ public class SlotPoolImpl implements SlotPool {
 
         // register request timeout
         // clouding 注释: 2022/2/20 16:38
-        //          请求的超时时间.如果超过,就会自动终止, 配置参数 slot.request.timeout 默认是300秒
+        //          请求的超时时间.如果超过,就会自动终止,
+        //          配置参数 slot.request.timeout 默认是300秒
         FutureUtils.orTimeout(
                         pendingRequest.getAllocatedSlotFuture(),
                         timeout.toMilliseconds(),
@@ -620,10 +624,16 @@ public class SlotPoolImpl implements SlotPool {
      * @param allocatedSlot which shall be returned
      */
     private void tryFulfillSlotRequestOrMakeAvailable(AllocatedSlot allocatedSlot) {
+        // clouding 注释: 2022/3/26 12:46
+        //          判断slot 是否还在使用
         Preconditions.checkState(!allocatedSlot.isUsed(), "Provided slot is still in use.");
 
+        // clouding 注释: 2022/3/26 12:57
+        //          找找有没有pending的请求,根据资源配置去查找
         final PendingRequest pendingRequest = pollMatchingPendingRequest(allocatedSlot);
 
+        // clouding 注释: 2022/3/26 12:43
+        //          如果有需要分配的request,就去分配,没有就放入availableSlots
         if (pendingRequest != null) {
             log.debug(
                     "Fulfilling pending slot request [{}] early with returned slot [{}]",
@@ -631,15 +641,25 @@ public class SlotPoolImpl implements SlotPool {
                     allocatedSlot.getAllocationId());
 
             allocatedSlots.add(pendingRequest.getSlotRequestId(), allocatedSlot);
+            // clouding 注释: 2022/3/26 12:47
+            //          这里就是把pendingRequest满足,返回allocatedSlot
             pendingRequest.getAllocatedSlotFuture().complete(allocatedSlot);
         } else {
             log.debug(
                     "Adding returned slot [{}] to available slots",
                     allocatedSlot.getAllocationId());
+            // clouding 注释: 2022/3/26 12:42
+            //          没有需要 分配的 request,就放在 可用列表中
             availableSlots.add(allocatedSlot, clock.relativeTimeMillis());
         }
     }
 
+    /*********************
+     * clouding 注释: 2022/3/26 12:58
+     *  	    检查待分配的pendingRequests 请求列表和
+     *  	    待连接的waitingForResourceManager请求列表
+     *  	    是否存在资源规格符合要求的
+     *********************/
     private PendingRequest pollMatchingPendingRequest(final AllocatedSlot slot) {
         final ResourceProfile slotResources = slot.getResourceProfile();
 
@@ -663,6 +683,18 @@ public class SlotPoolImpl implements SlotPool {
         return null;
     }
 
+    /*********************
+     * clouding 注释: 2022/3/25 21:21
+     *  	    处理TaskExecutor汇报上来的slot
+     *  	    1. 遍历TaskExecutor汇报上来的offers, 调用 offerSlot方法, 将slot添加到slotPool中
+     *  	    2. 将slot添加到slotpool成功后,将slot信息添加到result中去
+     *  	    3. 将添加成功的slot信息列表result,返回到TaskExecutor
+     *
+     *  	    SlotOffer的信息:
+     *  	    1. allocationId     分配是的id
+     *  	    2. slotIndex        该slot在TaskExecutor中的index
+     *  	    3. resourceProfile  该slot的资源规格
+     *********************/
     @Override
     public Collection<SlotOffer> offerSlots(
             TaskManagerLocation taskManagerLocation,
@@ -704,6 +736,8 @@ public class SlotPoolImpl implements SlotPool {
         final ResourceID resourceID = taskManagerLocation.getResourceID();
         final AllocationID allocationID = slotOffer.getAllocationId();
 
+        // clouding 注释: 2022/3/25 21:26
+        //          检查这个TaskExecutor是否注册过,没有注册的会提供失败
         if (!registeredTaskManagers.contains(resourceID)) {
             log.debug(
                     "Received outdated slot offering [{}] from unregistered TaskManager: {}",
@@ -713,6 +747,9 @@ public class SlotPoolImpl implements SlotPool {
         }
 
         // check whether we have already using this slot
+        // clouding 注释: 2022/3/25 21:27
+        //          检查 allocationID 是否已经汇报过了,如果汇报过了,就本次失败
+        //          就是从 allocatedSlots 或者 availableSlots 检查汇报过来的 allocationID 是否存在
         AllocatedSlot existingSlot;
         if ((existingSlot = allocatedSlots.get(allocationID)) != null
                 || (existingSlot = availableSlots.get(allocationID)) != null) {
@@ -729,6 +766,9 @@ public class SlotPoolImpl implements SlotPool {
             final SlotID newSlotId =
                     new SlotID(taskManagerLocation.getResourceID(), slotOffer.getSlotIndex());
 
+            // clouding 注释: 2022/3/25 21:32
+            //          如果汇报的 slot 和当前已经存在的slot,一致, 那么就是同一个slot的两次汇报,则本次成功 (Slot汇报的幂等性)
+            //          slot的唯一性是 TaskManager一致, slot index 一致, allocationID 一致 就是同一个slot
             if (existingSlotId.equals(newSlotId)) {
                 log.info("Received repeated offer for slot [{}]. Ignoring.", allocationID);
 
@@ -744,6 +784,8 @@ public class SlotPoolImpl implements SlotPool {
             }
         }
 
+        // clouding 注释: 2022/3/26 12:33
+        //          创建已分配的slot
         final AllocatedSlot allocatedSlot =
                 new AllocatedSlot(
                         allocationID,
@@ -757,7 +799,8 @@ public class SlotPoolImpl implements SlotPool {
         if (pendingRequest != null) {
             // we were waiting for this!
             allocatedSlots.add(pendingRequest.getSlotRequestId(), allocatedSlot);
-
+            // clouding 注释: 2022/3/26 12:41
+            //          pendingRequest 是否完成了分配, 完成就不处理,没完成就重新移除
             if (!pendingRequest.getAllocatedSlotFuture().complete(allocatedSlot)) {
                 // we could not complete the pending slot future --> try to fulfill another pending
                 // request
