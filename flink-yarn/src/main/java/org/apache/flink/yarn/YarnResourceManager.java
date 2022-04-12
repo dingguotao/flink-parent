@@ -336,6 +336,8 @@ public class YarnResourceManager extends ActiveResourceManager<YarnWorkerNode>
         final String appTrackingUrl = historyServerURL.map(URL::toString).orElse("");
 
         try {
+            // clouding 注释: 2022/3/26 18:15
+            //          取消rm注册,停止appMaster
             resourceManagerClient.unregisterApplicationMaster(
                     yarnStatus, diagnostics, appTrackingUrl);
         } catch (Throwable t) {
@@ -355,6 +357,10 @@ public class YarnResourceManager extends ActiveResourceManager<YarnWorkerNode>
         return workerSpecContainerResourceAdapter.tryComputeContainerResource(workerResourceSpec);
     }
 
+    /*********************
+     * clouding 注释: 2022/3/26 18:18
+     *  	    停止container
+     *********************/
     @Override
     public boolean stopWorker(final YarnWorkerNode workerNode) {
         final Container container = workerNode.getContainer();
@@ -380,6 +386,8 @@ public class YarnResourceManager extends ActiveResourceManager<YarnWorkerNode>
         return 1;
     }
 
+    // clouding 注释: 2022/3/26 18:29
+    //          容器异常结束场景
     @Override
     public void onContainersCompleted(final List<ContainerStatus> statuses) {
         runAsync(
@@ -397,6 +405,8 @@ public class YarnResourceManager extends ActiveResourceManager<YarnWorkerNode>
 
                         if (yarnWorkerNode != null) {
                             // Container completed unexpectedly ~> start a new one
+                            // clouding 注释: 2022/3/26 18:30
+                            //          如果需要,就重新申请一个
                             requestYarnContainerIfRequired();
                         }
                         // Eagerly close the connection with task manager.
@@ -419,6 +429,8 @@ public class YarnResourceManager extends ActiveResourceManager<YarnWorkerNode>
 
                     // if we are waiting for no further containers, we can go to the
                     // regular heartbeat interval
+                    // clouding 注释: 2022/3/26 18:19
+                    //          如果不需要申请container, 心跳间隔恢复
                     if (getNumRequestedNotAllocatedWorkers() <= 0) {
                         resourceManagerClient.setHeartbeatInterval(yarnHeartbeatIntervalMillis);
                     }
@@ -492,6 +504,8 @@ public class YarnResourceManager extends ActiveResourceManager<YarnWorkerNode>
         workerNodeMap.put(resourceId, new YarnWorkerNode(container));
 
         try {
+            // clouding 注释: 2022/3/26 18:12
+            //          封装contaienr启动的context
             // Context information used to start a TaskExecutor Java process
             ContainerLaunchContext taskExecutorLaunchContext =
                     createTaskExecutorLaunchContext(
@@ -500,6 +514,8 @@ public class YarnResourceManager extends ActiveResourceManager<YarnWorkerNode>
                             TaskExecutorProcessUtils.processSpecFromWorkerResourceSpec(
                                     flinkConfig, workerResourceSpec));
 
+            // clouding 注释: 2022/3/26 18:12
+            //          启动container
             nodeManagerClient.startContainerAsync(container, taskExecutorLaunchContext);
         } catch (Throwable t) {
             releaseFailedContainerAndRequestNewContainerIfRequired(container.getId(), t);
@@ -515,9 +531,13 @@ public class YarnResourceManager extends ActiveResourceManager<YarnWorkerNode>
         final ResourceID resourceId = new ResourceID(containerId.toString());
         // release the failed container
         workerNodeMap.remove(resourceId);
+        // clouding 注释: 2022/3/26 18:31
+        //          向yarn释放container
         resourceManagerClient.releaseAssignedContainer(containerId);
         notifyAllocatedWorkerStopped(resourceId);
         // and ask for a new one
+        // clouding 注释: 2022/3/26 18:31
+        //          申请新的container
         requestYarnContainerIfRequired();
     }
 
@@ -604,6 +624,8 @@ public class YarnResourceManager extends ActiveResourceManager<YarnWorkerNode>
         log.debug("Succeeded to call YARN Node Manager to stop container {}.", containerId);
     }
 
+    // clouding 注释: 2022/3/26 18:30
+    //          启动container异常
     @Override
     public void onStartContainerError(ContainerId containerId, Throwable t) {
         runAsync(() -> releaseFailedContainerAndRequestNewContainerIfRequired(containerId, t));
@@ -682,6 +704,8 @@ public class YarnResourceManager extends ActiveResourceManager<YarnWorkerNode>
                     getContainerRequest(containerResourceOptional.get()));
 
             // make sure we transmit the request fast and receive fast news of granted allocations
+            // clouding 注释: 2022/3/26 17:54
+            //          rm client 和 yarn的通信是通过心跳来的,所以这里缩短心跳间隔,来保证尽快发送
             resourceManagerClient.setHeartbeatInterval(containerRequestHeartbeatIntervalMillis);
             int numPendingWorkers =
                     notifyNewWorkerRequested(workerResourceSpec).getNumNotAllocated();

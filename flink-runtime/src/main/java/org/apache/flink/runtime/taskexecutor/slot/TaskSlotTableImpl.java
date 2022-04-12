@@ -74,21 +74,34 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
     private final int memoryPageSize;
 
     /** Timer service used to time out allocated slots. */
+    // clouding 注释: 2022/3/26 13:11
+    //          负责将已分配的slot(allocated slots) 加入超时检测服务里.TaskExecutor将slot提供给JobMaster,
+    //          一旦JobMaster接收,就移除超时检测.否则最终会超时,把该slot状态重置为FREE
     private final TimerService<AllocationID> timerService;
 
     /** The list of all task slots. */
+    // clouding 注释: 2022/3/26 13:14
+    //          该TaskExecutor上所有的 TaskSlot 列表
     private final Map<Integer, TaskSlot<T>> taskSlots;
 
     /** Mapping from allocation id to task slot. */
+    // clouding 注释: 2022/3/26 13:15
+    //          记录AllocationID 和  TaskSlot的映射关系
     private final Map<AllocationID, TaskSlot<T>> allocatedSlots;
 
     /** Mapping from execution attempt id to task and task slot. */
+    // clouding 注释: 2022/3/26 13:16
+    //          记录task的执行id 和 TaskSlotMapping的关系. 通过execution attempt id 查到绑定TaskSlot情况
     private final Map<ExecutionAttemptID, TaskSlotMapping<T>> taskSlotMappings;
 
     /** Mapping from job id to allocated slots for a job. */
+    // clouding 注释: 2022/3/26 13:17
+    //          记录job的slot情况
     private final Map<JobID, Set<AllocationID>> slotsPerJob;
 
     /** Interface for slot actions, such as freeing them or timing them out. */
+    // clouding 注释: 2022/3/26 13:17
+    //          负载释放slot 和 超时逻辑
     @Nullable private SlotActions slotActions;
 
     /** The table state. */
@@ -273,6 +286,8 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
             AllocationID allocationId,
             ResourceProfile resourceProfile,
             Time slotTimeout) {
+        // clouding 注释: 2022/3/26 22:45
+        //          taskSlot已经启动
         checkRunning();
 
         Preconditions.checkArgument(index < numberSlots);

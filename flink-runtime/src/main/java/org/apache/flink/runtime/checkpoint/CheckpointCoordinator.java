@@ -525,7 +525,11 @@ public class CheckpointCoordinator {
                 preCheckGlobalState(request.isPeriodic);
             }
 
+            // clouding 注释: 2022/4/9 16:11
+            //          所有的trigger
             final Execution[] executions = getTriggerExecutions();
+            // clouding 注释: 2022/4/9 16:11
+            //          所有的ack
             final Map<ExecutionAttemptID, ExecutionVertex> ackTasks = getAckTasks();
 
             // we will actually trigger this checkpoint!
@@ -537,6 +541,8 @@ public class CheckpointCoordinator {
                     initializeCheckpoint(request.props, request.externalSavepointLocation)
                             .thenApplyAsync(
                                     (checkpointIdAndStorageLocation) ->
+                                            // clouding 注释: 2022/4/9 16:11
+                                            //          创建pendingCheckpoint
                                             createPendingCheckpoint(
                                                     timestamp,
                                                     request.props,
@@ -1913,6 +1919,8 @@ public class CheckpointCoordinator {
      * @throws CheckpointException the exception fails checking
      */
     private Execution[] getTriggerExecutions() throws CheckpointException {
+        // clouding 注释: 2022/4/9 16:09
+        //          trigger execution 数组
         Execution[] executions = new Execution[tasksToTrigger.length];
         for (int i = 0; i < tasksToTrigger.length; i++) {
             Execution ee = tasksToTrigger[i].getCurrentExecutionAttempt();
@@ -1924,8 +1932,12 @@ public class CheckpointCoordinator {
                 throw new CheckpointException(
                         CheckpointFailureReason.NOT_ALL_REQUIRED_TASKS_RUNNING);
             } else if (ee.getState() == ExecutionState.RUNNING) {
+                // clouding 注释: 2022/4/9 16:09
+                //          确保这个Execution是running状态
                 executions[i] = ee;
             } else {
+                // clouding 注释: 2022/4/9 16:10
+                //          不在running状态,就报错
                 LOG.info(
                         "Checkpoint triggering task {} of job {} is not in state {} but {} instead. Aborting checkpoint.",
                         tasksToTrigger[i].getTaskNameWithSubtaskIndex(),
