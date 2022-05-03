@@ -242,9 +242,15 @@ public class DefaultOperatorStateBackend implements OperatorStateBackend {
             ListStateDescriptor<S> stateDescriptor, OperatorStateHandle.Mode mode)
             throws StateMigrationException {
 
+        // clouding 注释: 2022/4/17 21:28
+        //          确认stateDescriptor不为空，并获取stateDescriptor中的状态名称。
         Preconditions.checkNotNull(stateDescriptor);
         String name = Preconditions.checkNotNull(stateDescriptor.getName());
 
+        // clouding 注释: 2022/4/17 21:29
+        //          2）从accessedStatesByName缓存集合中获取已经创建的PartitionableListState，
+        //          如果获取成功，则调用checkStateNameAndMode()方法与之前创建的状态名称和类型进行对比，
+        //              如果匹配成功则直接返回previous状态
         @SuppressWarnings("unchecked")
         PartitionableListState<S> previous =
                 (PartitionableListState<S>) accessedStatesByName.get(name);
@@ -261,6 +267,8 @@ public class DefaultOperatorStateBackend implements OperatorStateBackend {
         // provided state name; check compatibility of restored state, if any
         // TODO with eager registration in place, these checks should be moved to restore()
 
+        // clouding 注释: 2022/4/17 21:30
+        //          如果从accessedStatesByName集合中没有获取到创建的算子状态，则创建新的PartitionableListState
         stateDescriptor.initializeSerializerUnlessSet(getExecutionConfig());
         TypeSerializer<S> partitionStateSerializer =
                 Preconditions.checkNotNull(stateDescriptor.getElementSerializer());
@@ -272,6 +280,8 @@ public class DefaultOperatorStateBackend implements OperatorStateBackend {
         if (null == partitionableListState) {
             // no restored state for the state name; simply create new state holder
 
+            // clouding 注释: 2022/4/17 21:30
+            //          创建新的PartitionableListState
             partitionableListState =
                     new PartitionableListState<>(
                             new RegisteredOperatorStateBackendMetaInfo<>(

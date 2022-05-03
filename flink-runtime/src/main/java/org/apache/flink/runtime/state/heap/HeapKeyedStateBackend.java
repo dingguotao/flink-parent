@@ -98,6 +98,10 @@ public class HeapKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
                     .collect(Collectors.toMap(t -> t.f0, t -> t.f1));
 
     /** Map of registered Key/Value states. */
+    // clouding 注释: 2022/4/17 19:22
+    //          来存储StateName与StateTable之间的映射关系，
+    //          registeredKVStates的 key为状态名称，
+    //                               value为具体状态数据使用的状态表
     private final Map<String, StateTable<K, ?, ?>> registeredKVStates;
 
     /** Map of registered priority queue set states. */
@@ -251,6 +255,8 @@ public class HeapKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
 
             stateTable.setMetaInfo(restoredKvMetaInfo);
         } else {
+            // clouding 注释: 2022/4/17 19:26
+            //          第一次创建状态
             RegisteredKeyValueStateBackendMetaInfo<N, V> newMetaInfo =
                     new RegisteredKeyValueStateBackendMetaInfo<>(
                             stateDesc.getType(),
@@ -293,11 +299,15 @@ public class HeapKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
                             stateDesc.getClass(), this.getClass());
             throw new FlinkRuntimeException(message);
         }
+        // clouding 注释: 2022/4/17 19:59
+        //          尝试注册和创建StateTable
         StateTable<K, N, SV> stateTable =
                 tryRegisterStateTable(
                         namespaceSerializer,
                         stateDesc,
                         getStateSnapshotTransformFactory(stateDesc, snapshotTransformFactory));
+        // clouding 注释: 2022/4/17 19:59
+        //          调用stateFactory.createState()方法创建状态
         return stateFactory.createState(stateDesc, stateTable, getKeySerializer());
     }
 

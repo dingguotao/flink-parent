@@ -58,7 +58,11 @@ public class DefaultKeyedStateStore implements KeyedStateStore {
     public <T> ValueState<T> getState(ValueStateDescriptor<T> stateProperties) {
         requireNonNull(stateProperties, "The state properties must not be null");
         try {
+            // clouding 注释: 2022/4/17 19:44
+            //          如果没有设置序列化格式,就设置默认的
             stateProperties.initializeSerializerUnlessSet(executionConfig);
+            // clouding 注释: 2022/4/17 19:47
+            //          获取ValueState状态数据
             return getPartitionedState(stateProperties);
         } catch (Exception e) {
             throw new RuntimeException("Error while getting state", e);

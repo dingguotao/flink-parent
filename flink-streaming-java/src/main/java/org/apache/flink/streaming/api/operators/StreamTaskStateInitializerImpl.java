@@ -124,6 +124,8 @@ public class StreamTaskStateInitializerImpl implements StreamTaskStateInitialize
             boolean isUsingCustomRawKeyedState)
             throws Exception {
 
+        // clouding 注释: 2022/4/17 18:09
+        //          从environment中获取TaskInfo，并基于Task实例创建 OperatorSubtaskDescriptionText
         TaskInfo taskInfo = environment.getTaskInfo();
         OperatorSubtaskDescriptionText operatorSubtaskDescription =
                 new OperatorSubtaskDescriptionText(
@@ -146,6 +148,8 @@ public class StreamTaskStateInitializerImpl implements StreamTaskStateInitialize
         try {
 
             // -------------- Keyed State Backend --------------
+            // clouding 注释: 2022/4/17 18:14
+            //          创建 keyed 类型状态后端
             keyedStatedBackend =
                     keyedStatedBackend(
                             keySerializer,
@@ -155,6 +159,8 @@ public class StreamTaskStateInitializerImpl implements StreamTaskStateInitialize
                             metricGroup);
 
             // -------------- Operator State Backend --------------
+            // clouding 注释: 2022/4/17 18:14
+            //          创建 operator 类型状态后端
             operatorStateBackend =
                     operatorStateBackend(
                             operatorIdentifierText,
@@ -162,6 +168,8 @@ public class StreamTaskStateInitializerImpl implements StreamTaskStateInitialize
                             streamTaskCloseableRegistry);
 
             // -------------- Raw State Streams --------------
+            // clouding 注释: 2022/4/17 18:15
+            //          创建原生类型状态后端, rawKeyedStateInputs rawOperatorStateInputs
             rawKeyedStateInputs =
                     rawKeyedStateInputs(
                             prioritizedOperatorSubtaskStates

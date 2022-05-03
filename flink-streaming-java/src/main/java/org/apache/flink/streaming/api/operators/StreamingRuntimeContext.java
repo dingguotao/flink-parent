@@ -192,8 +192,16 @@ public class StreamingRuntimeContext extends AbstractRuntimeUDFContext {
 
     @Override
     public <T> ValueState<T> getState(ValueStateDescriptor<T> stateProperties) {
+        // clouding 注释: 2022/4/16 17:43
+        //          1. 获取 keyedStateStore ,keyedStateStore 是在StreamOperator中根据keystateBackend初始化拿到的.
+        //          keyedStateStore是keyState的存储对象,每一次状态变化,都会存储到keyedStateStore
+        //          2. 状态序列化方法初始化. 提供一个序列化方法来指定声明状态的序列化方式
         KeyedStateStore keyedStateStore = checkPreconditionsAndGetKeyedStateStore(stateProperties);
         stateProperties.initializeSerializerUnlessSet(getExecutionConfig());
+        // clouding 注释: 2022/4/16 17:52
+        //          从keyedStateStore 中获取初始值.
+        //          如果是第一次启动,是默认值.
+        //          如果是ck启动,会是恢复的值
         return keyedStateStore.getState(stateProperties);
     }
 
