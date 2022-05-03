@@ -65,6 +65,8 @@ public class TtlStateFactory<K, N, SV, TTLSV, S extends State, IS extends S> {
         Preconditions.checkNotNull(stateDesc);
         Preconditions.checkNotNull(stateBackend);
         Preconditions.checkNotNull(timeProvider);
+        // clouding 注释: 2022/4/17 19:55
+        //          根据是否开启了 ttl,判断创建那种的state
         return stateDesc.getTtlConfig().isEnabled()
                 ? new TtlStateFactory<K, N, SV, TTLSV, S, IS>(
                                 namespaceSerializer, stateDesc, stateBackend, timeProvider)
@@ -135,6 +137,9 @@ public class TtlStateFactory<K, N, SV, TTLSV, S extends State, IS extends S> {
                             stateDesc.getClass(), TtlStateFactory.class);
             throw new FlinkRuntimeException(message);
         }
+
+        // clouding 注释: 2022/4/17 19:57
+        //          创建各种 state. 创建方法在 stateFactories 的map中
         IS state = stateFactory.get();
         if (incrementalCleanup != null) {
             incrementalCleanup.setTtlState((AbstractTtlState<K, N, ?, TTLSV, ?>) state);

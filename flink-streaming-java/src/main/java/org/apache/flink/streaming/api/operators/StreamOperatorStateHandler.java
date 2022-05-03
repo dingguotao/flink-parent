@@ -90,6 +90,8 @@ public class StreamOperatorStateHandler {
         }
     }
 
+    // clouding 注释: 2022/4/16 18:34
+    //          初始化 operator state
     public void initializeOperatorState(CheckpointedStreamOperator streamOperator)
             throws Exception {
         CloseableIterable<KeyGroupStatePartitionStreamProvider> keyedStateInputs =
@@ -100,11 +102,19 @@ public class StreamOperatorStateHandler {
         try {
             StateInitializationContext initializationContext =
                     new StateInitializationContextImpl(
+                            // clouding 注释: 2022/4/16 18:35
+                            //          是否首次重启
                             context.isRestored(), // information whether we restore or start for
                             // the first time
+                            // clouding 注释: 2022/4/16 18:35
+                            //          operatorState 和 keyedState的存储
                             operatorStateBackend, // access to operator state backend
                             keyedStateStore, // access to keyed state backend
+                            // clouding 注释
+                            //          keyedState的状态流
                             keyedStateInputs, // access to keyed state stream
+                            // clouding 注释
+                            //          operator state 状态流
                             operatorStateInputs); // access to operator state stream
 
             streamOperator.initializeState(initializationContext);

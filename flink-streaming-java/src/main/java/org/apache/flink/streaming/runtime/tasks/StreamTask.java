@@ -306,6 +306,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
                 Executors.newCachedThreadPool(
                         new ExecutorThreadFactory("AsyncOperations", uncaughtExceptionHandler));
 
+        // clouding 注释: 2022/4/18 00:17
+        //          在构建 StreamTask 时,创建backend
         this.stateBackend = createStateBackend();
 
         this.subtaskCheckpointCoordinator =
@@ -521,6 +523,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
                             }
                         }
 
+                        // clouding 注释: 2022/4/16 21:44
+                        //          对当前Task中所有算子的状态数据进行初始化
                         operatorChain.initializeStateAndOpenOperators(
                                 createStreamTaskStateInitializer());
 

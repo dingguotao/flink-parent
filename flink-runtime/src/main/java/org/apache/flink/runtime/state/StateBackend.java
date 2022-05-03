@@ -106,6 +106,10 @@ public interface StateBackend extends java.io.Serializable {
      * @throws IOException Thrown, if the state backend does not understand the pointer, or if the
      *     pointer could not be resolved due to an I/O error.
      */
+    /*********************
+     * clouding 注释: 2022/4/17 21:47
+     *  	    用于获取Checkpoint的Location信息，Location信息包含Checkpoint元数据信息；
+     *********************/
     CompletedCheckpointStorageLocation resolveCheckpoint(String externalPointer) throws IOException;
 
     /**
@@ -116,6 +120,11 @@ public interface StateBackend extends java.io.Serializable {
      * @return A checkpoint storage for the given job.
      * @throws IOException Thrown if the checkpoint storage cannot be initialized.
      */
+    /*********************
+     * clouding 注释: 2022/4/17 21:47
+     *  	    为Job创建CheckpointStorage对象，
+     *  	    CheckpointStorage提供写入Checkpoint数据和元数据信息的能力
+     *********************/
     CheckpointStorage createCheckpointStorage(JobID jobId) throws IOException;
 
     // ------------------------------------------------------------------------

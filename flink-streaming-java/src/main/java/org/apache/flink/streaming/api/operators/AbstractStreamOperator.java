@@ -261,6 +261,8 @@ public abstract class AbstractStreamOperator<OUT>
     public final void initializeState(StreamTaskStateInitializer streamTaskStateManager)
             throws Exception {
 
+        // clouding 注释: 2022/4/16 21:47
+        //          从ExecutionConfig中获取KeySerializer序列化器
         final TypeSerializer<?> keySerializer =
                 config.getStateKeySerializer(getUserCodeClassloader());
 
@@ -268,6 +270,8 @@ public abstract class AbstractStreamOperator<OUT>
         final CloseableRegistry streamTaskCloseableRegistry =
                 Preconditions.checkNotNull(containingTask.getCancelables());
 
+        // clouding 注释: 2022/4/16 21:48
+        //          创建 StreamOperatorStateContext, 会创建 keystate, operator state raw等的状态后端
         final StreamOperatorStateContext context =
                 streamTaskStateManager.streamOperatorStateContext(
                         getOperatorID(),
@@ -279,9 +283,13 @@ public abstract class AbstractStreamOperator<OUT>
                         metrics,
                         isUsingCustomRawKeyedState());
 
+        // clouding 注释: 2022/4/16 21:49
+        //          用于创建和管理OperatorState
         stateHandler =
                 new StreamOperatorStateHandler(
                         context, getExecutionConfig(), streamTaskCloseableRegistry);
+        // clouding 注释: 2022/4/16 21:50
+        //          获取TimeServiceManager实例，用于在当前算子中注册和管理定时器。
         timeServiceManager = context.internalTimerServiceManager();
         stateHandler.initializeOperatorState(this);
         runtimeContext.setKeyedStateStore(stateHandler.getKeyedStateStore().orElse(null));

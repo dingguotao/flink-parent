@@ -262,15 +262,25 @@ public abstract class AbstractKeyedStateBackend<K>
                 "State key serializer has not been configured in the config. "
                         + "This operation cannot use partitioned state.");
 
+        // clouding 注释: 2022/4/17 19:53
+        //          从keyValueStatesByName集合中获取kvState，
+        //          如果kvState为空，则调用TtlStateFactory创建新的kvState。
         InternalKvState<K, ?, ?> kvState = keyValueStatesByName.get(stateDescriptor.getName());
         if (kvState == null) {
             if (!stateDescriptor.isSerializerInitialized()) {
                 stateDescriptor.initializeSerializerUnlessSet(executionConfig);
             }
+            // clouding 注释: 2022/4/17 19:55
+            //          真正创建state
             kvState =
                     TtlStateFactory.createStateAndWrapWithTtlIfEnabled(
                             namespaceSerializer, stateDescriptor, this, ttlTimeProvider);
+            // clouding 注释: 2022/4/17 19:53
+            //          放入map,下次直接获取
             keyValueStatesByName.put(stateDescriptor.getName(), kvState);
+            // clouding 注释: 2022/4/17 19:54
+            //          状态被设定为QuerableState，
+            //          则需要调用publishQueryableStateIfEnabled()方法开启QueryableState功能。
             publishQueryableStateIfEnabled(stateDescriptor, kvState);
         }
         return (S) kvState;
@@ -304,11 +314,16 @@ public abstract class AbstractKeyedStateBackend<K>
 
         checkNotNull(namespace, "Namespace");
 
+        // clouding 注释: 2022/4/17 19:51
+        //          根据lastName是否与stateDescriptor中的名称一致，选择是否直接返回lastState
         if (lastName != null && lastName.equals(stateDescriptor.getName())) {
             lastState.setCurrentNamespace(namespace);
             return (S) lastState;
         }
 
+        // clouding 注释: 2022/4/17 19:50
+        //          通过keyValueStatesByName集合检索对应名称的KeyedState，
+        //          检索到则直接返回keyValueStatesByName集合已经创建好的KeyedState。
         InternalKvState<K, ?, ?> previous = keyValueStatesByName.get(stateDescriptor.getName());
         if (previous != null) {
             lastState = previous;
@@ -317,6 +332,8 @@ public abstract class AbstractKeyedStateBackend<K>
             return (S) previous;
         }
 
+        // clouding 注释: 2022/4/17 19:51
+        //          创建新的KeyedState。
         final S state = getOrCreateKeyedState(namespaceSerializer, stateDescriptor);
         final InternalKvState<K, N, ?> kvState = (InternalKvState<K, N, ?>) state;
 

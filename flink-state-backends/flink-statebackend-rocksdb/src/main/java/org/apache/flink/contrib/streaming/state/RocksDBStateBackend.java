@@ -471,6 +471,8 @@ public class RocksDBStateBackend extends AbstractStateBackend implements Configu
 
     @Override
     public CheckpointStorage createCheckpointStorage(JobID jobId) throws IOException {
+        // clouding 注释: 2022/4/17 21:51
+        //          FsStateBackend
         return checkpointStreamBackend.createCheckpointStorage(jobId);
     }
 

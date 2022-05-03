@@ -305,7 +305,11 @@ public class OperatorChain<OUT, OP extends StreamOperator<OUT>> implements Strea
             StreamTaskStateInitializer streamTaskStateInitializer) throws Exception {
         for (StreamOperatorWrapper<?, ?> operatorWrapper : getAllOperators(true)) {
             StreamOperator<?> operator = operatorWrapper.getStreamOperator();
+            // clouding 注释: 2022/4/16 21:45
+            //          初始化 state
             operator.initializeState(streamTaskStateInitializer);
+            // clouding 注释: 2022/4/16 21:46
+            //          开启算子
             operator.open();
         }
     }
