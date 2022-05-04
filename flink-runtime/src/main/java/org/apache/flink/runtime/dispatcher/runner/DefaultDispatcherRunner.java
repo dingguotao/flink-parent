@@ -102,6 +102,8 @@ public final class DefaultDispatcherRunner implements DispatcherRunner, LeaderCo
 
     @Override
     public void grantLeadership(UUID leaderSessionID) {
+        // clouding 注释: 2022/5/4 17:03
+        //          启动dispatcher
         runActionIfRunning(() -> startNewDispatcherLeaderProcess(leaderSessionID));
     }
 
