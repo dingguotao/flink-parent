@@ -191,6 +191,11 @@ public class ZooKeeperLeaderElectionService
         }
     }
 
+    /*********************
+     * clouding 注释: 2022/5/4 16:35
+     *  	    当Master节点被选举成为leader时,会调用 confirmLeadership()
+     *  	    会把 leader 的akka 地址 和 leaderSessionID 写入到zk的临时节点上,供TaskExecutor启动时使用
+     *********************/
     @Override
     public void confirmLeadership(UUID leaderSessionID, String leaderAddress) {
         if (LOG.isDebugEnabled()) {
@@ -204,6 +209,8 @@ public class ZooKeeperLeaderElectionService
             // check if this is an old confirmation call
             synchronized (lock) {
                 if (running) {
+                    // clouding 注释: 2022/5/4 16:48
+                    //          再次check id,防止中间有变化
                     if (leaderSessionID.equals(this.issuedLeaderSessionID)) {
                         confirmLeaderInformation(leaderSessionID, leaderAddress);
                         writeLeaderInformation();
@@ -268,6 +275,10 @@ public class ZooKeeperLeaderElectionService
         confirmedLeaderAddress = null;
     }
 
+    /*********************
+     * clouding 注释: 2022/5/4 16:50
+     *  	    失去leader或者没有选举上执行的逻辑
+     *********************/
     @Override
     public void notLeader() {
         synchronized (lock) {
@@ -281,6 +292,8 @@ public class ZooKeeperLeaderElectionService
                 issuedLeaderSessionID = null;
                 clearConfirmedLeaderInformation();
 
+                // clouding 注释: 2022/5/4 16:50
+                //          通知master 失去leader的处理逻辑
                 leaderContender.revokeLeadership();
             } else {
                 LOG.debug(

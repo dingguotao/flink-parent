@@ -314,6 +314,8 @@ public class JobManagerRunnerImpl
 
     private CompletableFuture<Void> verifyJobSchedulingStatusAndStartJobManager(
             UUID leaderSessionId) {
+        // clouding 注释: 2022/5/4 17:05
+        //          检索启动的状态
         final CompletableFuture<JobSchedulingStatus> jobSchedulingStatusFuture =
                 getJobSchedulingStatus();
 
@@ -338,6 +340,8 @@ public class JobManagerRunnerImpl
                 jobMasterService.getAddress());
 
         try {
+            // clouding 注释: 2022/5/4 17:05
+            //          把 RUNNING 状态写入
             runningJobsRegistry.setJobRunning(jobGraph.getJobID());
         } catch (IOException e) {
             return FutureUtils.completedExceptionally(
