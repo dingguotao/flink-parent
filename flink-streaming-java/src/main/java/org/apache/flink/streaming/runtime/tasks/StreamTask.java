@@ -998,6 +998,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
                             operatorChain.setIgnoreEndOfInput(false);
                         }
 
+                        // clouding 注释: 2022/5/4 18:23
+                        //          开始执行checkpoint state
                         subtaskCheckpointCoordinator.checkpointState(
                                 checkpointMetaData,
                                 checkpointOptions,

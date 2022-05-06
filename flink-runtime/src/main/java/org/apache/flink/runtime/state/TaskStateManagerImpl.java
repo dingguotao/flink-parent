@@ -120,6 +120,7 @@ public class TaskStateManagerImpl implements TaskStateManager {
 
         // clouding 注释: 2022/1/11 21:19
         //          ck完毕汇报
+        //          checkpointResponder 是专门汇报state状态的
         checkpointResponder.acknowledgeCheckpoint(
                 jobId, executionAttemptID, checkpointId, checkpointMetrics, acknowledgedState);
     }

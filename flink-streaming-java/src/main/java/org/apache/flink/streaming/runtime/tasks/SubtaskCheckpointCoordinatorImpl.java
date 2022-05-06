@@ -261,6 +261,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
 
         // Step (0): Record the last triggered checkpointId and abort the sync phase of checkpoint
         // if necessary.
+        // clouding 注释: 2022/5/4 18:24
+        //          记录最后触发的checkpointId，并在必要时中止 checkpoint 的同步阶段。
         lastCheckpointId = metadata.getCheckpointId();
         if (checkAndClearAbortedStatus(metadata.getCheckpointId())) {
             // broadcast cancel checkpoint marker to avoid downstream back-pressure due to
@@ -281,14 +283,21 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
 
         // Step (1): Prepare the checkpoint, allow operators to do some pre-barrier work.
         //           The pre-barrier work should be nothing or minimal in the common case.
+        // clouding 注释: 2022/5/4 18:25
+        //          准备检查点，允许操作员进行一些 pre-barrier 工作。
+        //          在一般情况下，pre-barrier 工作应该什么都不做或尽量少做
         operatorChain.prepareSnapshotPreBarrier(metadata.getCheckpointId());
 
         // Step (2): Send the checkpoint barrier downstream
+        // clouding 注释: 2022/5/4 18:26
+        //          将 CheckpointBarrier 发送到下游
         operatorChain.broadcastEvent(
                 new CheckpointBarrier(metadata.getCheckpointId(), metadata.getTimestamp(), options),
                 options.isUnalignedCheckpoint());
 
         // Step (3): Prepare to spill the in-flight buffers for input and output
+        // clouding 注释: 2022/5/4 18:26
+        //          准备溢出 in-flight buffers 以用于输入和输出
         if (options.isUnalignedCheckpoint()) {
             prepareInflightDataSnapshot(metadata.getCheckpointId());
         }
@@ -297,11 +306,15 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
         // progress of the
         // streaming topology
 
+        // clouding 注释: 2022/5/4 18:27
+        //          拍摄状态快照。这在很大程度上应该是异步的，不影响流拓扑的进度
         Map<OperatorID, OperatorSnapshotFutures> snapshotFutures =
                 new HashMap<>(operatorChain.getNumberOfOperators());
         try {
             if (takeSnapshotSync(
                     snapshotFutures, metadata, metrics, options, operatorChain, isRunning)) {
+                // clouding 注释: 2022/5/4 18:34
+                //          如果完成 ck 时的汇报流程
                 finishAndReportAsync(snapshotFutures, metadata, metrics, isRunning);
             } else {
                 cleanup(snapshotFutures, metadata, metrics, new Exception("Checkpoint declined"));
