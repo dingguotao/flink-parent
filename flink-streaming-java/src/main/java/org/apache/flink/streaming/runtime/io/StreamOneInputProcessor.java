@@ -62,6 +62,8 @@ public final class StreamOneInputProcessor<IN> implements StreamInputProcessor {
 
     @Override
     public InputStatus processInput() throws Exception {
+        // clouding 注释: 2022/5/15 17:38
+        //          读取数据的入口, 从输入input,读入到output
         InputStatus status = input.emitNext(output);
 
         if (status == InputStatus.END_OF_INPUT) {

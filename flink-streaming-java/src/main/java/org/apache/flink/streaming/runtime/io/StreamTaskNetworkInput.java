@@ -159,6 +159,8 @@ public final class StreamTaskNetworkInput<T> implements StreamTaskInput<T> {
                 }
 
                 if (result.isFullRecord()) {
+                    // clouding 注释: 2022/5/15 17:39
+                    //          读到了数据,反序列化对象到output里
                     processElement(deserializationDelegate.getInstance(), output);
                     return InputStatus.MORE_AVAILABLE;
                 }
@@ -188,6 +190,8 @@ public final class StreamTaskNetworkInput<T> implements StreamTaskInput<T> {
 
     private void processElement(StreamElement recordOrMark, DataOutput<T> output) throws Exception {
         if (recordOrMark.isRecord()) {
+            // clouding 注释: 2022/5/15 17:39
+            //          output 接到数据,并交给operator处理
             output.emitRecord(recordOrMark.asRecord());
         } else if (recordOrMark.isWatermark()) {
             statusWatermarkValve.inputWatermark(recordOrMark.asWatermark(), lastChannel);

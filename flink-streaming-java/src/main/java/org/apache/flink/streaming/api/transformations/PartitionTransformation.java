@@ -37,6 +37,10 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  *
  * @param <T> The type of the elements that result from this {@code PartitionTransformation}
  */
+/*********************
+ * clouding 注释: 2022/5/14 20:11
+ *  	    用以转换输入元素的分区
+ *********************/
 @Internal
 public class PartitionTransformation<T> extends Transformation<T> {
 
