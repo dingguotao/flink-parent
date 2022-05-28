@@ -174,6 +174,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
     protected final StreamConfig configuration;
 
     /** Our state backend. We use this to create checkpoint streams and a keyed state backend. */
+    // clouding 注释: 2022/5/15 10:03
+    //          状态存储组件
     protected final StateBackend stateBackend;
 
     private final SubtaskCheckpointCoordinator subtaskCheckpointCoordinator;
@@ -490,10 +492,16 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
         disposedOperators = false;
         LOG.debug("Initializing {}.", getName());
 
+        // clouding 注释: 2022/5/15 10:05
+        //          构建 operator chain
         operatorChain = new OperatorChain<>(this, recordWriter);
         headOperator = operatorChain.getHeadOperator();
 
         // task specific initialization
+        // clouding 注释: 2022/5/15 10:05
+        //          task 初始化
+        //          SourceStreamTask 就是启动SourceFunction开始读取数据;
+        //          OneInputStreamTask 和  TwoInputStreamTask 会构建InputGate,从上游的StreamTask读取数据,然后构建StreamTaskNetworkOutput
         init();
 
         // save the work of reloading state, etc, if the task is already canceled
@@ -571,6 +579,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
     @Override
     public final void invoke() throws Exception {
         try {
+            // clouding 注释: 2022/5/15 10:05
+            //          前置构建依赖组件
             beforeInvoke();
 
             // final check to exit early before starting to run
@@ -579,6 +589,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
             }
 
             // let the task do its work
+            // clouding 注释: 2022/5/15 10:06
+            //          循环执行
             runMailboxLoop();
 
             // if this left the run() method cleanly despite the fact that this was canceled,
@@ -587,6 +599,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
                 throw new CancelTaskException();
             }
 
+            // clouding 注释: 2022/5/15 10:06
+            //          关闭和清理部分
             afterInvoke();
         } catch (Throwable invokeException) {
             failing = !canceled;

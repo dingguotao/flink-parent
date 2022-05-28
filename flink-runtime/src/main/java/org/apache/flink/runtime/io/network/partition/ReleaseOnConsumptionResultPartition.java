@@ -29,6 +29,10 @@ import java.io.IOException;
 import static org.apache.flink.util.Preconditions.checkState;
 
 /** ResultPartition that releases itself once all subpartitions have been consumed. */
+/*********************
+ * clouding 注释: 2022/5/15 18:03
+ *  	    批处理模式下,在消费完数据后进行数据回收的Partition
+ *********************/
 public class ReleaseOnConsumptionResultPartition extends ResultPartition {
     private static final int PIPELINED_RESULT_PARTITION_ITSELF = -42;
 

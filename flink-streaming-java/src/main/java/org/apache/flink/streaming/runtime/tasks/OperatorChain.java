@@ -309,7 +309,7 @@ public class OperatorChain<OUT, OP extends StreamOperator<OUT>> implements Strea
             //          初始化 state
             operator.initializeState(streamTaskStateInitializer);
             // clouding 注释: 2022/4/16 21:46
-            //          开启算子
+            //          开启算子,加载udf
             operator.open();
         }
     }

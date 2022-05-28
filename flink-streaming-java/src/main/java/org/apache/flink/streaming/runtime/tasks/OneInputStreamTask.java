@@ -155,6 +155,8 @@ public class OneInputStreamTask<IN, OUT> extends StreamTask<OUT, OneInputStreamO
         public void emitRecord(StreamRecord<IN> record) throws Exception {
             numRecordsIn.inc();
             operator.setKeyContextElement1(record);
+            // clouding 注释: 2022/5/15 17:40
+            //          处理数据,调用udf处理,并交给下游
             operator.processElement(record);
         }
 
