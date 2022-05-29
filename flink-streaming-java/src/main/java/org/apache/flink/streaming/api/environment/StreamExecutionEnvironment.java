@@ -1783,8 +1783,9 @@ public class StreamExecutionEnvironment {
         checkNotNull(
                 executorFactory,
                 "Cannot find compatible factory for specified execution.target (=%s)",
-                configuration.get(DeploymentOptions.TARGET)    CompletableFuture<JobClient> jobClientFuture =
-                         Factory
+                configuration.get(DeploymentOptions.TARGET) );
+        CompletableFuture<JobClient> jobClientFuture =
+                executorFactory
          // 这个executor有很多种模式
                 .getExecutor(configuration)
                                          // TODO 这个是核心流程

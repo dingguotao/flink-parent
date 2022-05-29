@@ -64,10 +64,16 @@ public class FallbackYarnSessionCli extends AbstractCustomCommandLine {
 
     private boolean originalIsActive(CommandLine commandLine) {
         final String jobManagerOption = commandLine.getOptionValue(addressOption.getOpt(), null);
+        // clouding 注释: 2022/5/29 17:45
+        //          -m yarn-cluster参数
         final boolean yarnJobManager = ID.equals(jobManagerOption);
+        // clouding 注释: 2022/5/29 17:45
+        //          命令行中的 -yid
         final boolean hasYarnAppId =
                 commandLine.hasOption(applicationId.getOpt())
                         || configuration.getOptional(YarnConfigOptions.APPLICATION_ID).isPresent();
+        // clouding 注释: 2022/5/29 17:46
+        //          是否有 yarn-properties的配置模式,且配置中有applicationID的key
         final boolean hasYarnExecutor =
                 YarnSessionClusterExecutor.NAME.equalsIgnoreCase(
                                 configuration.get(DeploymentOptions.TARGET))
