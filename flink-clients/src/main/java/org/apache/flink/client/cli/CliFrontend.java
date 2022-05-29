@@ -235,21 +235,7 @@ public class CliFrontend {
 
         // clouding 注释: 2021/9/19 14:35
         //          PackagedProgram 就是把提交应用的jar包信息封装了一下
-        try (PackagedProgram program = getPackagedProgram(programOptions, effectiveConfiguration)) {
-            // TODO 这个是执行程序
-            executeProgram(effectiveConfiguration, program);
-        }
-    }
-
-    /** Get all provided libraries needed to run the program from the ProgramOptions. */
-    private List<URL> getJobJarAndDependencies(ProgramOptions programOptions)
-            throws CliArgsException {
-        // TODO 就是 -c 的类名
-        String entryPointClass = programOptions.getEntryPointClassName();
-        String jarFilePath = programOptions.getJarFilePath();
-
         try {
-            // TODO 这个是执行程序
             executeProgram(effectiveConfiguration, program);
         } finally {
             program.close();
@@ -361,7 +347,6 @@ public class CliFrontend {
             program.close();
         }
     }
-        }
 
     /**
      * Executes the list action.
