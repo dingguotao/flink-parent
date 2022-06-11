@@ -98,9 +98,13 @@ public class HeartbeatManagerSenderImpl<I, O> extends HeartbeatManagerImpl<I, O>
     }
 
     private void requestHeartbeat(HeartbeatMonitor<O> heartbeatMonitor) {
+        // clouding 注释: 2022/6/11 18:25
+        //          生成 payload
         O payload = getHeartbeatListener().retrievePayload(heartbeatMonitor.getHeartbeatTargetId());
         final HeartbeatTarget<O> heartbeatTarget = heartbeatMonitor.getHeartbeatTarget();
 
+        // clouding 注释: 2022/6/11 18:26
+        //          发送心跳逻辑
         heartbeatTarget.requestHeartbeat(getOwnResourceID(), payload);
     }
 }

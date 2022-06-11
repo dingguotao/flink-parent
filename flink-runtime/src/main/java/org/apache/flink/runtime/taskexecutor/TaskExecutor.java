@@ -921,11 +921,15 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     @Override
     public void heartbeatFromJobManager(
             ResourceID resourceID, AllocatedSlotReport allocatedSlotReport) {
+        // clouding 注释: 2022/6/11 18:28
+        //          收到JobMaster发送的心跳请求
         jobManagerHeartbeatManager.requestHeartbeat(resourceID, allocatedSlotReport);
     }
 
     @Override
     public void heartbeatFromResourceManager(ResourceID resourceID) {
+        // clouding 注释: 2022/6/11 18:29
+        //          收到来自ResourceManager的心跳
         resourceManagerHeartbeatManager.requestHeartbeat(resourceID, null);
     }
 

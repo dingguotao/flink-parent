@@ -950,6 +950,8 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
 
                         @Override
                         public void requestHeartbeat(ResourceID resourceID, Void payload) {
+                            // clouding 注释: 2022/6/11 18:29
+                            //          向TaskExecutor 发送心跳
                             taskExecutorGateway.heartbeatFromResourceManager(resourceID);
                         }
                     });
