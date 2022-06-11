@@ -103,6 +103,8 @@ public class TaskSlot<T extends TaskSlotPayload> implements AutoCloseableAsync {
         this.asyncExecutor = Preconditions.checkNotNull(asyncExecutor);
 
         this.tasks = new HashMap<>(4);
+        // clouding 注释: 2022/6/4 18:06
+        //          分配状态为 ALLOCATED
         this.state = TaskSlotState.ALLOCATED;
 
         this.jobId = jobId;

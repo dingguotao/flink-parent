@@ -422,6 +422,8 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
         Preconditions.checkArgument(pipelineJars.size() == 1, "Should only have one jar");
 
         try {
+            // clouding 注释: 2022/5/29 18:24
+            //          部署 per job 模式
             return deployInternal(
                     clusterSpecification,
                     "Flink Application Cluster",
@@ -489,6 +491,8 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
             boolean detached)
             throws Exception {
 
+        // clouding 注释: 2022/5/29 18:25
+        //          kerberos 是否配置
         final UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
         if (HadoopUtils.isKerberosSecurityEnabled(currentUser)) {
             boolean useTicketCache =
@@ -501,23 +505,33 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
             }
         }
 
+        // clouding 注释: 2022/5/29 18:29
+        //          参数检查
         isReadyForDeployment(clusterSpecification);
 
         // ------------------ Check if the specified queue exists --------------------
 
+        // clouding 注释: 2022/5/29 18:29
+        //          检查yarn 队列是否存在
         checkYarnQueues(yarnClient);
 
         // ------------------ Check if the YARN ClusterClient has the requested resources
         // --------------
 
         // Create application via yarnClient
+        // clouding 注释: 2022/5/29 18:31
+        //          通过 yarnApplication 可以获取到yarn的资源情况
         final YarnClientApplication yarnApplication = yarnClient.createApplication();
         final GetNewApplicationResponse appResponse = yarnApplication.getNewApplicationResponse();
 
+        // clouding 注释: 2022/5/29 18:31
+        //          获取所有的 cpu 和 内存
         Resource maxRes = appResponse.getMaximumResourceCapability();
 
         final ClusterResourceDescription freeClusterMem;
         try {
+            // clouding 注释: 2022/5/29 18:32
+            //          获取到空闲的资源
             freeClusterMem = getCurrentFreeClusterResources(yarnClient);
         } catch (YarnException | IOException e) {
             failSessionDuringDeployment(yarnClient, yarnApplication);
@@ -525,11 +539,16 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
                     "Could not retrieve information about free cluster resources.", e);
         }
 
+        // clouding 注释: 2022/5/29 18:34
+        //          这是 yarn 启动container 最小的资源, yarn中的配置 "yarn.scheduler.minimum-allocation-mb",
+        //          默认1024M
         final int yarnMinAllocationMB =
                 yarnConfiguration.getInt(YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB, 0);
 
         final ClusterSpecification validClusterSpecification;
         try {
+            // clouding 注释: 2022/5/29 18:26
+            //          校验 集群资源,是否满足构建 flink集群
             validClusterSpecification =
                     validateClusterResources(
                             clusterSpecification, yarnMinAllocationMB, maxRes, freeClusterMem);
@@ -547,6 +566,8 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
 
         flinkConfiguration.setString(ClusterEntrypoint.EXECUTION_MODE, executionMode.toString());
 
+        // clouding 注释: 2022/5/29 18:36
+        //          向yarn 提交appMaster请求
         ApplicationReport report =
                 startAppMaster(
                         flinkConfiguration,
@@ -563,10 +584,14 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
             logDetachedClusterInformation(yarnApplicationId, LOG);
         }
 
+        // clouding 注释: 2022/5/29 18:37
+        //          配置 集群端口等信息
         setClusterEntrypointInfoToConfig(report);
 
         return () -> {
             try {
+                // clouding 注释: 2022/5/29 18:38
+                //          new rest client,后续通过这个 和 flink 集群 通过rest api交互
                 return new RestClusterClient<>(flinkConfiguration, report.getApplicationId());
             } catch (Exception e) {
                 throw new RuntimeException("Error while creating RestClusterClient.", e);
@@ -581,6 +606,8 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
             ClusterResourceDescription freeClusterResources)
             throws YarnDeploymentException {
 
+        // clouding 注释: 2022/5/29 18:26
+        //          获取JobManager, TaskManager的内存
         int jobManagerMemoryMb = clusterSpecification.getMasterMemoryMB();
         final int taskManagerMemoryMb = clusterSpecification.getTaskManagerMemoryMB();
 
@@ -752,6 +779,8 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
                         getFileReplication());
 
         // The files need to be shipped and added to classpath.
+        // clouding 注释: 2022/5/29 18:45
+        //          shipFiles 就是会上传到 hdfs的文件
         Set<File> systemShipFiles = new HashSet<>(shipFiles.size());
         for (File file : shipFiles) {
             systemShipFiles.add(file.getAbsoluteFile());
@@ -1647,12 +1676,18 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
 
         LOG.info("Found Web Interface {}:{} of application '{}'.", host, port, appId);
 
+        // clouding 注释: 2022/5/29 18:37
+        //          配置 Flink中JobManager的 IP,port
         flinkConfiguration.setString(JobManagerOptions.ADDRESS, host);
         flinkConfiguration.setInteger(JobManagerOptions.PORT, port);
 
+        // clouding 注释: 2022/5/29 18:37
+        //          配置 Flink中Dispatcher的 ip, port
         flinkConfiguration.setString(RestOptions.ADDRESS, host);
         flinkConfiguration.setInteger(RestOptions.PORT, port);
 
+        // clouding 注释: 2022/5/29 18:38
+        //          yarn的 app id
         flinkConfiguration.set(YarnConfigOptions.APPLICATION_ID, ConverterUtils.toString(appId));
 
         setHAClusterIdIfNotSet(flinkConfiguration, appId);

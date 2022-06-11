@@ -640,6 +640,8 @@ public class Task
             // this may involve downloading the job's JAR files and/or classes
             LOG.info("Loading JAR files for task {}.", this);
 
+            // clouding 注释: 2022/6/5 17:14
+            //          加载用户的jar文件
             userCodeClassLoader = createUserCodeClassloader();
             final ExecutionConfig executionConfig =
                     serializedExecutionConfig.deserializeValue(userCodeClassLoader);
@@ -741,6 +743,8 @@ public class Task
             // Make sure the user code classloader is accessible thread-locally.
             // We are setting the correct context class loader before instantiating the invokable
             // so that it is available to the invokable during its entire lifetime.
+            // clouding 注释: 2022/6/5 17:21
+            //          设置线程的类加载器
             executingThread.setContextClassLoader(userCodeClassLoader);
 
             /*********************
@@ -762,18 +766,26 @@ public class Task
 
             // switch to the RUNNING state, if that fails, we have been canceled/failed in the
             // meantime
+            // clouding 注释: 2022/6/5 17:23
+            //          切换状态
             if (!transitionState(ExecutionState.DEPLOYING, ExecutionState.RUNNING)) {
                 throw new CancelTaskException();
             }
 
             // notify everyone that we switched to running
+            // clouding 注释: 2022/6/5 17:23
+            //          通知相关组件, 任务进入 RUNNING状态
             taskManagerActions.updateTaskExecutionState(
                     new TaskExecutionState(jobId, executionId, ExecutionState.RUNNING));
 
             // make sure the user code classloader is accessible thread-locally
+            // clouding 注释: 2022/6/5 17:24
+            //          又设置一遍??
             executingThread.setContextClassLoader(userCodeClassLoader);
 
             // run the invokable
+            // clouding 注释: 2022/6/5 17:24
+            //          启动业务执行
             invokable.invoke();
 
             // make sure, we enter the catch block if the task leaves the invoke() method due
@@ -787,6 +799,8 @@ public class Task
             // ----------------------------------------------------------------
 
             // finish the produced partitions. if this fails, we consider the execution failed.
+            // clouding 注释: 2022/6/5 17:25
+            //          把没有写到下游的数据, 统一执行 flush, 如果flush失败, 抛出异常, task也会失败
             for (ResultPartitionWriter partitionWriter : consumableNotifyingPartitionWriters) {
                 if (partitionWriter != null) {
                     partitionWriter.finish();
@@ -883,6 +897,8 @@ public class Task
                 notifyFatalError(message, tt);
             }
         } finally {
+            // clouding 注释: 2022/6/5 17:27
+            //          释放 内存, 缓存 等等清理工作
             try {
                 LOG.info("Freeing task resources for {} ({}).", taskNameWithSubtask, executionId);
 

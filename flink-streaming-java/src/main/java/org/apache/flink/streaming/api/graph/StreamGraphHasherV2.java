@@ -102,6 +102,8 @@ public class StreamGraphHasherV2 implements StreamGraphHasher {
             visited.add(sourceNodeId);
         }
 
+        // clouding 注释: 2022/5/30 15:17
+        //          广度优先的遍历,也就是层次遍历
         StreamNode currentNode;
         while ((currentNode = remaining.poll()) != null) {
             // Generate the hash code. Because multiple path exist to each
