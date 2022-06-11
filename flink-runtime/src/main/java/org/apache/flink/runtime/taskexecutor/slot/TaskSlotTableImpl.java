@@ -287,6 +287,10 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
         return allocateSlot(index, jobId, allocationId, defaultSlotResourceProfile, slotTimeout);
     }
 
+    // clouding 注释: 2022/6/4 17:48
+    //          allocateSlot 方法逻辑:
+    //              1. 判断本次slot 是否分配过了. 如果分配过了,就标记失败 返回 false;
+    //              2. 否则就执行分配
     @Override
     public boolean allocateSlot(
             int index,
@@ -321,7 +325,7 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
             return duplicatedTaskSlot.getJobId().equals(jobId)
                     && duplicatedTaskSlot.getAllocationId().equals(allocationId);
             // clouding 注释: 2021/9/20 16:50
-            //          下面这个if，和上面判断不是一样吗？？为啥又要判断一次
+            //          下面这个if，和上面判断不是一样吗？？ 可能是到这里时,重复申请分配拿到了该slot
         } else if (allocatedSlots.containsKey(allocationId)) {
             return true;
         }
@@ -354,12 +358,18 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
         }
 
         // update the allocation id to task slot map
+        // clouding 注释: 2022/6/4 18:07
+        //          记录 allocationId 和 taskSlot 映射关系
         allocatedSlots.put(allocationId, taskSlot);
 
         // register a timeout for this slot since it's in state allocated
+        // clouding 注释: 2022/6/4 18:08
+        //          注册一个 超时检测, 如果超时,会把该slot 状态重置
         timerService.registerTimeout(allocationId, slotTimeout.getSize(), slotTimeout.getUnit());
 
         // add this slot to the set of job slots
+        // clouding 注释: 2022/6/4 18:08
+        //          记录 jobID 和 slot 的关系
         Set<AllocationID> slots = slotsPerJob.get(jobId);
 
         if (slots == null) {
@@ -390,6 +400,8 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
             // unregister a potential timeout
             LOG.info("Activate slot {}.", taskSlot.getAllocationId());
 
+            // clouding 注释: 2022/6/4 18:31
+            //          从 timerService 移除该slot的超时机制
             timerService.unregisterTimeout(taskSlot.getAllocationId());
 
             return true;
@@ -619,6 +631,8 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
     // TimeoutListener methods
     // ---------------------------------------------------------------------
 
+    // clouding 注释: 2022/6/4 18:10
+    //          超时检测slot
     @Override
     public void notifyTimeout(AllocationID key, UUID ticket) {
         checkStarted();

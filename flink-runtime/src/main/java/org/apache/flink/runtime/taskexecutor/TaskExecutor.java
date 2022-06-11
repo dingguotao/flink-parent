@@ -1034,7 +1034,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     // ----------------------------------------------------------------------
 
     /**
-     * ResourceManager为JobMaster分配Slot的接口，通知TaskExecutor来分配slot资源
+     * clouding: ResourceManager为JobMaster分配Slot的接口，通知TaskExecutor来分配slot资源
      * @param slotId slot id for the request
      * @param jobId for which to request a slot
      * @param allocationId id for the request
@@ -1096,17 +1096,25 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             //          出错的话，就释放资源
             // free the allocated slot
             try {
+                // clouding 注释: 2022/6/4 17:30
+                //          释放 该 slot
                 taskSlotTable.freeSlot(allocationId);
             } catch (SlotNotFoundException slotNotFoundException) {
                 // slot no longer existent, this should actually never happen, because we've
                 // just allocated the slot. So let's fail hard in this case!
+                // clouding 注释: 2022/6/4 17:31
+                //          释放slot异常, 会导致TaskExecutor的进程退出, 最终走的是 System.exit(FAILURE_EXIT_CODE);
                 onFatalError(slotNotFoundException);
             }
 
             // release local state under the allocation id.
+            // clouding 注释: 2022/6/4 17:34
+            //          如果开启了Local Recovery, 那么久释放申请slot时分配的allocationId 对应的本地State
             localStateStoresManager.releaseLocalStateForAllocationId(allocationId);
 
             // sanity check
+            // clouding 注释: 2022/6/4 17:36
+            //          再次检查slotId对应的Slot是否空闲, 否则就执行异常退出逻辑
             if (!taskSlotTable.isSlotFree(slotId.getSlotNumber())) {
                 onFatalError(new Exception("Could not free slot " + slotId));
             }
@@ -1114,6 +1122,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             return FutureUtils.completedExceptionally(
                     new SlotAllocationException("Could not create new job.", e));
         }
+        // clouding 注释: 2022/6/4 18:13
+        //          slot 信息汇报给JobMaster
 
         if (job.isConnected()) {
             // clouding 注释: 2021/9/13 15:53
@@ -1155,10 +1165,16 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                     taskManagerConfiguration.getTimeout())) {
                 log.info("Allocated slot for {}.", allocationId);
             } else {
+                // clouding 注释: 2022/6/4 17:26
+                //          分配失败,则抛出异常
                 log.info("Could not allocate slot for {}.", allocationId);
                 throw new SlotAllocationException("Could not allocate slot.");
             }
+            // clouding 注释: 2022/6/4 17:26
+            //          下面是 slot 不是 free状态的判断. 产生原因可能是重复申请或者状态乱了等等
         } else if (!taskSlotTable.isAllocated(slotId.getSlotNumber(), jobId, allocationId)) {
+            // clouding 注释: 2022/6/4 17:27
+            //          slot 已经被申请, 且是其他 job
             final String message =
                     "The slot " + slotId + " has already been allocated for a different job.";
 
@@ -1507,6 +1523,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     //  Internal job manager connection methods
     // ------------------------------------------------------------------------
 
+    // clouding 注释: 2022/6/4 18:23
+    //          将slot 提供给 jobMaster
     private void offerSlotsToJobManager(final JobID jobId) {
         jobTable.getConnection(jobId).ifPresent(this::internalOfferSlotsToJobManager);
     }
@@ -1523,6 +1541,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
             final JobMasterGateway jobMasterGateway = jobManagerConnection.getJobManagerGateway();
 
+            // clouding 注释: 2022/6/4 18:23
+            //          获取到所有的该 job 已分配(ALLOCATED) 但不是 ACTIVE 的slot
             final Iterator<TaskSlot<Task>> reservedSlotsIterator =
                     taskSlotTable.getAllocatedSlots(jobId);
             final JobMasterId jobMasterId = jobManagerConnection.getJobMasterId();
@@ -1530,7 +1550,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             final Collection<SlotOffer> reservedSlots = new HashSet<>(2);
 
             // clouding 注释: 2021/9/20 17:13
-            //          把TaskSlot转换成SlotOffer对象，发送给JobManager
+            //          把TaskSlot转换成SlotOffer对象，发送给JobManager,
+            //          slotOffer 主要包含了 allocationId, index, resourceProfile
             while (reservedSlotsIterator.hasNext()) {
                 SlotOffer offer = reservedSlotsIterator.next().generateSlotOffer();
                 reservedSlots.add(offer);
@@ -1543,6 +1564,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                             getResourceID(), reservedSlots, taskManagerConfiguration.getTimeout());
 
             acceptedSlotsFuture.whenCompleteAsync(
+                    // clouding 注释: 2022/6/4 18:28
+                    //          处理 jobMaster 返回的 offerSlot 请求结果
                     handleAcceptedSlotOffers(jobId, jobMasterGateway, jobMasterId, reservedSlots),
                     getMainThreadExecutor());
         } else {
@@ -1574,18 +1597,22 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                             throwable);
 
                     // We encountered an exception. Free the slots and return them to the RM.
+                    // clouding 注释: 2022/6/4 18:29
+                    //          释放slot
                     for (SlotOffer reservedSlot : offeredSlots) {
                         freeSlotInternal(reservedSlot.getAllocationId(), throwable);
                     }
                 }
             } else {
                 // clouding 注释: 2021/9/13 15:56
-                //          如果没有异常
+                //          如果没有异常, 处理JobMaster 接收的SlotOffer
                 // check if the response is still valid
                 if (isJobManagerConnectionValid(jobId, jobMasterId)) {
                     // mark accepted slots active
                     for (SlotOffer acceptedSlot : acceptedSlots) {
                         try {
+                            // clouding 注释: 2022/6/4 18:30
+                            //          标记 Slot的状态 从 ALLOCATED 到 ACTIVE, 并从timerService的超时检测中移除
                             if (!taskSlotTable.markSlotActive(acceptedSlot.getAllocationId())) {
                                 // the slot is either free or releasing at the moment
                                 final String message = "Could not mark slot " + jobId + " active.";
@@ -1596,6 +1623,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                                         new FlinkException(message));
                             }
                         } catch (SlotNotFoundException e) {
+                            // clouding 注释: 2022/6/4 18:32
+                            //          转换状态失败的 slot, 失败处理流程
                             final String message = "Could not mark slot " + jobId + " active.";
                             jobMasterGateway.failSlot(
                                     getResourceID(),
@@ -1608,6 +1637,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
                     final Exception e = new Exception("The slot was rejected by the JobManager.");
 
+                    // clouding 注释: 2022/6/4 18:33
+                    //          剩余的slot,就直接释放
                     for (SlotOffer rejectedSlot : offeredSlots) {
                         freeSlotInternal(rejectedSlot.getAllocationId(), e);
                     }
@@ -1986,6 +2017,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
         checkNotNull(ticket);
 
         if (taskSlotTable.isValidTimeout(allocationId, ticket)) {
+            // clouding 注释: 2022/6/4 18:10
+            //          超时了,需要释放 slot
             freeSlotInternal(
                     allocationId, new Exception("The slot " + allocationId + " has timed out."));
         } else {
