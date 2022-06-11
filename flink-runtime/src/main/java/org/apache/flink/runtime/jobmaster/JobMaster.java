@@ -978,7 +978,7 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
     private void startHeartbeatServices() {
         /*********************
         * clouding 注释: 2022/1/9 22:43
-        *  	     创建TaskManager的心跳管理，执行HeartbeatManagerSenderImpl
+        *  	     创建TaskManager的心跳管理，执行HeartbeatManagerSenderImpl, 创建后就直接启动了
         *********************/
         taskManagerHeartbeatManager =
                 heartbeatServices.createHeartbeatManagerSender(

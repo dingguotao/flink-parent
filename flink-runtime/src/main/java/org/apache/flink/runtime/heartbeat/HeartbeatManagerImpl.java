@@ -131,6 +131,8 @@ public class HeartbeatManagerImpl<I, O> implements HeartbeatManager<I, O> {
     public void monitorTarget(ResourceID resourceID, HeartbeatTarget<O> heartbeatTarget) {
         if (!stopped) {
             if (heartbeatTargets.containsKey(resourceID)) {
+                // clouding 注释: 2022/6/11 17:50
+                //          如果已经包含了这个 id,就不重复创建了
                 log.debug("The target with resource ID {} is already been monitored.", resourceID);
             } else {
                 // clouding 注释: 2021/6/5 20:48
@@ -215,13 +217,19 @@ public class HeartbeatManagerImpl<I, O> implements HeartbeatManager<I, O> {
         if (!stopped) {
             log.debug("Received heartbeat request from {}.", requestOrigin);
 
+            // clouding 注释: 2022/6/11 18:30
+            //          1. reportHeartbeat
             final HeartbeatTarget<O> heartbeatTarget = reportHeartbeat(requestOrigin);
 
             if (heartbeatTarget != null) {
                 if (heartbeatPayload != null) {
+                    // clouding 注释: 2022/6/11 18:34
+                    //          2. 处理发送过来的 heartbeatPayload
                     heartbeatListener.reportPayload(requestOrigin, heartbeatPayload);
                 }
 
+                // clouding 注释: 2022/6/11 18:34
+                //          3. 向发送方回复信息
                 heartbeatTarget.receiveHeartbeat(
                         getOwnResourceID(), heartbeatListener.retrievePayload(requestOrigin));
             }
@@ -231,6 +239,9 @@ public class HeartbeatManagerImpl<I, O> implements HeartbeatManager<I, O> {
     HeartbeatTarget<O> reportHeartbeat(ResourceID resourceID) {
         if (heartbeatTargets.containsKey(resourceID)) {
             HeartbeatMonitor<O> heartbeatMonitor = heartbeatTargets.get(resourceID);
+
+            // clouding 注释: 2022/6/11 18:31
+            //          reportHeartbeat 汇报心跳,就是更新心跳时间
             heartbeatMonitor.reportHeartbeat();
 
             return heartbeatMonitor.getHeartbeatTarget();
