@@ -156,16 +156,20 @@ public class StreamingJobGraphGenerator {
         preValidate();
 
         // make sure that all vertices start immediately
+        // clouding 注释: 2022/6/12 17:06
+        //          流处理默认是 EAGER
         jobGraph.setScheduleMode(streamGraph.getScheduleMode());
 
         // Generate deterministic hashes for the nodes in order to identify them across
         // submission iff they didn't change.
         // clouding 注释: 2022/5/30 15:08
-        //          为每个operator 生成 hash
+        //          为每个 StreamNode 生成 hash, 用来标识 jobVertexId
         Map<Integer, byte[]> hashes =
                 defaultStreamGraphHasher.traverseStreamGraphAndGenerateHashes(streamGraph);
 
         // Generate legacy version hashes for backwards compatibility
+        // clouding 注释: 2022/6/12 17:03
+        //          向前兼容,生成老版本的hash id
         List<Map<Integer, byte[]>> legacyHashes = new ArrayList<>(legacyStreamGraphHashers.size());
         for (StreamGraphHasher hasher : legacyStreamGraphHashers) {
             legacyHashes.add(hasher.traverseStreamGraphAndGenerateHashes(streamGraph));
@@ -175,8 +179,12 @@ public class StreamingJobGraphGenerator {
         //          生成 JobVertex，JobEdge, 并尽可能的把多个节点chain在一起
         setChaining(hashes, legacyHashes);
 
+        // clouding 注释: 2022/6/12 17:08
+        //          设置jobVertex的物理边界
         setPhysicalEdges();
 
+        // clouding 注释: 2022/6/12 17:04
+        //          设置共享的SlotGroup, 同一个coLocation,运行在同一个slot中
         setSlotSharingAndCoLocation();
 
         setManagedMemoryFraction(
@@ -186,14 +194,20 @@ public class StreamingJobGraphGenerator {
                 id -> streamGraph.getStreamNode(id).getMinResources(),
                 id -> streamGraph.getStreamNode(id).getManagedMemoryWeight());
 
+        // clouding 注释: 2022/6/12 17:04
+        //          checkpoint 信息
         configureCheckpointing();
 
         jobGraph.setSavepointRestoreSettings(streamGraph.getSavepointRestoreSettings());
 
+        // clouding 注释: 2022/6/12 17:04
+        //          设置用户的 jar 文件
         JobGraphUtils.addUserArtifactEntries(streamGraph.getUserArtifacts(), jobGraph);
 
         // set the ExecutionConfig last when it has been finalized
         try {
+            // clouding 注释: 2022/6/12 17:05
+            //          设置执行环境配置
             jobGraph.setExecutionConfig(streamGraph.getExecutionConfig());
         } catch (IOException e) {
             throw new IllegalConfigurationException(
@@ -266,6 +280,8 @@ public class StreamingJobGraphGenerator {
      * <p>This will recursively create all {@link JobVertex} instances.
      */
     private void setChaining(Map<Integer, byte[]> hashes, List<Map<Integer, byte[]>> legacyHashes) {
+        // clouding 注释: 2022/6/12 17:19
+        //          从source节点,开始生成 operatorChain
         for (Integer sourceNodeId : streamGraph.getSourceIDs()) {
             createChain(
                     sourceNodeId,
@@ -277,11 +293,19 @@ public class StreamingJobGraphGenerator {
     private List<StreamEdge> createChain(
             Integer currentNodeId, int chainIndex, OperatorChainInfo chainInfo) {
         Integer startNodeId = chainInfo.getStartNodeId();
+        // clouding 注释: 2022/6/12 17:19
+        //          builtVertices 是存放构建过的 StreamNode
         if (!builtVertices.contains(startNodeId)) {
 
+            // clouding 注释: 2022/6/12 17:20
+            //          chain的出边
             List<StreamEdge> transitiveOutEdges = new ArrayList<StreamEdge>();
 
+            // clouding 注释: 2022/6/12 17:20
+            //          可以 chain的edge
             List<StreamEdge> chainableOutputs = new ArrayList<StreamEdge>();
+            // clouding 注释: 2022/6/12 20:59
+            //          不可以chain的edge
             List<StreamEdge> nonChainableOutputs = new ArrayList<StreamEdge>();
 
             StreamNode currentNode = streamGraph.getStreamNode(currentNodeId);
@@ -307,13 +331,19 @@ public class StreamingJobGraphGenerator {
                         chainInfo.newChain(nonChainable.getTargetId()));
             }
 
+            // clouding 注释: 2022/6/12 21:44
+            //          当前节点的名称 aaa  ->  bbb, 这种格式
             chainedNames.put(currentNodeId, createChainedName(currentNodeId, chainableOutputs));
+            // clouding 注释: 2022/6/12 21:44
+            //          chain的最小和首选资源
             chainedMinResources.put(
                     currentNodeId, createChainedMinResources(currentNodeId, chainableOutputs));
             chainedPreferredResources.put(
                     currentNodeId,
                     createChainedPreferredResources(currentNodeId, chainableOutputs));
 
+            // clouding 注释: 2022/6/12 21:42
+            //          生成operator id,放进 chainInfo中
             OperatorID currentOperatorId =
                     chainInfo.addNodeToChain(currentNodeId, chainedNames.get(currentNodeId));
 
@@ -327,8 +357,12 @@ public class StreamingJobGraphGenerator {
                         .addOutputFormat(currentOperatorId, currentNode.getOutputFormat());
             }
 
+            // clouding 注释: 2022/6/12 21:45
+            //          当前节点如果是startNodeId, 就创建 jobVertex, 返回StreamConfig, 否则创建一个 空的 StreamConfig
             StreamConfig config =
                     currentNodeId.equals(startNodeId)
+                            // clouding 注释: 2022/6/12 21:59
+                            //          创建 JobVertex
                             ? createJobVertex(startNodeId, chainInfo)
                             : new StreamConfig(new Configuration());
 
@@ -336,6 +370,8 @@ public class StreamingJobGraphGenerator {
 
             if (currentNodeId.equals(startNodeId)) {
 
+                // clouding 注释: 2022/6/12 21:48
+                //          startNodeId 是chain的开始节点
                 config.setChainStart();
                 config.setChainIndex(0);
                 config.setOperatorName(streamGraph.getStreamNode(currentNodeId).getOperatorName());
@@ -345,12 +381,18 @@ public class StreamingJobGraphGenerator {
                 }
 
                 config.setOutEdgesInOrder(transitiveOutEdges);
+                // clouding 注释: 2022/6/12 21:54
+                //          将chain中所有子节点的streamConfig 写入到headOfChain节点, 只有头结点才生成这个
                 config.setTransitiveChainedTaskConfigs(chainedConfigs.get(startNodeId));
 
             } else {
+                // clouding 注释: 2022/6/12 21:55
+                //          chain的子节点场景
                 chainedConfigs.computeIfAbsent(
                         startNodeId, k -> new HashMap<Integer, StreamConfig>());
 
+                // clouding 注释: 2022/6/12 21:55
+                //          chain中的索引
                 config.setChainIndex(chainIndex);
                 StreamNode node = streamGraph.getStreamNode(currentNodeId);
                 config.setOperatorName(node.getOperatorName());
@@ -1116,6 +1158,8 @@ public class StreamingJobGraphGenerator {
         }
 
         private OperatorID addNodeToChain(int currentNodeId, String operatorName) {
+            // clouding 注释: 2022/6/12 21:42
+            //          生成operator id
             List<Tuple2<byte[], byte[]>> operatorHashes =
                     chainedOperatorHashes.computeIfAbsent(startNodeId, k -> new ArrayList<>());
 

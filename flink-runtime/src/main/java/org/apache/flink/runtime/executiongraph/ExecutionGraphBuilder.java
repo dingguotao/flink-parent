@@ -175,18 +175,18 @@ public class ExecutionGraphBuilder {
                             //          核心的 new ExecutionGraph
                             : new ExecutionGraph(
                                     jobInformation,
-                                    futureExecutor,
-                                    ioExecutor,
-                                    rpcTimeout,
-                                    restartStrategy,
-                                    maxPriorAttemptsHistoryLength,
-                                    failoverStrategyFactory,
-                                    slotProvider,
+                                    futureExecutor, // 异步执行线程池
+                                    ioExecutor,  // io操作线程池
+                                    rpcTimeout, // rpc调用超时时间
+                                    restartStrategy,    // 重启策略
+                                    maxPriorAttemptsHistoryLength,  // 保留历史记录的最大重试次数
+                                    failoverStrategyFactory,    // 失败重试工厂
+                                    slotProvider,   // 向rm申请资源对象
                                     classLoader,
-                                    blobWriter,
-                                    allocationTimeout,
-                                    partitionReleaseStrategyFactory,
-                                    shuffleMaster,
+                                    blobWriter, // 用以将数据写入blob server
+                                    allocationTimeout,  // 分配请求时间
+                                    partitionReleaseStrategyFactory,    //  intermediateResultPartition释放工厂类
+                                    shuffleMaster,  // 用以注册intermediateResultPartition, 向JobMaster注册数据分区
                                     partitionTracker,
                                     jobGraph.getScheduleMode());
         } catch (IOException e) {
@@ -214,6 +214,8 @@ public class ExecutionGraphBuilder {
         // clouding 注释: 2021/9/19 22:27
         //          处理 JobGraph中的每一个Vertex，把JobVertex初始化
         for (JobVertex vertex : jobGraph.getVertices()) {
+            // clouding 注释: 2022/6/25 17:59
+            //          获取节点的调用类名
             String executableClass = vertex.getInvokableClassName();
             if (executableClass == null || executableClass.isEmpty()) {
                 throw new JobSubmissionException(
@@ -226,6 +228,8 @@ public class ExecutionGraphBuilder {
             }
 
             try {
+                // clouding 注释: 2022/6/25 19:23
+                //          根据不用节点类型,调用job启动时的逻辑
                 vertex.initializeOnMaster(classLoader);
             } catch (Throwable t) {
                 throw new JobExecutionException(
@@ -240,6 +244,8 @@ public class ExecutionGraphBuilder {
                 (System.nanoTime() - initMasterStart) / 1_000_000);
 
         // topologically sort the job vertices and attach the graph to the existing one
+        // clouding 注释: 2022/6/25 19:23
+        //          按照顺序,获取所有的JobVertex
         List<JobVertex> sortedTopology = jobGraph.getVerticesSortedTopologicallyFromSources();
         if (log.isDebugEnabled()) {
             log.debug(
@@ -249,7 +255,7 @@ public class ExecutionGraphBuilder {
                     jobId);
         }
         // clouding 注释: 2021/9/19 22:16
-        //          把JobGraph转换成ExecutionGraph。
+        //          把JobGraph转换成ExecutionGraph入口
         executionGraph.attachJobGraph(sortedTopology);
 
         if (log.isDebugEnabled()) {
@@ -276,6 +282,8 @@ public class ExecutionGraphBuilder {
             CompletedCheckpointStore completedCheckpoints;
             CheckpointIDCounter checkpointIdCounter;
             try {
+                // clouding 注释: 2022/6/25 19:26
+                //          获取checkpoint保留的个数
                 int maxNumberOfCheckpointsToRetain =
                         jobManagerConfig.getInteger(CheckpointingOptions.MAX_RETAINED_CHECKPOINTS);
 
@@ -302,6 +310,8 @@ public class ExecutionGraphBuilder {
             }
 
             // Maximum number of remembered checkpoints
+            // clouding 注释: 2022/6/25 19:26
+            //          获取历史记录checkpoint最大的数量
             int historySize = jobManagerConfig.getInteger(WebOptions.CHECKPOINTS_HISTORY_SIZE);
 
             CheckpointStatsTracker checkpointStatsTracker =
@@ -312,6 +322,8 @@ public class ExecutionGraphBuilder {
                             metrics);
 
             // load the state backend from the application settings
+            // clouding 注释: 2022/6/25 20:16
+            //          state backend的配置
             final StateBackend applicationConfiguredBackend;
             final SerializedValue<StateBackend> serializedAppConfigured =
                     snapshotSettings.getDefaultStateBackend();
@@ -340,6 +352,8 @@ public class ExecutionGraphBuilder {
 
             // instantiate the user-defined checkpoint hooks
 
+            // clouding 注释: 2022/6/25 20:17
+            //          实例化用户checkpoint的钩子,在触发或者恢复快照时执行
             final SerializedValue<MasterTriggerRestoreHook.Factory[]> serializedHooks =
                     snapshotSettings.getMasterHooks();
             final List<MasterTriggerRestoreHook<?>> hooks;
@@ -388,6 +402,8 @@ public class ExecutionGraphBuilder {
 
         // create all the metrics for the Execution Graph
 
+        // clouding 注释: 2022/6/25 20:46
+        //          监控任务的metric
         metrics.gauge(RestartTimeGauge.METRIC_NAME, new RestartTimeGauge(executionGraph));
         metrics.gauge(DownTimeGauge.METRIC_NAME, new DownTimeGauge(executionGraph));
         metrics.gauge(UpTimeGauge.METRIC_NAME, new UpTimeGauge(executionGraph));

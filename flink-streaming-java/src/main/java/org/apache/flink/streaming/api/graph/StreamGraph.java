@@ -537,6 +537,9 @@ public class StreamGraph implements Pipeline {
                     "Already has virtual partition node with id " + virtualId);
         }
 
+        // clouding 注释: 2022/6/12 16:28
+        //          virtualPartitionNodes 专门放partitioner,
+        //          originalId是上游的id
         virtualPartitionNodes.put(virtualId, new Tuple3<>(originalId, partitioner, shuffleMode));
     }
 
@@ -580,7 +583,9 @@ public class StreamGraph implements Pipeline {
             OutputTag outputTag,
             ShuffleMode shuffleMode) {
 
-        // todo 这里是虚拟节点。
+        // clouding 注释: 2022/6/12 16:00
+        //          检查上游是否是虚拟节点,虚拟节点就意味着有连接关系,
+        //          有3种的虚拟节点 virtualSideOutputNodes virtualSelectNodes virtualPartitionNodes
         if (virtualSideOutputNodes.containsKey(upStreamVertexID)) {
             int virtualId = upStreamVertexID;
             upStreamVertexID = virtualSideOutputNodes.get(virtualId).f0;
@@ -612,6 +617,8 @@ public class StreamGraph implements Pipeline {
                     shuffleMode);
         } else if (virtualPartitionNodes.containsKey(upStreamVertexID)) {
             int virtualId = upStreamVertexID;
+            // clouding 注释: 2022/6/12 16:32
+            //          向上找了一个节点
             upStreamVertexID = virtualPartitionNodes.get(virtualId).f0;
             if (partitioner == null) {
                 partitioner = virtualPartitionNodes.get(virtualId).f1;
