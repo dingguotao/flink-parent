@@ -299,6 +299,8 @@ public class StreamGraphGenerator {
         } else if (transform instanceof CoFeedbackTransformation<?>) {
             transformedIds = transformCoFeedback((CoFeedbackTransformation<?>) transform);
         } else if (transform instanceof PartitionTransformation<?>) {
+            // clouding 注释: 2022/6/12 16:28
+            //          分区器
             transformedIds = transformPartition((PartitionTransformation<?>) transform);
         } else if (transform instanceof SideOutputTransformation<?>) {
             transformedIds = transformSideOutput((SideOutputTransformation<?>) transform);
@@ -373,12 +375,19 @@ public class StreamGraphGenerator {
      * property. @see StreamGraphGenerator
      */
     private <T> Collection<Integer> transformPartition(PartitionTransformation<T> partition) {
+        // clouding 注释: 2022/6/12 16:29
+        //          获取到上游的 transformations
         Transformation<T> input = partition.getInput();
         List<Integer> resultIds = new ArrayList<>();
 
+        // clouding 注释: 2022/6/12 16:30
+        //          拿到上游的所有 transformedIds
         Collection<Integer> transformedIds = transform(input);
         for (Integer transformedId : transformedIds) {
             int virtualId = Transformation.getNewNodeId();
+            // clouding 注释: 2022/6/12 11:25
+            //          添加虚拟node, 会在他的下游节点添加进去时候,增加连接关系
+            //          这里带进去了partitioner
             streamGraph.addVirtualPartitionNode(
                     transformedId,
                     virtualId,
@@ -732,9 +741,13 @@ public class StreamGraphGenerator {
             return alreadyTransformed.get(transform);
         }
 
+        // clouding 注释: 2022/6/12 11:21
+        //          确定是否共享slot
         String slotSharingGroup =
                 determineSlotSharingGroup(transform.getSlotSharingGroup(), inputIds);
 
+        // clouding 注释: 2022/6/12 11:22
+        //          增加streamNode
         streamGraph.addOperator(
                 transform.getId(),
                 slotSharingGroup,
@@ -744,6 +757,8 @@ public class StreamGraphGenerator {
                 transform.getOutputType(),
                 transform.getName());
 
+        // clouding 注释: 2022/6/12 11:24
+        //          设置 stateKeySelector
         if (transform.getStateKeySelector() != null) {
             TypeSerializer<?> keySerializer =
                     transform.getStateKeyType().createSerializer(executionConfig);
@@ -751,6 +766,8 @@ public class StreamGraphGenerator {
                     transform.getId(), transform.getStateKeySelector(), keySerializer);
         }
 
+        // clouding 注释: 2022/6/12 11:22
+        //          并行度设置
         int parallelism =
                 transform.getParallelism() != ExecutionConfig.PARALLELISM_DEFAULT
                         ? transform.getParallelism()
@@ -759,6 +776,8 @@ public class StreamGraphGenerator {
         streamGraph.setMaxParallelism(transform.getId(), transform.getMaxParallelism());
 
         for (Integer inputId : inputIds) {
+            // clouding 注释: 2022/6/12 11:22
+            //          添加 edge
             streamGraph.addEdge(inputId, transform.getId(), 0);
         }
 

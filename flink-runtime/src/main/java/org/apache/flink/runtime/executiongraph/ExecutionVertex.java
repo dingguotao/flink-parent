@@ -420,26 +420,42 @@ public class ExecutionVertex
 
     private ExecutionEdge[] connectPointwise(
             IntermediateResultPartition[] sourcePartitions, int inputNumber) {
+        // clouding 注释: 2022/6/26 00:42
+        //          numSources 是上游 intermediateResult的partition的数量,
+        //          parallelism 当前节点的并行度
         final int numSources = sourcePartitions.length;
         final int parallelism = getTotalNumberOfParallelSubtasks();
 
         // simple case same number of sources as targets
+        // clouding 注释: 2022/6/26 00:43
+        //          上下游一致,就一对一连接
         if (numSources == parallelism) {
             return new ExecutionEdge[] {
                 new ExecutionEdge(sourcePartitions[subTaskIndex], this, inputNumber)
             };
         } else if (numSources < parallelism) {
+            // clouding 注释: 2022/6/26 00:44
+            //          上游的 numSources 少, 当前的 parallelism 多, 就是一对多的情况
 
             int sourcePartition;
 
             // check if the pattern is regular or irregular
             // we use int arithmetics for regular, and floating point with rounding for irregular
+            // clouding 注释: 2022/6/26 00:44
+            //          如果下游是上游的倍数关系,比如上游2个,下游4个, 那么就一对二, 那么
+            //         上游    下游
+            //          0 对应 0 1,
+            //          1 对应 2 3
             if (parallelism % numSources == 0) {
                 // same number of targets per source
+                // clouding 注释: 2022/6/26 00:45
+                //          每个source 对应的下游分区
                 int factor = parallelism / numSources;
                 sourcePartition = subTaskIndex / factor;
             } else {
                 // different number of targets per source
+                // clouding 注释: 2022/6/26 00:46
+                //          不成倍数关系,比如上游的2个,下游是3个
                 float factor = ((float) parallelism) / numSources;
                 sourcePartition = (int) (subTaskIndex / factor);
             }
@@ -448,8 +464,17 @@ public class ExecutionVertex
                 new ExecutionEdge(sourcePartitions[sourcePartition], this, inputNumber)
             };
         } else {
+            // clouding 注释: 2022/6/26 00:44
+            //          上游的 numSources 多, 当前的 parallelism 少,也就是多对一的
             if (numSources % parallelism == 0) {
+                // clouding 注释: 2022/6/26 00:54
+                //          成倍数情况
                 // same number of targets per source
+                // clouding 注释: 2022/6/26 00:54
+                //          例如上游是4个,下游是2个,那么
+                //          上游     下游
+                //          0, 1 对应 0,
+                //          2, 3 对应 1
                 int factor = numSources / parallelism;
                 int startIndex = subTaskIndex * factor;
 
@@ -460,6 +485,8 @@ public class ExecutionVertex
                 }
                 return edges;
             } else {
+                // clouding 注释: 2022/6/26 00:58
+                //          不成倍数
                 float factor = ((float) numSources) / parallelism;
 
                 int start = (int) (subTaskIndex * factor);

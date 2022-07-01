@@ -100,11 +100,12 @@ public class DefaultExecutionSlotAllocator implements ExecutionSlotAllocator {
         // clouding 注释: 2021/9/20 14:59
         //          遍历所有的 executionVertexSchedulingRequirements，如果申请完成，就放入 slotExecutionVertexAssignments，
         //          上面创建了slotExecutionVertexAssignments这个集合
-        for (ExecutionVertexSchedulingRequirements schedulingRequirements :
-                executionVertexSchedulingRequirements) {
+        for (ExecutionVertexSchedulingRequirements schedulingRequirements : executionVertexSchedulingRequirements) {
             final ExecutionVertexID executionVertexId =
                     schedulingRequirements.getExecutionVertexId();
             final SlotRequestId slotRequestId = new SlotRequestId();
+            // clouding 注释: 2022/6/26 18:18
+            //          默认的group是default
             final SlotSharingGroupId slotSharingGroupId =
                     schedulingRequirements.getSlotSharingGroupId();
 

@@ -847,6 +847,8 @@ public class ExecutionGraph implements AccessExecutionGraph {
         //          把 JobVertex 转换成了 ExecutionJobVertex
         for (JobVertex jobVertex : topologiallySorted) {
 
+            // clouding 注释: 2022/6/25 20:59
+            //          是否是空或者isStoppable
             if (jobVertex.isInputVertex() && !jobVertex.isStoppable()) {
                 this.isStoppable = false;
             }
@@ -862,6 +864,8 @@ public class ExecutionGraph implements AccessExecutionGraph {
                             globalModVersion,
                             createTimestamp);
 
+            // clouding 注释: 2022/6/25 22:34
+            //          将JobEdge构建ExecutionEdge, 将ExecutionVertex和 IntermediateResult 进行关联
             ejv.connectToPredecessors(this.intermediateResults);
 
             ExecutionJobVertex previousTask = this.tasks.putIfAbsent(jobVertex.getID(), ejv);

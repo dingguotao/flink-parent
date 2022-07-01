@@ -158,9 +158,13 @@ public class ExecutionJobVertex
         this.graph = graph;
         this.jobVertex = jobVertex;
 
+        // clouding 注释: 2022/6/25 21:04
+        //          获取并行度
         int vertexParallelism = jobVertex.getParallelism();
         int numTaskVertices = vertexParallelism > 0 ? vertexParallelism : defaultParallelism;
 
+        // clouding 注释: 2022/6/25 21:04
+        //          设置最大并行度,如果有配置,就使用配置的,如果没有,就使用默认的
         final int configuredMaxParallelism = jobVertex.getMaxParallelism();
 
         this.maxParallelismConfigured = (VALUE_NOT_SET != configuredMaxParallelism);
@@ -172,6 +176,8 @@ public class ExecutionJobVertex
                         : KeyGroupRangeAssignment.computeDefaultMaxParallelism(numTaskVertices));
 
         // verify that our parallelism is not higher than the maximum parallelism
+        // clouding 注释: 2022/6/25 21:05
+        //          并行度是不能超过最大并行度的
         if (numTaskVertices > maxParallelism) {
             throw new JobException(
                     String.format(
@@ -185,6 +191,8 @@ public class ExecutionJobVertex
 
         this.taskVertices = new ExecutionVertex[numTaskVertices];
 
+        // clouding 注释: 2022/6/25 21:12
+        //          创建输入
         this.inputs = new ArrayList<>(jobVertex.getInputs().size());
 
         // take the sharing group
@@ -198,6 +206,8 @@ public class ExecutionJobVertex
         }
 
         // create the intermediate results
+        // clouding 注释: 2022/6/25 21:12
+        //          创建输出
         this.producedDataSets =
                 new IntermediateResult[jobVertex.getNumberOfProducedIntermediateDataSets()];
 
@@ -258,6 +268,8 @@ public class ExecutionJobVertex
         // set up the input splits, if the vertex has any
         try {
             @SuppressWarnings("unchecked")
+                    // clouding 注释: 2022/6/25 21:47
+                    //          对可切分的数据源进行切分
             InputSplitSource<InputSplit> splitSource =
                     (InputSplitSource<InputSplit>) jobVertex.getInputSplitSource();
 
@@ -483,6 +495,8 @@ public class ExecutionJobVertex
 
             int consumerIndex = ires.registerConsumer();
 
+            // clouding 注释: 2022/6/26 01:00
+            //          task之间的数据交换逻辑,将下游和上游对接
             for (int i = 0; i < parallelism; i++) {
                 ExecutionVertex ev = taskVertices[i];
                 ev.connectSource(num, ires, edge, consumerIndex);
