@@ -112,6 +112,8 @@ public abstract class CheckpointBarrierHandler implements Closeable {
                         .setAlignmentDurationNanos(alignmentDurationNanos)
                         .setCheckpointStartDelayNanos(latestCheckpointStartDelayNanos);
 
+        // clouding 注释: 2022/7/3 18:06
+        //          toNotifyOnCheckpoint 就是 AbstractInvokable
         toNotifyOnCheckpoint.triggerCheckpointOnBarrier(
                 checkpointMetaData, checkpointBarrier.getCheckpointOptions(), checkpointMetrics);
     }

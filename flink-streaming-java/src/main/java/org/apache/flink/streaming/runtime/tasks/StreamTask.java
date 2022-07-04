@@ -905,6 +905,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
             CheckpointMetrics checkpointMetrics =
                     new CheckpointMetrics().setAlignmentDurationNanos(0L);
 
+            // clouding 注释: 2022/7/3 16:59
+            //          unaligned checkpoint 写入buffer数据
             subtaskCheckpointCoordinator.initCheckpoint(
                     checkpointMetaData.getCheckpointId(), checkpointOptions);
 
