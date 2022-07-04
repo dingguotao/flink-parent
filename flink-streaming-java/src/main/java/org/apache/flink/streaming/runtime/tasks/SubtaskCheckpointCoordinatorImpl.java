@@ -631,6 +631,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
             ChannelStateWriteResult channelStateWriteResult,
             CheckpointStreamFactory storage)
             throws Exception {
+        // clouding 注释: 2022/7/3 19:02
+        //          同步操作, 做checkpoint,主要是执行 snapshotState
         OperatorSnapshotFutures snapshotInProgress =
                 checkpointStreamOperator(
                         op, checkpointMetaData, checkpointOptions, storage, isRunning);
