@@ -61,6 +61,8 @@ class ChannelStateCheckpointWriter {
     private final CheckpointStateOutputStream checkpointStream;
     private final ChannelStateWriteResult result;
     private final Map<InputChannelInfo, StateContentMetaInfo> inputChannelOffsets = new HashMap<>();
+    // clouding 注释: 2022/7/7 00:03
+    //          用来存储写入的buffer信息
     private final Map<ResultSubpartitionInfo, StateContentMetaInfo> resultSubpartitionOffsets =
             new HashMap<>();
     private final ChannelStateSerializer serializer;

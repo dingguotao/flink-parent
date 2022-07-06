@@ -68,6 +68,9 @@ public class CheckpointBarrierUnaligner extends CheckpointBarrierHandler {
      * Tag the state of which input channel has pending in-flight buffers; that is, already received
      * buffers that predate the checkpoint barrier of the current checkpoint.
      */
+    // clouding 注释: 2022/7/5 21:00
+    //          inflight buffer指的是input channel的receivedBuffer范围内，
+    //          在id为当前checkpoint id的barrier之后的所有数据buffer
     private final Map<InputChannelInfo, Boolean> hasInflightBuffers;
 
     private int numBarrierConsumed;
@@ -112,19 +115,28 @@ public class CheckpointBarrierUnaligner extends CheckpointBarrierHandler {
     public void processBarrier(CheckpointBarrier receivedBarrier, InputChannelInfo channelInfo)
             throws Exception {
         long barrierId = receivedBarrier.getId();
+        // clouding 注释: 2022/7/5 21:04
+        //          checkpoint id太老了
         if (currentConsumedCheckpointId > barrierId
                 || (currentConsumedCheckpointId == barrierId && !isCheckpointPending())) {
             // ignore old and cancelled barriers
             return;
         }
+        // clouding 注释: 2022/7/5 21:04
+        //          说明新到了一个 checkpoint
         if (currentConsumedCheckpointId < barrierId) {
             currentConsumedCheckpointId = barrierId;
             numBarrierConsumed = 0;
             hasInflightBuffers
                     .entrySet()
+                    // clouding 注释: 2022/7/6 11:50
+                    //          默认给的 true
                     .forEach(hasInflightBuffer -> hasInflightBuffer.setValue(true));
         }
         if (currentConsumedCheckpointId == barrierId) {
+            // clouding 注释: 2022/7/5 21:06
+            //          如果当前进行的checkpoint id等于接收到的barrier id，
+            //          说明channel中的inflight buffer已经处理完毕, 就设置为false
             hasInflightBuffers.put(channelInfo, false);
             numBarrierConsumed++;
         }
@@ -247,9 +259,13 @@ public class CheckpointBarrierUnaligner extends CheckpointBarrierHandler {
          * Tag the state of which input channel has not received the barrier, such that newly
          * arriving buffers need to be written in the unaligned checkpoint.
          */
+        // clouding 注释: 2022/7/6 11:53
+        //          用来存储还没有接收到的barrier的inputChannel信息
         private final Map<InputChannelInfo, Boolean> storeNewBuffers;
 
         /** The number of input channels which has received or processed the barrier. */
+        // clouding 注释: 2022/7/6 11:54
+        //          接收到的barrier
         private int numBarriersReceived;
 
         /** A future indicating that all barriers of the a given checkpoint have been read. */
@@ -289,6 +305,8 @@ public class CheckpointBarrierUnaligner extends CheckpointBarrierHandler {
                 CheckpointBarrier barrier, InputChannelInfo channelInfo) throws IOException {
             long barrierId = barrier.getId();
 
+            // clouding 注释: 2022/7/6 11:58
+            //          来了个新的checkpoint
             if (currentReceivedCheckpointId < barrierId) {
                 handleNewCheckpoint(barrier);
                 handler.executeInTaskThread(
@@ -307,6 +325,8 @@ public class CheckpointBarrierUnaligner extends CheckpointBarrierHandler {
                 storeNewBuffers.put(channelInfo, false);
 
                 if (++numBarriersReceived == numOpenChannels) {
+                    // clouding 注释: 2022/7/6 14:30
+                    //          所有的都收到了,会在 ThreadSafeUnaligner.getAllBarriersReceivedFuture 返回
                     allBarriersReceivedFuture.complete(null);
                 }
             }
@@ -314,6 +334,8 @@ public class CheckpointBarrierUnaligner extends CheckpointBarrierHandler {
 
         @Override
         public synchronized void notifyBufferReceived(Buffer buffer, InputChannelInfo channelInfo) {
+            // clouding 注释: 2022/7/6 14:12
+            //          如果还没收到这个channel的barrier,就写入inputData
             if (storeNewBuffers.get(channelInfo)) {
                 checkpointCoordinator
                         .getChannelStateWriter()
@@ -323,6 +345,8 @@ public class CheckpointBarrierUnaligner extends CheckpointBarrierHandler {
                                 ChannelStateWriter.SEQUENCE_NUMBER_UNKNOWN,
                                 ofElement(buffer, Buffer::recycleBuffer));
             } else {
+                // clouding 注释: 2022/7/6 14:12
+                //          否则就回收该buffer
                 buffer.recycleBuffer();
             }
         }
@@ -335,6 +359,8 @@ public class CheckpointBarrierUnaligner extends CheckpointBarrierHandler {
         private synchronized void handleNewCheckpoint(CheckpointBarrier barrier)
                 throws IOException {
             long barrierId = barrier.getId();
+            // clouding 注释: 2022/7/6 11:59
+            //          上一个的barrier是否全部到了
             if (!allBarriersReceivedFuture.isDone()) {
                 CheckpointException exception =
                         new CheckpointException(
@@ -351,17 +377,27 @@ public class CheckpointBarrierUnaligner extends CheckpointBarrierHandler {
                     // let the task know we are not completing this
                     final long currentCheckpointId = currentReceivedCheckpointId;
                     handler.executeInTaskThread(
+                            // clouding 注释: 2022/7/6 12:01
+                            //          终止上一个checkpoint
                             () -> handler.notifyAbort(currentCheckpointId, exception),
                             "notifyAbort");
                 }
                 allBarriersReceivedFuture.completeExceptionally(exception);
             }
 
+            // clouding 注释: 2022/7/6 12:00
+            //          处理这个新的checkpoint, 设置开始时间
             handler.markCheckpointStart(barrier.getTimestamp());
             currentReceivedCheckpointId = barrierId;
+            // clouding 注释: 2022/7/6 12:02
+            //          初始化storeNewBuffers，设置所有的input channel都没有收到barrier
             storeNewBuffers.entrySet().forEach(storeNewBuffer -> storeNewBuffer.setValue(true));
             numBarriersReceived = 0;
+            // clouding 注释: 2022/7/6 14:29
+            //          标记是否所有的input的barrier都收到了
             allBarriersReceivedFuture = new CompletableFuture<>();
+            // clouding 注释: 2022/7/6 12:02
+            //          开始这个checkpoint
             checkpointCoordinator.initCheckpoint(barrierId, barrier.getCheckpointOptions());
         }
 

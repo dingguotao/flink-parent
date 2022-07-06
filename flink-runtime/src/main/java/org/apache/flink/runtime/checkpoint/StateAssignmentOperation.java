@@ -167,6 +167,7 @@ public class StateAssignmentOperation {
                         operatorIDs,
                         OperatorSubtaskState::getRawOperatorState,
                         RoundRobinOperatorStateRepartitioner.INSTANCE);
+
         final Map<OperatorInstanceID, List<InputChannelStateHandle>> newInputChannelState =
                 reDistributePartitionableStates(
                         operatorStates,
@@ -174,6 +175,7 @@ public class StateAssignmentOperation {
                         operatorIDs,
                         OperatorSubtaskState::getInputChannelState,
                         channelStateNonRescalingRepartitioner("input channel"));
+
         final Map<OperatorInstanceID, List<ResultSubpartitionStateHandle>>
                 newResultSubpartitionState =
                         reDistributePartitionableStates(

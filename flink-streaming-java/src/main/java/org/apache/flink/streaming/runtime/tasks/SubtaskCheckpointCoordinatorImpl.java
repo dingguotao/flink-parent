@@ -265,6 +265,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
         //          记录最后触发的checkpointId，并在必要时中止 checkpoint 的同步阶段。
         lastCheckpointId = metadata.getCheckpointId();
         if (checkAndClearAbortedStatus(metadata.getCheckpointId())) {
+            // clouding 注释: 2022/7/6 14:17
+            //          这里是abort的checkpoint
             // broadcast cancel checkpoint marker to avoid downstream back-pressure due to
             // checkpoint barrier align.
             operatorChain.broadcastEvent(new CancelCheckpointMarker(metadata.getCheckpointId()));
@@ -389,6 +391,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
     @Override
     public void initCheckpoint(long id, CheckpointOptions checkpointOptions) {
         if (checkpointOptions.isUnalignedCheckpoint()) {
+            // clouding 注释: 2022/7/6 12:03
+            //          使用 ChannelStateWriter 开始写出数据
             channelStateWriter.start(id, checkpointOptions);
         }
     }
@@ -497,6 +501,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
         ResultPartitionWriter[] writers = env.getAllWriters();
         for (ResultPartitionWriter writer : writers) {
             for (int i = 0; i < writer.getNumberOfSubpartitions(); i++) {
+                // clouding 注释: 2022/7/6 14:19
+                //          获取到所有的subpartition, 写入到 channelStateWriter
                 ResultSubpartition subpartition = writer.getSubpartition(i);
                 channelStateWriter.addOutputData(
                         checkpointId,
@@ -505,10 +511,19 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
                         subpartition.requestInflightBufferSnapshot().toArray(new Buffer[0]));
             }
         }
+        // clouding 注释: 2022/7/6 14:23
+        //          写入output
         channelStateWriter.finishOutput(checkpointId);
         prepareInputSnapshot
+                // clouding 注释: 2022/7/6 14:23
+                //          org.apache.flink.streaming.runtime.tasks.StreamTask.prepareInputSnapshot 走这里
+                //          这里返回一个future，所有的input channel是否都收到了barrier，如果有channel没有收到barrier，如果有channel没有收到barrier，就没有返回，或者有异常报错。
+                //          apply调用的是StreamTask的prepareInputSnapshot方法
+                //          prepareInputSnapshot在StreamTask类创建subtaskCheckpointCoordinator时被初始化
                 .apply(channelStateWriter, checkpointId)
                 .whenComplete(
+                        // clouding 注释: 2022/7/6 14:32
+                        //          apply返回的时候, 表示要么报错了,要么 input 结束了
                         (unused, ex) -> {
                             if (ex != null) {
                                 channelStateWriter.abort(
@@ -516,6 +531,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
                                         ex,
                                         false /* result is needed and cleaned by getWriteResult */);
                             } else {
+                                // clouding 注释: 2022/7/6 14:23
+                                //          写入input
                                 channelStateWriter.finishInput(checkpointId);
                             }
                         });
@@ -582,6 +599,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
         long checkpointId = checkpointMetaData.getCheckpointId();
         long started = System.nanoTime();
 
+        // clouding 注释: 2022/7/7 17:11
+        //          channel state 数据
         ChannelStateWriteResult channelStateWriteResult =
                 checkpointOptions.isUnalignedCheckpoint()
                         ? channelStateWriter.getAndRemoveWriteResult(checkpointId)

@@ -88,6 +88,8 @@ public class InputProcessorUtil {
                 Arrays.stream(inputGates)
                         .map(InputGateUtil::createInputGate)
                         .toArray(InputGate[]::new);
+        // clouding 注释: 2022/7/6 14:09
+        //          注册了 listener, 针对unaligned checkpoint, 这个就是 ThreadSafeUnaligner
         barrierHandler
                 .getBufferReceivedListener()
                 .ifPresent(
@@ -113,7 +115,13 @@ public class InputProcessorUtil {
         switch (config.getCheckpointMode()) {
             case EXACTLY_ONCE:
                 if (config.isUnalignedCheckpointsEnabled()) {
+                    // clouding 注释: 2022/7/5 20:55
+                    //          开启了 unaligned checkpoint
                     return new AlternatingCheckpointBarrierHandler(
+                            // clouding 注释: 2022/7/5 20:56
+                            //          传入了 Aligner 和 Unaligner
+                            //          可以根据checkpoint barrier类型(checkpoint或savepoint)，
+                            //          选择使用对应的CheckpointBarrierHandler
                             new CheckpointBarrierAligner(
                                     taskName, toNotifyOnCheckpoint, inputGates),
                             new CheckpointBarrierUnaligner(
@@ -121,6 +129,8 @@ public class InputProcessorUtil {
                                     taskName,
                                     toNotifyOnCheckpoint,
                                     inputGates),
+                            // clouding 注释: 2022/7/5 20:55
+                            //          这个是 AbstractInvokable
                             toNotifyOnCheckpoint);
                 }
                 return new CheckpointBarrierAligner(taskName, toNotifyOnCheckpoint, inputGates);
