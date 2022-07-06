@@ -61,6 +61,8 @@ class AlternatingCheckpointBarrierHandler extends CheckpointBarrierHandler {
     @Override
     public void processBarrier(CheckpointBarrier receivedBarrier, InputChannelInfo channelInfo)
             throws Exception {
+        // clouding 注释: 2022/7/6 11:46
+        //          忽略 太早的 barrier, 这种是迟到的意思
         if (receivedBarrier.getId() < lastSeenBarrierId) {
             return;
         }
@@ -68,6 +70,9 @@ class AlternatingCheckpointBarrierHandler extends CheckpointBarrierHandler {
         lastSeenBarrierId = receivedBarrier.getId();
         CheckpointBarrierHandler previousHandler = activeHandler;
         activeHandler = receivedBarrier.isCheckpoint() ? unalignedHandler : alignedHandler;
+        // clouding 注释: 2022/7/6 11:50
+        //          如果上一个handler和当前handler不同，
+        //          说明遇到了不同类型的barrier，则终止上一个handler正在进行的checkpoint操作
         if (previousHandler != activeHandler) {
             previousHandler.abortPendingCheckpoint(
                     lastSeenBarrierId,

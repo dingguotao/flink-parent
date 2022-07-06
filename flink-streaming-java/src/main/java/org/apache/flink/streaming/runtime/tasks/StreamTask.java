@@ -957,6 +957,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
             throws IOException {
 
         try {
+            // clouding 注释: 2022/7/6 14:14
+            //          执行checkpoint
             if (performCheckpoint(checkpointMetaData, checkpointOptions, checkpointMetrics)) {
                 if (isSynchronousSavepointId(checkpointMetaData.getCheckpointId())) {
                     runSynchronousSavepointMailboxLoop();

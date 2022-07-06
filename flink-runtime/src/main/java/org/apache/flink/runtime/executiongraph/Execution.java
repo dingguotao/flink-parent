@@ -1152,7 +1152,7 @@ public class Execution
         if (slot != null) {
             final TaskManagerGateway taskManagerGateway = slot.getTaskManagerGateway();
 
-            // attemptId 是这个Execution的id，每重试一次自增1
+            // todo attemptId 是这个Execution的id，每重试一次自增1
             taskManagerGateway.triggerCheckpoint(
                     attemptId, getVertex().getJobId(), checkpointId, timestamp, checkpointOptions);
         } else {

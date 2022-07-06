@@ -488,9 +488,13 @@ public class RemoteInputChannel extends InputChannel {
             if (notifyReceivedBarrier != null) {
                 receivedCheckpointId = notifyReceivedBarrier.getId();
                 if (notifyReceivedBarrier.isCheckpoint()) {
+                    // clouding 注释: 2022/7/6 14:07
+                    //          通知接收到了barrier
                     listener.notifyBarrierReceived(notifyReceivedBarrier, channelInfo);
                 }
             } else if (notifyReceivedBuffer != null) {
+                // clouding 注释: 2022/7/6 14:07
+                //          通知接收到了buffer
                 listener.notifyBufferReceived(notifyReceivedBuffer, channelInfo);
             }
         } finally {

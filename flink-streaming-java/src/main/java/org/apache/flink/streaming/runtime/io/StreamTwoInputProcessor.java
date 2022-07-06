@@ -200,6 +200,8 @@ public final class StreamTwoInputProcessor<IN1, IN2> implements StreamInputProce
     @Override
     public CompletableFuture<Void> prepareSnapshot(
             ChannelStateWriter channelStateWriter, long checkpointId) throws IOException {
+        // clouding 注释: 2022/7/6 14:33
+        //          two input的场景
         return CompletableFuture.allOf(
                 input1.prepareSnapshot(channelStateWriter, checkpointId),
                 input2.prepareSnapshot(channelStateWriter, checkpointId));
