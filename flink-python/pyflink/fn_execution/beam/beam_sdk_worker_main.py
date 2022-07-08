@@ -25,5 +25,13 @@ import pyflink.fn_execution.beam.beam_coders # noqa # pylint: disable=unused-imp
 
 import apache_beam.runners.worker.sdk_worker_main
 
-if __name__ == '__main__':
+# disable bundle processor shutdown
+from apache_beam.runners.worker import sdk_worker
+sdk_worker.DEFAULT_BUNDLE_PROCESSOR_CACHE_SHUTDOWN_THRESHOLD_S = 86400 * 30
+
+
+def main():
+    import logging
+    # Remove all the built-in log handles
+    logging.getLogger().handlers = []
     apache_beam.runners.worker.sdk_worker_main.main(sys.argv)

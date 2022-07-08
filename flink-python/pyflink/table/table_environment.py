@@ -1518,13 +1518,15 @@ class TableEnvironment(object, metaclass=ABCMeta):
         jvm = get_gateway().jvm
         jar_urls = self.get_config().get_configuration().get_string(config_key, None)
         if jar_urls is not None:
-            # normalize and remove duplicates
-            jar_urls_set = set([jvm.java.net.URL(url).toString() for url in jar_urls.split(";")])
+            # normalize
+            jar_urls_list = [jvm.java.net.URL(url).toString() for url in jar_urls.split(";")]
             j_configuration = get_j_env_configuration(self)
             if j_configuration.containsKey(config_key):
                 for url in j_configuration.getString(config_key, "").split(";"):
-                    jar_urls_set.add(url)
-            j_configuration.setString(config_key, ";".join(jar_urls_set))
+                    url = url.strip()
+                    if url != "" and url not in jar_urls_list:
+                        jar_urls_list.append(url)
+            j_configuration.setString(config_key, ";".join(jar_urls_list))
 
     @abstractmethod
     def _get_j_env(self):
@@ -1731,10 +1733,7 @@ class StreamTableEnvironment(TableEnvironment):
         """
         j_data_stream = data_stream._j_data_stream
         JPythonConfigUtil = get_gateway().jvm.org.apache.flink.python.util.PythonConfigUtil
-        JPythonConfigUtil.declareManagedMemory(
-            j_data_stream.getTransformation(),
-            self._get_j_env(),
-            self._j_tenv.getConfig())
+        JPythonConfigUtil.configPythonOperator(j_data_stream.getExecutionEnvironment())
         if len(fields) == 0:
             return Table(j_table=self._j_tenv.fromDataStream(j_data_stream), t_env=self)
         elif all(isinstance(f, Expression) for f in fields):

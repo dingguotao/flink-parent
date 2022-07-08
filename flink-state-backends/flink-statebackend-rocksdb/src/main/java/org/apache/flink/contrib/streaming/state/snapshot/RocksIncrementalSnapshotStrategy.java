@@ -120,9 +120,8 @@ public class RocksIncrementalSnapshotStrategy<K> extends RocksDBSnapshotStrategy
             @Nonnull File instanceBasePath,
             @Nonnull UUID backendUID,
             @Nonnull SortedMap<Long, Set<StateHandleID>> materializedSstFiles,
-            long lastCompletedCheckpointId,
-            int numberOfTransferingThreads) {
-
+            @Nonnull RocksDBStateUploader rocksDBStateUploader,
+            long lastCompletedCheckpointId) {
         super(
                 DESCRIPTION,
                 db,
@@ -138,7 +137,7 @@ public class RocksIncrementalSnapshotStrategy<K> extends RocksDBSnapshotStrategy
         this.backendUID = backendUID;
         this.materializedSstFiles = materializedSstFiles;
         this.lastCompletedCheckpointId = lastCompletedCheckpointId;
-        this.stateUploader = new RocksDBStateUploader(numberOfTransferingThreads);
+        this.stateUploader = rocksDBStateUploader;
         this.localDirectoryName = backendUID.toString().replaceAll("[\\-]", "");
     }
 
@@ -175,7 +174,11 @@ public class RocksIncrementalSnapshotStrategy<K> extends RocksDBSnapshotStrategy
     @Override
     public void notifyCheckpointComplete(long completedCheckpointId) {
         synchronized (materializedSstFiles) {
-            if (completedCheckpointId > lastCompletedCheckpointId) {
+            // FLINK-23949: materializedSstFiles.keySet().contains(completedCheckpointId) make sure
+            // the notified checkpointId is not a savepoint, otherwise next checkpoint will
+            // degenerate into a full checkpoint
+            if (completedCheckpointId > lastCompletedCheckpointId
+                    && materializedSstFiles.keySet().contains(completedCheckpointId)) {
                 materializedSstFiles
                         .keySet()
                         .removeIf(checkpointId -> checkpointId < completedCheckpointId);
@@ -189,6 +192,11 @@ public class RocksIncrementalSnapshotStrategy<K> extends RocksDBSnapshotStrategy
         synchronized (materializedSstFiles) {
             materializedSstFiles.keySet().remove(abortedCheckpointId);
         }
+    }
+
+    @Override
+    public void close() {
+        stateUploader.close();
     }
 
     @Nonnull

@@ -21,13 +21,31 @@ package org.apache.flink.runtime.dispatcher;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.JobStatus;
 import org.apache.flink.api.common.time.Time;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.core.testutils.OneShotLatch;
+import org.apache.flink.runtime.blob.BlobServer;
 import org.apache.flink.runtime.concurrent.ManuallyTriggeredScheduledExecutor;
+import org.apache.flink.runtime.entrypoint.component.DefaultDispatcherResourceManagerComponentFactory;
+import org.apache.flink.runtime.entrypoint.component.DispatcherResourceManagerComponent;
+import org.apache.flink.runtime.entrypoint.component.DispatcherResourceManagerComponentFactory;
+import org.apache.flink.runtime.execution.Environment;
 import org.apache.flink.runtime.executiongraph.ArchivedExecutionGraph;
+import org.apache.flink.runtime.heartbeat.HeartbeatServices;
+import org.apache.flink.runtime.highavailability.HighAvailabilityServices;
+import org.apache.flink.runtime.jobgraph.JobGraph;
+import org.apache.flink.runtime.jobgraph.JobVertex;
+import org.apache.flink.runtime.jobgraph.tasks.AbstractInvokable;
 import org.apache.flink.runtime.messages.webmonitor.JobDetails;
 import org.apache.flink.runtime.messages.webmonitor.JobsOverview;
+import org.apache.flink.runtime.metrics.MetricRegistry;
+import org.apache.flink.runtime.minicluster.MiniCluster;
+import org.apache.flink.runtime.minicluster.MiniClusterConfiguration;
+import org.apache.flink.runtime.resourcemanager.StandaloneResourceManagerFactory;
 import org.apache.flink.runtime.rest.handler.legacy.utils.ArchivedExecutionGraphBuilder;
+import org.apache.flink.runtime.rpc.FatalErrorHandler;
 import org.apache.flink.runtime.testingUtils.TestingUtils;
 import org.apache.flink.runtime.util.ManualTicker;
+import org.apache.flink.runtime.webmonitor.retriever.MetricQueryServiceRetriever;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.TestLogger;
 
@@ -44,9 +62,11 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
@@ -73,27 +93,13 @@ public class FileArchivedExecutionGraphStoreTest extends TestLogger {
      */
     @Test
     public void testPut() throws IOException {
-        final ArchivedExecutionGraph dummyExecutionGraph =
-                new ArchivedExecutionGraphBuilder().setState(JobStatus.FINISHED).build();
-        final File rootDir = temporaryFolder.newFolder();
+        assertPutJobGraphWithStatus(JobStatus.FINISHED);
+    }
 
-        try (final FileArchivedExecutionGraphStore executionGraphStore =
-                createDefaultExecutionGraphStore(rootDir)) {
-
-            final File storageDirectory = executionGraphStore.getStorageDir();
-
-            // check that the storage directory is empty
-            assertThat(storageDirectory.listFiles().length, Matchers.equalTo(0));
-
-            executionGraphStore.put(dummyExecutionGraph);
-
-            // check that we have persisted the given execution graph
-            assertThat(storageDirectory.listFiles().length, Matchers.equalTo(1));
-
-            assertThat(
-                    executionGraphStore.get(dummyExecutionGraph.getJobID()),
-                    new PartialArchivedExecutionGraphMatcher(dummyExecutionGraph));
-        }
+    /** Tests that a SUSPENDED job can be persisted. */
+    @Test
+    public void testPutSuspendedJob() throws IOException {
+        assertPutJobGraphWithStatus(JobStatus.SUSPENDED);
     }
 
     /** Tests that null is returned if we request an unknown JobID. */
@@ -319,6 +325,108 @@ public class FileArchivedExecutionGraphStoreTest extends TestLogger {
             assertThat(
                     executionGraphStore.getAvailableJobDetails(),
                     Matchers.containsInAnyOrder(jobDetails.toArray()));
+        }
+    }
+
+    /** Tests that a session cluster can terminate gracefully when jobs are still running. */
+    @Test
+    public void testPutSuspendedJobOnClusterShutdown() throws Exception {
+        final Duration timeout = Duration.ofSeconds(5);
+        try (final MiniCluster miniCluster =
+                new PersistingMiniCluster(new MiniClusterConfiguration.Builder().build())) {
+            miniCluster.start();
+            final JobVertex vertex = new JobVertex("blockingVertex");
+            vertex.setInvokableClass(SignallingBlockingNoOpInvokable.class);
+            final JobGraph jobGraph = new JobGraph(vertex);
+            miniCluster.submitJob(jobGraph);
+            SignallingBlockingNoOpInvokable.LATCH.await();
+        }
+    }
+
+    /**
+     * Invokable which signals with {@link SignallingBlockingNoOpInvokable#LATCH} when it is invoked
+     * and blocks forever afterwards.
+     */
+    public static class SignallingBlockingNoOpInvokable extends AbstractInvokable {
+
+        /** Latch used to signal an initial invocation. */
+        public static final OneShotLatch LATCH = new OneShotLatch();
+
+        public SignallingBlockingNoOpInvokable(Environment environment) {
+            super(environment);
+        }
+
+        @Override
+        public void invoke() throws Exception {
+            LATCH.trigger();
+            Thread.sleep(Long.MAX_VALUE);
+        }
+    }
+
+    private class PersistingMiniCluster extends MiniCluster {
+
+        PersistingMiniCluster(MiniClusterConfiguration miniClusterConfiguration) {
+            super(miniClusterConfiguration);
+        }
+
+        @Override
+        protected Collection<? extends DispatcherResourceManagerComponent>
+                createDispatcherResourceManagerComponents(
+                        Configuration configuration,
+                        RpcServiceFactory rpcServiceFactory,
+                        HighAvailabilityServices haServices,
+                        BlobServer blobServer,
+                        HeartbeatServices heartbeatServices,
+                        MetricRegistry metricRegistry,
+                        MetricQueryServiceRetriever metricQueryServiceRetriever,
+                        FatalErrorHandler fatalErrorHandler)
+                        throws Exception {
+            final DispatcherResourceManagerComponentFactory
+                    dispatcherResourceManagerComponentFactory =
+                            DefaultDispatcherResourceManagerComponentFactory
+                                    .createSessionComponentFactory(
+                                            StandaloneResourceManagerFactory.getInstance());
+
+            final File rootDir = temporaryFolder.newFolder();
+            final ArchivedExecutionGraphStore executionGraphInfoStore =
+                    createDefaultExecutionGraphStore(rootDir);
+
+            return Collections.singleton(
+                    dispatcherResourceManagerComponentFactory.create(
+                            configuration,
+                            getIOExecutor(),
+                            rpcServiceFactory.createRpcService(),
+                            haServices,
+                            blobServer,
+                            heartbeatServices,
+                            metricRegistry,
+                            executionGraphInfoStore,
+                            metricQueryServiceRetriever,
+                            fatalErrorHandler));
+        }
+    }
+
+    private void assertPutJobGraphWithStatus(JobStatus jobStatus) throws IOException {
+        final ArchivedExecutionGraph dummyExecutionGraph =
+                new ArchivedExecutionGraphBuilder().setState(jobStatus).build();
+        final File rootDir = temporaryFolder.newFolder();
+
+        try (final FileArchivedExecutionGraphStore executionGraphStore =
+                createDefaultExecutionGraphStore(rootDir)) {
+
+            final File storageDirectory = executionGraphStore.getStorageDir();
+
+            // check that the storage directory is empty
+            assertThat(storageDirectory.listFiles().length, Matchers.equalTo(0));
+
+            executionGraphStore.put(dummyExecutionGraph);
+
+            // check that we have persisted the given execution graph
+            assertThat(storageDirectory.listFiles().length, Matchers.equalTo(1));
+
+            assertThat(
+                    executionGraphStore.get(dummyExecutionGraph.getJobID()),
+                    new PartialArchivedExecutionGraphMatcher(dummyExecutionGraph));
         }
     }
 

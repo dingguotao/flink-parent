@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.util.Collections.emptySet;
-import static java.util.Collections.singleton;
 
 /**
  * The {@code SubtaskStateMapper} narrows down the subtasks that need to be read during rescaling to
@@ -58,18 +57,6 @@ public enum SubtaskStateMapper {
             // The current implementation uses round robin but that may be changed later.
             return ROUND_ROBIN.getOldSubtasks(
                     newSubtaskIndex, oldNumberOfSubtasks, newNumberOfSubtasks);
-        }
-    },
-
-    /**
-     * Discards extra state. Useful if all subtasks already contain the same information
-     * (broadcast).
-     */
-    DISCARD_EXTRA_STATE {
-        @Override
-        public Set<Integer> getOldSubtasks(
-                int newSubtaskIndex, int oldNumberOfSubtasks, int newNumberOfSubtasks) {
-            return newSubtaskIndex >= oldNumberOfSubtasks ? emptySet() : singleton(newSubtaskIndex);
         }
     },
 
@@ -179,6 +166,17 @@ public enum SubtaskStateMapper {
                 subtasks.add(subtask);
             }
             return subtasks;
+        }
+    },
+
+    UNSUPPORTED {
+        @Override
+        public Set<Integer> getOldSubtasks(
+                int newSubtaskIndex, int oldNumberOfSubtasks, int newNumberOfSubtasks) {
+            throw new UnsupportedOperationException(
+                    "Cannot rescale the given pointwise partitioner.\n"
+                            + "Did you change the partitioner to forward or rescale?\n"
+                            + "It may also help to add an explicit shuffle().");
         }
     };
 

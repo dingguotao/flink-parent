@@ -20,7 +20,6 @@ package org.apache.flink.runtime.io.network.partition;
 
 import org.apache.flink.core.fs.CloseableRegistry;
 import org.apache.flink.runtime.checkpoint.CheckpointOptions;
-import org.apache.flink.runtime.checkpoint.CheckpointType;
 import org.apache.flink.runtime.checkpoint.channel.ChannelStateWriter;
 import org.apache.flink.runtime.checkpoint.channel.RecordingChannelStateWriter;
 import org.apache.flink.runtime.event.AbstractEvent;
@@ -361,12 +360,8 @@ public class PipelinedSubpartitionWithReadViewTest {
         assertEquals(0, availablityListener.getNumPriorityEvents());
 
         CheckpointOptions options =
-                new CheckpointOptions(
-                        CheckpointType.CHECKPOINT,
-                        new CheckpointStorageLocationReference(new byte[] {0, 1, 2}),
-                        true,
-                        true,
-                        0);
+                CheckpointOptions.unaligned(
+                        new CheckpointStorageLocationReference(new byte[] {0, 1, 2}));
         channelStateWriter.start(0, options);
         BufferConsumer barrierBuffer =
                 EventSerializer.toBufferConsumer(new CheckpointBarrier(0, 0, options), true);
@@ -408,12 +403,8 @@ public class PipelinedSubpartitionWithReadViewTest {
         subpartition.setChannelStateWriter(ChannelStateWriter.NO_OP);
 
         CheckpointOptions options =
-                new CheckpointOptions(
-                        CheckpointType.CHECKPOINT,
-                        new CheckpointStorageLocationReference(new byte[] {0, 1, 2}),
-                        true,
-                        true,
-                        0);
+                CheckpointOptions.unaligned(
+                        new CheckpointStorageLocationReference(new byte[] {0, 1, 2}));
         BufferConsumer barrierBuffer =
                 EventSerializer.toBufferConsumer(new CheckpointBarrier(0, 0, options), true);
         subpartition.add(barrierBuffer);
@@ -496,8 +487,7 @@ public class PipelinedSubpartitionWithReadViewTest {
     }
 
     @Test
-    public void testBlockedByCheckpointAndResumeConsumption()
-            throws IOException, InterruptedException {
+    public void testResumeBlockedSubpartitionWithEvents() throws IOException, InterruptedException {
         blockSubpartitionByCheckpoint(1);
 
         // add an event after subpartition blocked
@@ -505,31 +495,65 @@ public class PipelinedSubpartitionWithReadViewTest {
         // no data available notification after adding an event
         checkNumNotificationsAndAvailability(1);
 
+        // Resumption will make the subpartition available.
         resumeConsumptionAndCheckAvailability(0, true);
         assertNextEvent(readView, BUFFER_SIZE, null, false, 0, false, true);
+    }
 
-        blockSubpartitionByCheckpoint(2);
+    @Test
+    public void testResumeBlockedSubpartitionWithUnfinishedBufferFlushed()
+            throws IOException, InterruptedException {
+        blockSubpartitionByCheckpoint(1);
 
         // add a buffer and flush the subpartition
         subpartition.add(createFilledFinishedBufferConsumer(BUFFER_SIZE));
         subpartition.flush();
         // no data available notification after adding a buffer and flushing the subpartition
-        checkNumNotificationsAndAvailability(2);
+        checkNumNotificationsAndAvailability(1);
 
-        resumeConsumptionAndCheckAvailability(Integer.MAX_VALUE, false);
+        // Resumption will make the subpartition available.
+        resumeConsumptionAndCheckAvailability(Integer.MAX_VALUE, true);
         assertNextBuffer(readView, BUFFER_SIZE, false, 0, false, true);
+    }
 
-        blockSubpartitionByCheckpoint(3);
+    @Test
+    public void testResumeBlockedSubpartitionWithUnfinishedBufferNotFlushed()
+            throws IOException, InterruptedException {
+        blockSubpartitionByCheckpoint(1);
+
+        // add a buffer but not flush the subpartition.
+        subpartition.add(createFilledFinishedBufferConsumer(BUFFER_SIZE));
+        // no data available notification after adding a buffer.
+        checkNumNotificationsAndAvailability(1);
+
+        // Resumption will not make the subpartition available since the data is not flushed before.
+        resumeConsumptionAndCheckAvailability(Integer.MAX_VALUE, false);
+    }
+
+    @Test
+    public void testResumeBlockedSubpartitionWithFinishedBuffers()
+            throws IOException, InterruptedException {
+        blockSubpartitionByCheckpoint(1);
 
         // add two buffers to the subpartition
         subpartition.add(createFilledFinishedBufferConsumer(BUFFER_SIZE));
         subpartition.add(createFilledFinishedBufferConsumer(BUFFER_SIZE));
         // no data available notification after adding the second buffer
-        checkNumNotificationsAndAvailability(3);
+        checkNumNotificationsAndAvailability(1);
 
+        // Resumption will make the subpartition available.
         resumeConsumptionAndCheckAvailability(Integer.MAX_VALUE, true);
         assertNextBuffer(readView, BUFFER_SIZE, false, 0, false, true);
         assertNextBuffer(readView, BUFFER_SIZE, false, 0, false, true);
+    }
+
+    @Test
+    public void testResumeBlockedEmptySubpartition() throws IOException, InterruptedException {
+        blockSubpartitionByCheckpoint(1);
+
+        // Resumption will not make the subpartition available since it is empty.
+        resumeConsumptionAndCheckAvailability(Integer.MAX_VALUE, false);
+        assertNoNextBuffer(readView);
     }
 
     // ------------------------------------------------------------------------

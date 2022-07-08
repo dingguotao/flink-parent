@@ -70,9 +70,17 @@ import static org.junit.Assert.assertTrue;
  * Tests for verifying that the {@link SourceOperator} as a task input can be integrated well with
  * {@link org.apache.flink.streaming.runtime.io.StreamOneInputProcessor}.
  */
-public class SourceOperatorStreamTaskTest {
+public class SourceOperatorStreamTaskTest extends SourceStreamTaskTestBase {
     private static final OperatorID OPERATOR_ID = new OperatorID();
     private static final int NUM_RECORDS = 10;
+
+    @Test
+    public void testMetrics() throws Exception {
+        testMetrics(
+                SourceOperatorStreamTask::new,
+                new SourceOperatorFactory<>(
+                        new MockSource(Boundedness.BOUNDED, 1), WatermarkStrategy.noWatermarks()));
+    }
 
     /**
      * Tests that the stream operator can snapshot and restore the operator state of chained

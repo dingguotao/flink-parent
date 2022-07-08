@@ -84,7 +84,7 @@ public class CheckpointBarrierTracker extends CheckpointBarrierHandler {
 
         // fast path for single channel trackers
         if (totalNumberOfInputChannels == 1) {
-            markAlignmentStartAndEnd(receivedBarrier.getTimestamp());
+            markAlignmentStartAndEnd(barrierId, receivedBarrier.getTimestamp());
             notifyCheckpoint(receivedBarrier);
             return;
         }
@@ -122,7 +122,10 @@ public class CheckpointBarrierTracker extends CheckpointBarrierHandler {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Received all barriers for checkpoint {}", barrierId);
                     }
-                    markAlignmentEnd();
+                    // Only one calculation of the alignment time at once is supported right now.
+                    if (barrierCount.checkpointId == latestPendingCheckpointID) {
+                        markAlignmentEnd();
+                    }
                     notifyCheckpoint(receivedBarrier);
                 }
             }
@@ -132,7 +135,7 @@ public class CheckpointBarrierTracker extends CheckpointBarrierHandler {
             // if it is not newer than the latest checkpoint ID, then there cannot be a
             // successful checkpoint for that ID anyways
             if (barrierId > latestPendingCheckpointID) {
-                markAlignmentStart(receivedBarrier.getTimestamp());
+                markAlignmentStart(barrierId, receivedBarrier.getTimestamp());
                 latestPendingCheckpointID = barrierId;
                 pendingCheckpoints.addLast(new CheckpointBarrierCount(barrierId));
 
@@ -162,6 +165,7 @@ public class CheckpointBarrierTracker extends CheckpointBarrierHandler {
 
         // fast path for single channel trackers
         if (totalNumberOfInputChannels == 1) {
+            resetAlignment();
             notifyAbortOnCancellationBarrier(checkpointId);
             return;
         }
@@ -221,6 +225,7 @@ public class CheckpointBarrierTracker extends CheckpointBarrierHandler {
                                 CheckpointFailureReason.CHECKPOINT_DECLINED_INPUT_END_OF_STREAM));
             }
         }
+        resetAlignment();
     }
 
     public long getLatestCheckpointId() {

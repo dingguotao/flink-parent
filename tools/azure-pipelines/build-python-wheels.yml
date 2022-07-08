@@ -16,7 +16,7 @@
 jobs:
   - job: compile_${{parameters.stage_name}}
     pool:
-      vmImage: 'ubuntu-16.04'
+      vmImage: 'ubuntu-20.04'
     container: flink-build-container
     workspace:
       clean: all
@@ -46,7 +46,7 @@ jobs:
     strategy:
       matrix:
         linux:
-          vm-label: 'ubuntu-16.04'
+          vm-label: 'ubuntu-20.04'
         mac:
           vm-label: 'macOS-10.15'
     pool:

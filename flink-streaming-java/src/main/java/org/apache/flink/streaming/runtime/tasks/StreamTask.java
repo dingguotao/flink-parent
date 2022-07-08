@@ -444,7 +444,10 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
             activeSyncSavepointId = null;
             operatorChain.setIgnoreEndOfInput(false);
         }
-        syncSavepointId = null;
+
+        if (syncSavepointId != null && syncSavepointId <= id) {
+            syncSavepointId = null;
+        }
     }
 
     private void setSynchronousSavepointId(long checkpointId, boolean ignoreEndOfInput) {
@@ -787,7 +790,7 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
         if (operatorChain != null) {
             // beware: without synchronization, #performCheckpoint() may run in
             //         parallel and this call is not thread-safe
-            actionExecutor.run(() -> operatorChain.releaseOutputs());
+            actionExecutor.run(() -> operatorChain.close());
         } else {
             // failed to allocate operatorChain, clean up record writers
             recordWriter.close();
@@ -905,16 +908,10 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
         CompletableFuture<Boolean> result = new CompletableFuture<>();
         mainMailboxExecutor.execute(
                 () -> {
-                    latestAsyncCheckpointStartDelayNanos =
-                            1_000_000
-                                    * Math.max(
-                                            0,
-                                            System.currentTimeMillis()
-                                                    - checkpointMetaData.getTimestamp());
                     try {
                         // clouding 注释: 2021/10/17 23:42
                         //          触发 triggerCheckpoint
-                        result.complete(triggerCheckpoint(checkpointMetaData, checkpointOptions));
+                        result.complete(triggerCheckpointAsyncInMailbox(checkpointMetaData, checkpointOptions));
                     } catch (Exception ex) {
                         // Report the failure both via the Future result but also to the mailbox
                         result.completeExceptionally(ex);
@@ -927,15 +924,22 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
         return result;
     }
 
-    private boolean triggerCheckpoint(
+    private boolean triggerCheckpointAsyncInMailbox(
             CheckpointMetaData checkpointMetaData, CheckpointOptions checkpointOptions)
             throws Exception {
         try {
+            latestAsyncCheckpointStartDelayNanos =
+                    1_000_000
+                            * Math.max(
+                                    0,
+                                    System.currentTimeMillis() - checkpointMetaData.getTimestamp());
+
             // No alignment if we inject a checkpoint
             CheckpointMetricsBuilder checkpointMetrics =
                     new CheckpointMetricsBuilder()
                             .setAlignmentDurationNanos(0L)
-                            .setBytesProcessedDuringAlignment(0L);
+                            .setBytesProcessedDuringAlignment(0L)
+                            .setCheckpointStartDelayNanos(latestAsyncCheckpointStartDelayNanos);
 
             // clouding 注释: 2021/10/17 23:44
             //          初始化

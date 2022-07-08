@@ -340,6 +340,46 @@ public class CheckpointBarrierTrackerTest {
     }
 
     @Test
+    public void testNextFirstCheckpointBarrierOvertakesCancellationBarrier() throws Exception {
+        BufferOrEvent[] sequence = {
+            // start checkpoint 1
+            createBarrier(1, 1),
+            //  start checkpoint 2(just suppose checkpoint 1 was canceled)
+            createBarrier(2, 1),
+            // cancellation barrier of checkpoint 1
+            createCancellationBarrier(1, 0),
+            //  finish the checkpoint 2
+            createBarrier(2, 0)
+        };
+
+        ValidatingCheckpointHandler validator = new ValidatingCheckpointHandler();
+        inputGate = createCheckpointedInputGate(2, sequence, validator);
+
+        // Checkpoint 1
+        assertEquals(sequence[0], inputGate.pollNext().get());
+
+        long beforeSecondCheckpointStartTime = System.nanoTime();
+        // Checkpoint 2
+        assertEquals(sequence[1], inputGate.pollNext().get());
+        long afterSecondCheckpointStartTime = System.nanoTime();
+        // Cancellation checkpoint 1
+        assertEquals(sequence[2], inputGate.pollNext().get());
+        long beforeSecondCheckpointEndTime = System.nanoTime();
+        // Finishing checkpoint 2
+        assertEquals(sequence[3], inputGate.pollNext().get());
+        long afterSecondCheckpointEndTime = System.nanoTime();
+
+        long alignmentTime = validator.lastAlignmentDurationNanos.get();
+        assertThat(
+                alignmentTime,
+                greaterThanOrEqualTo(
+                        beforeSecondCheckpointEndTime - afterSecondCheckpointStartTime));
+        assertThat(
+                alignmentTime,
+                lessThanOrEqualTo(afterSecondCheckpointEndTime - beforeSecondCheckpointStartTime));
+    }
+
+    @Test
     public void testSingleChannelAbortCheckpoint() throws Exception {
         BufferOrEvent[] sequence = {
             createBuffer(0),
@@ -548,6 +588,44 @@ public class CheckpointBarrierTrackerTest {
 
         assertTrue(handler.getLastBytesProcessedDuringAlignment().isDone());
         assertThat(handler.getLastBytesProcessedDuringAlignment().get(), equalTo(0L));
+    }
+
+    @Test
+    public void testTwoLastBarriersOneByOne() throws Exception {
+        BufferOrEvent[] sequence = {
+            // start checkpoint 1
+            createBarrier(1, 1),
+            // start checkpoint 2
+            createBarrier(2, 1),
+            // finish the checkpoint 1
+            createBarrier(1, 0),
+            //  finish the checkpoint 2
+            createBarrier(2, 0)
+        };
+
+        ValidatingCheckpointHandler validator = new ValidatingCheckpointHandler();
+        inputGate = createCheckpointedInputGate(2, sequence, validator);
+
+        // start checkpoint 1
+        assertEquals(sequence[0], inputGate.pollNext().get());
+        Thread.sleep(10);
+
+        // start checkpoint 2
+        long start = System.currentTimeMillis();
+        assertEquals(sequence[1], inputGate.pollNext().get());
+        Thread.sleep(1);
+
+        // finish the checkpoint 1
+        assertEquals(sequence[2], inputGate.pollNext().get());
+        Thread.sleep(1);
+
+        //  finish the checkpoint 2
+        assertEquals(sequence[3], inputGate.pollNext().get());
+        long totalSecondCheckpointTime = System.currentTimeMillis() - start;
+
+        long alignmentTime = validator.lastAlignmentDurationNanos.get() / 1_000_000;
+        assertThat(alignmentTime, greaterThanOrEqualTo(2L));
+        assertThat(alignmentTime, lessThanOrEqualTo(totalSecondCheckpointTime));
     }
 
     // ------------------------------------------------------------------------
