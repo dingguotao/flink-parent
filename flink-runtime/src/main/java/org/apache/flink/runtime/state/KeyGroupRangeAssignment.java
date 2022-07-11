@@ -102,6 +102,7 @@ public final class KeyGroupRangeAssignment {
 
         int start = ((operatorIndex * maxParallelism + parallelism - 1) / parallelism);
         int end = ((operatorIndex + 1) * maxParallelism - 1) / parallelism;
+        // 连续区间
         return new KeyGroupRange(start, end);
     }
 
