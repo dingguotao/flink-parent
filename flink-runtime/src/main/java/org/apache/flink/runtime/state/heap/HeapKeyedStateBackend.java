@@ -101,7 +101,10 @@ public class HeapKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
     // clouding 注释: 2022/4/17 19:22
     //          来存储StateName与StateTable之间的映射关系，
     //          registeredKVStates的 key为状态名称，
-    //                               value为具体状态数据使用的状态表
+    //                               value为具体状态数据使用的状态表,
+    //                               StateTable 有两个实现:
+    //                                  CopyOnWriteStateTable flink定制的cow结构,checkpoint支持异步快照, map内存的默认
+    //                                  NestedMapsStateTable 借助NestedMap存储, NestedMap 是嵌套两层的map,只能做同步快照
     private final Map<String, StateTable<K, ?, ?>> registeredKVStates;
 
     /** Map of registered priority queue set states. */

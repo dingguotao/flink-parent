@@ -127,6 +127,8 @@ public class TaskStateManagerImpl implements TaskStateManager {
 
     @Nonnull
     @Override
+    // clouding 注释: 2022/7/10 21:18
+    //          选择 local 还是 remote的state 去恢复
     public PrioritizedOperatorSubtaskState prioritizedOperatorState(OperatorID operatorID) {
 
         if (jobManagerTaskRestore == null) {

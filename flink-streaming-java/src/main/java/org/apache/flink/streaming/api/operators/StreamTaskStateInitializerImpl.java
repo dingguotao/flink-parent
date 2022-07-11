@@ -136,6 +136,8 @@ public class StreamTaskStateInitializerImpl implements StreamTaskStateInitialize
 
         final String operatorIdentifierText = operatorSubtaskDescription.toString();
 
+        // clouding 注释: 2022/7/10 21:18
+        //          要么用local,要么用remote(hdfs上的)state去恢复,封装在了 PrioritizedOperatorSubtaskState
         final PrioritizedOperatorSubtaskState prioritizedOperatorSubtaskStates =
                 taskStateManager.prioritizedOperatorState(operatorID);
 

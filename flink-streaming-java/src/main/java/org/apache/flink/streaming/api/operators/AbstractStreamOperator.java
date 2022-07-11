@@ -291,6 +291,8 @@ public abstract class AbstractStreamOperator<OUT>
         // clouding 注释: 2022/4/16 21:50
         //          获取TimeServiceManager实例，用于在当前算子中注册和管理定时器。
         timeServiceManager = context.internalTimerServiceManager();
+        // clouding 注释: 2022/7/10 21:37
+        //          初始化 operator state
         stateHandler.initializeOperatorState(this);
         runtimeContext.setKeyedStateStore(stateHandler.getKeyedStateStore().orElse(null));
     }
