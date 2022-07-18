@@ -384,11 +384,17 @@ public class FlinkYarnSessionCli extends AbstractCustomCommandLine {
 
     @Override
     public boolean isActive(CommandLine commandLine) {
+        // clouding 注释: 2022/7/18 00:11
+        //          -m JobManager的地址
         final String jobManagerOption = commandLine.getOptionValue(addressOption.getOpt(), null);
         final boolean yarnJobManager = ID.equals(jobManagerOption);
+        // clouding 注释: 2022/7/18 00:11
+        //          yarn appId
         final boolean hasYarnAppId =
                 commandLine.hasOption(applicationId.getOpt())
                         || configuration.getOptional(YarnConfigOptions.APPLICATION_ID).isPresent();
+        // clouding 注释: 2022/7/18 00:11
+        //          execution.target
         final boolean hasYarnExecutor =
                 YarnSessionClusterExecutor.NAME.equalsIgnoreCase(
                                 configuration.get(DeploymentOptions.TARGET))
@@ -875,6 +881,8 @@ public class FlinkYarnSessionCli extends AbstractCustomCommandLine {
         }
     }
 
+    // clouding 注释: 2022/7/17 21:15
+    //          Flink Session模式下, client的入口类
     public static void main(final String[] args) {
         final String configurationDirectory = CliFrontend.getConfigurationDirectoryFromEnv();
 

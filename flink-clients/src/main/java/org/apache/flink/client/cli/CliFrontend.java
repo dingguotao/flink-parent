@@ -216,7 +216,7 @@ public class CliFrontend {
             return;
         }
 
-        // TODO 根据之前添加的顺序，依次遍历是否active: Generic, YARN, Default
+        // TODO 根据之前添加的顺序，依次遍历是否active: Generic, YARN, Default, Default默认就是true
         final CustomCommandLine activeCommandLine =
                 validateAndGetActiveCommandLine(checkNotNull(commandLine));
 
@@ -1055,9 +1055,9 @@ public class CliFrontend {
         }
     }
 
-    /**
-     * 提交程序的入口
-     */
+
+    // clouding 注释: 2022/7/17 21:15
+    //          Yarn Per job的client入口类
     /** Submits the job based on the arguments. */
     public static void main(final String[] args) {
         EnvironmentInformation.logEnvironmentInfo(LOG, "Command Line Client", args);
@@ -1072,6 +1072,8 @@ public class CliFrontend {
                 GlobalConfiguration.loadConfiguration(configurationDirectory);
 
         // 3. load the custom command lines
+        // clouding 注释: 2022/7/17 22:02
+        //          加载 CommandLine
         final List<CustomCommandLine> customCommandLines =
                 loadCustomCommandLines(configuration, configurationDirectory);
 
@@ -1146,7 +1148,7 @@ public class CliFrontend {
         //	Command line interface of the YARN session, with a special initialization here
         //	to prefix all options with y/yarn.
         // clouding 注释: 2022/3/20 17:33
-        //          反射去实现,没有用new
+        //          反射去实现,没有用new, 可以解耦
         final String flinkYarnSessionCLI = "org.apache.flink.yarn.cli.FlinkYarnSessionCli";
         try {
             customCommandLines.add(
@@ -1167,8 +1169,9 @@ public class CliFrontend {
         }
 
         //	Tips: DefaultCLI must be added at last, because getActiveCustomCommandLine(..) will get
-        // the
-        //	      active CustomCommandLine in order and DefaultCLI isActive always return true.
+        // the active CustomCommandLine in order and DefaultCLI isActive always return true.
+        // clouding 注释: 2022/7/17 22:05
+        //          最后添加DefaultCLI, 是因为getActiveCustomCommandLine会按照添加顺序去get,而DefaultCLI 默认是true
         customCommandLines.add(new DefaultCLI(configuration));
 
         return customCommandLines;
@@ -1186,7 +1189,8 @@ public class CliFrontend {
      */
     public CustomCommandLine validateAndGetActiveCommandLine(CommandLine commandLine) {
         LOG.debug("Custom commandlines: {}", customCommandLines);
-        // 依次遍历每一种
+        // clouding 注释: 2022/7/18 00:10
+        //         依次遍历每一种
         for (CustomCommandLine cli : customCommandLines) {
             LOG.debug(
                     "Checking custom commandline {}, isActive: {}", cli, cli.isActive(commandLine));

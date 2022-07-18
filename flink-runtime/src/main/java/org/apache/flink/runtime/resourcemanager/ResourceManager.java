@@ -1214,12 +1214,20 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                             "ResourceManager {} was revoked leadership. Clearing fencing token.",
                             getAddress());
 
+                    // clouding 注释: 2022/7/17 11:40
+                    //          清空注册的TaskExecutor, JobMaster的信息
                     clearStateInternal();
 
+                    // clouding 注释: 2022/7/17 11:40
+                    //          设置 fencingToken为null
                     setFencingToken(null);
 
+                    // clouding 注释: 2022/7/17 11:40
+                    //          停止SlotManager,以及清空SlotManager状态
                     slotManager.suspend();
 
+                    // clouding 注释: 2022/7/17 11:40
+                    //          停止心跳
                     stopHeartbeatServices();
                 });
     }

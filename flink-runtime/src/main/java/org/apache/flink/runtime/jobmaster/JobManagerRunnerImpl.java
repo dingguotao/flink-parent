@@ -439,6 +439,8 @@ public class JobManagerRunnerImpl
 
         setNewLeaderGatewayFuture();
 
+        // clouding 注释: 2022/7/17 11:42
+        //          停止JobMaster服务
         return jobMasterService
                 .suspend(new FlinkException("JobManager is no longer the leader."))
                 .thenApply(FunctionUtils.nullFn());

@@ -492,7 +492,7 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
             throws Exception {
 
         // clouding 注释: 2022/5/29 18:25
-        //          kerberos 是否配置
+        //          kerberos 是否配置, 以及验证
         final UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
         if (HadoopUtils.isKerberosSecurityEnabled(currentUser)) {
             boolean useTicketCache =
@@ -520,7 +520,7 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
 
         // Create application via yarnClient
         // clouding 注释: 2022/5/29 18:31
-        //          通过 yarnApplication 可以获取到yarn的资源情况
+        //          通过 yarnApplication 可以获取到yarn的 app实例, 可以获取到yarn的资源情况
         final YarnClientApplication yarnApplication = yarnClient.createApplication();
         final GetNewApplicationResponse appResponse = yarnApplication.getNewApplicationResponse();
 
@@ -559,6 +559,8 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
 
         LOG.info("Cluster specification: {}", validClusterSpecification);
 
+        // clouding 注释: 2022/7/18 00:38
+        //          设置集群的启动模式
         final ClusterEntrypoint.ExecutionMode executionMode =
                 detached
                         ? ClusterEntrypoint.ExecutionMode.DETACHED
@@ -572,6 +574,8 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
                 startAppMaster(
                         flinkConfiguration,
                         applicationName,
+                        // clouding 注释: 2022/7/18 00:40
+                        //          启动入口类,有两个 YarnJobClusterEntrypoint YarnSessionClusterEntrypoint
                         yarnClusterEntrypoint,
                         jobGraph,
                         yarnClient,
@@ -765,6 +769,8 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
                             + "The Flink YARN client needs to store its files in a distributed file system");
         }
 
+        // clouding 注释: 2022/7/18 00:41
+        //          提交到yarn的描述信息
         ApplicationSubmissionContext appContext = yarnApplication.getApplicationSubmissionContext();
 
         final List<Path> providedLibDirs =
@@ -846,6 +852,8 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
             jobGraph.writeUserArtifactEntriesToConfiguration();
         }
 
+        // clouding 注释: 2022/7/18 00:43
+        //          把FLINK_HOME/lib下文件加到shipFiles, 等待上传
         if (providedLibDirs == null || providedLibDirs.isEmpty()) {
             addLibFoldersToShipFiles(systemShipFiles);
         }
@@ -865,6 +873,8 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
         // Plugin files only need to be shipped and should not be added to classpath.
         if (providedLibDirs == null || providedLibDirs.isEmpty()) {
             Set<File> shipOnlyFiles = new HashSet<>();
+            // clouding 注释: 2022/7/18 00:42
+            //          把plugins目录的文件上传
             addPluginsFoldersToShipFiles(shipOnlyFiles);
             fileUploader.registerMultipleLocalResources(
                     shipOnlyFiles.stream()
@@ -1034,6 +1044,8 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
             Utils.setTokensFor(amContainer, fileUploader.getRemotePaths(), yarnConfiguration);
         }
 
+        // clouding 注释: 2022/7/18 00:46
+        //        至此, 设置完了所有的资源文件
         amContainer.setLocalResources(fileUploader.getRegisteredLocalResources());
         fileUploader.close();
 
@@ -1084,6 +1096,8 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
         // set classpath from YARN configuration
         Utils.setupYarnClassPath(yarnConfiguration, appMasterEnv);
 
+        // clouding 注释: 2022/7/18 00:46
+        //          设置appMaster的 env
         amContainer.setEnvironment(appMasterEnv);
 
         // Set up resource type requirements for ApplicationMaster
@@ -1119,12 +1133,16 @@ public class YarnClusterDescriptor implements ClusterDescriptor<ApplicationId> {
                 new DeploymentFailureHook(yarnApplication, fileUploader.getApplicationDir());
         Runtime.getRuntime().addShutdownHook(deploymentFailureHook);
         LOG.info("Submitting application master " + appId);
+        // clouding 注释: 2022/7/18 00:48
+        //          提交 appMaster,等着yarn分配部署
         yarnClient.submitApplication(appContext);
 
         LOG.info("Waiting for the cluster to be allocated");
         final long startTime = System.currentTimeMillis();
         ApplicationReport report;
         YarnApplicationState lastAppState = YarnApplicationState.NEW;
+        // clouding 注释: 2022/7/18 00:48
+        //          等待yarn状态返回
         loop:
         while (true) {
             try {
