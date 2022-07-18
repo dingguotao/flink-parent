@@ -277,7 +277,7 @@ public class ZooKeeperLeaderElectionService
 
     /*********************
      * clouding 注释: 2022/5/4 16:50
-     *  	    失去leader或者没有选举上执行的逻辑
+     *  	    没有选举上执行的逻辑
      *********************/
     @Override
     public void notLeader() {
