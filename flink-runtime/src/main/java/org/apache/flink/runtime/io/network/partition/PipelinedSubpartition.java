@@ -158,6 +158,12 @@ public class PipelinedSubpartition extends ResultSubpartition {
         LOG.debug("{}: Finished {}.", parent.getOwningTaskName(), this);
     }
 
+    /*********************
+     * clouding 注释: 2022/7/23 19:19
+     *  	    添加一个 BufferConsumer
+     *  	    finish: 代表整个subpartition都完成了, 本次就添加失败了
+     *  	    insertAsHead:
+     *********************/
     private boolean add(BufferConsumer bufferConsumer, boolean finish, boolean insertAsHead) {
         checkNotNull(bufferConsumer);
 
@@ -171,6 +177,8 @@ public class PipelinedSubpartition extends ResultSubpartition {
             // Add the bufferConsumer and update the stats
             handleAddingBarrier(bufferConsumer, insertAsHead);
             updateStatistics(bufferConsumer);
+            // clouding 注释: 2022/7/23 19:22
+            //          更新 backlog的值
             increaseBuffersInBacklog(bufferConsumer);
             notifyDataAvailable = insertAsHead || finish || shouldNotifyDataAvailable();
 
@@ -178,6 +186,8 @@ public class PipelinedSubpartition extends ResultSubpartition {
         }
 
         if (notifyDataAvailable) {
+            // clouding 注释: 2022/7/23 19:22
+            //          通知有数据进来,需要消费了
             notifyDataAvailable();
         }
 

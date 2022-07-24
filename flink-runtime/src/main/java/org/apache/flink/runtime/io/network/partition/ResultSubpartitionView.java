@@ -26,6 +26,8 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 
 /** A view to consume a {@link ResultSubpartition} instance. */
+// clouding 注释: 2022/7/24 00:32
+//          ResultSubPartition中读取数据,释放资源的接口
 public interface ResultSubpartitionView {
 
     /**
@@ -38,6 +40,10 @@ public interface ResultSubpartitionView {
      * <p><strong>Important</strong>: The consumer has to make sure that each buffer instance will
      * eventually be recycled with {@link Buffer#recycleBuffer()} after it has been consumed.
      */
+    /*********************
+     * clouding 注释: 2022/7/24 00:31
+     *  	    用来获取Buffer, 申请MemorySegment
+     *********************/
     @Nullable
     BufferAndBacklog getNextBuffer() throws IOException;
 

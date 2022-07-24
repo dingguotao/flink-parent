@@ -25,9 +25,21 @@ import org.apache.flink.util.CloseableIterator;
 import java.io.IOException;
 
 /** Interface for turning sequences of memory segments into records. */
+/*********************
+ * clouding 注释: 2022/7/24 00:27
+ *  	    实现类: SpillingAdaptiveSpanningRecordDeserializer, 和序列化器 {@link SpanningRecordSerializer} 类似
+ *********************/
 public interface RecordDeserializer<T extends IOReadableWritable> {
 
     /** Status of the deserialization result. */
+    /*********************
+     * clouding 注释: 2022/7/24 00:27
+     *  	    和 {@link org.apache.flink.runtime.io.network.api.serialization.RecordSerializer.SerializationResult} 类似
+     *  	    有3种状态:
+     *  	    PARTIAL_RECORD: 记录未被完全读取,但是缓冲区已经消费完成
+     *  	    INTERMEDIATE_RECORD_FROM_BUFFER: 记录已经被完全读取,但是缓冲区还有数据
+     *  	    LAST_RECORD_FROM_BUFFER: 记录被完全读取,并且缓冲区消费完成
+     *********************/
     enum DeserializationResult {
         PARTIAL_RECORD(false, true),
         INTERMEDIATE_RECORD_FROM_BUFFER(true, false),

@@ -46,6 +46,10 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 import static org.apache.flink.util.Preconditions.checkState;
 
 /** An input channel, which requests a local subpartition. */
+/*********************
+ * clouding 注释: 2022/7/23 19:50
+ *  	    对应于本地结果分区的数据交换, 用以本地不同task之间的数据交换
+ *********************/
 public class LocalInputChannel extends InputChannel implements BufferAvailabilityListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalInputChannel.class);
@@ -252,6 +256,10 @@ public class LocalInputChannel extends InputChannel implements BufferAvailabilit
                 new BufferAndAvailability(buffer, next.isDataAvailable(), next.buffersInBacklog()));
     }
 
+    /*********************
+     * clouding 注释: 2022/7/23 19:51
+     *  	    通知数据到了, ResultSubPartition里有数据到了
+     *********************/
     @Override
     public void notifyDataAvailable() {
         notifyChannelNonEmpty();

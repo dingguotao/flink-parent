@@ -32,6 +32,10 @@ import java.nio.ByteBuffer;
  *
  * @param <T> The type of the records that are serialized.
  */
+/*********************
+ * clouding 注释: 2022/7/23 22:34
+ *  	    数据记录的序列化器, 可以支持跨内存段的序列化器
+ *********************/
 public class SpanningRecordSerializer<T extends IOReadableWritable> implements RecordSerializer<T> {
 
     /** Flag to enable/disable checks, if buffer not set/full or pending serialization. */
@@ -41,6 +45,8 @@ public class SpanningRecordSerializer<T extends IOReadableWritable> implements R
     private final DataOutputSerializer serializationBuffer;
 
     /** Intermediate buffer for data serialization (wrapped from {@link #serializationBuffer}). */
+    // clouding 注释: 2022/7/23 22:42
+    //          Java中原生的 ByteBuffer
     private ByteBuffer dataBuffer;
 
     public SpanningRecordSerializer() {
@@ -56,6 +62,9 @@ public class SpanningRecordSerializer<T extends IOReadableWritable> implements R
      *
      * @param record the record to serialize
      */
+    // clouding 注释: 2022/7/23 22:01
+    //          序列化 record 到这个类的 dataBuffer 中,
+    //          dataBuffer 中, limit 是Buffer内存段的长度, position是写入位置的偏移量
     @Override
     public void serializeRecord(T record) throws IOException {
         if (CHECKED) {
@@ -85,20 +94,30 @@ public class SpanningRecordSerializer<T extends IOReadableWritable> implements R
      * @param targetBuffer the target BufferBuilder to copy to
      * @return how much information was written to the target buffer and whether this buffer is full
      */
+    // clouding 注释: 2022/7/23 22:01
+    //          将 dataBuffer 数据写入到 targetBuffer 中
     @Override
     public SerializationResult copyToBufferBuilder(BufferBuilder targetBuffer) {
         targetBuffer.append(dataBuffer);
         targetBuffer.commit();
 
+        // clouding 注释: 2022/7/23 22:48
+        //          获取 ByteBuffer 的写入状态
         return getSerializationResult(targetBuffer);
     }
 
     private SerializationResult getSerializationResult(BufferBuilder targetBuffer) {
         if (dataBuffer.hasRemaining()) {
+            // clouding 注释: 2022/7/23 22:48
+            //          Record 还有剩余,但是BufferBuilder没空间了
             return SerializationResult.PARTIAL_RECORD_MEMORY_SEGMENT_FULL;
         }
         return !targetBuffer.isFull()
+                // clouding 注释: 2022/7/23 22:49
+                //       Record写完了, 但是 BufferBuilder还有空间
                 ? SerializationResult.FULL_RECORD
+                // clouding 注释: 2022/7/23 22:50
+                //          Record写完了, 并且 BufferBuilder写满了
                 : SerializationResult.FULL_RECORD_MEMORY_SEGMENT_FULL;
     }
 

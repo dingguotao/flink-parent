@@ -37,6 +37,8 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamElement;
  * <p>When a source closes it will emit a final watermark with timestamp {@code Long.MAX_VALUE}.
  * When an operator receives this it will know that no more input will be arriving in the future.
  */
+// clouding 注释: 2022/7/23 19:09
+//          Watermark 标识一个时间戳,用来告诉算子,所有到timestamp的数据都已到达
 @PublicEvolving
 public final class Watermark extends StreamElement {
 
@@ -46,6 +48,8 @@ public final class Watermark extends StreamElement {
     // ------------------------------------------------------------------------
 
     /** The timestamp of the watermark in milliseconds. */
+    // clouding 注释: 2022/7/23 19:10
+    //          时间戳
     private final long timestamp;
 
     /** Creates a new watermark with the given timestamp in milliseconds. */

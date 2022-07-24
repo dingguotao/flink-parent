@@ -49,6 +49,10 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 import static org.apache.flink.util.Preconditions.checkState;
 
 /** An input channel, which requests a remote partition queue. */
+/*********************
+ * clouding 注释: 2022/7/23 21:23
+ *  	    跨网络的数据交换
+ *********************/
 public class RemoteInputChannel extends InputChannel {
 
     /** ID to distinguish this channel from other channels sharing the same TCP connection. */

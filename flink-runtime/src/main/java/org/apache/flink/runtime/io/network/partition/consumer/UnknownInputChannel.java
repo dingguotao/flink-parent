@@ -35,6 +35,10 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * An input channel place holder to be replaced by either a {@link RemoteInputChannel} or {@link
  * LocalInputChannel} at runtime.
  */
+/*********************
+ * clouding 注释: 2022/7/23 21:23
+ *  	    占位的InputChannel, 是由于还没有确定Task生产者和自己是否在一个TaskManager上
+ *********************/
 class UnknownInputChannel extends InputChannel {
 
     private final ResultPartitionManager partitionManager;

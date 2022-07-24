@@ -102,6 +102,8 @@ public abstract class MemorySegment {
 
     /** The beginning of the byte array contents, relative to the byte array object. */
     @SuppressWarnings("restriction")
+    // clouding 注释: 2022/7/22 22:04
+    //          二进制的索引
     protected static final long BYTE_ARRAY_BASE_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
 
     /**
@@ -121,21 +123,30 @@ public abstract class MemorySegment {
      * segment will point to undefined addresses outside the heap and may in out-of-order execution
      * cases cause segmentation faults.
      */
+    // clouding 注释: 2022/7/22 22:28
+    //          如果是堆外内存, heapMemory = null;
+    //          如果是堆上内存, heapMemory 就是代表的字节数组
     protected final byte[] heapMemory;
 
     /**
      * The address to the data, relative to the heap memory byte array. If the heap memory byte
      * array is <tt>null</tt>, this becomes an absolute memory address outside the heap.
      */
+    // clouding 注释: 2022/7/22 22:27
+    //          字节数组的相对地址
     protected long address;
 
     /**
      * The address one byte after the last addressable byte, i.e. <tt>address + size</tt> while the
      * segment is not disposed.
      */
+    // clouding 注释: 2022/7/22 22:27
+    //          地址的结束位置
     protected final long addressLimit;
 
     /** The size in bytes of the memory segment. */
+    // clouding 注释: 2022/7/22 22:29
+    //          memory segment的字节数
     protected final int size;
 
     /** Optional owner of the memory segment. */

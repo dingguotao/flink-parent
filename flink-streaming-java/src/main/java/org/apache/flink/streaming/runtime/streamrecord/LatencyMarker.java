@@ -28,16 +28,22 @@ import org.apache.flink.runtime.jobgraph.OperatorID;
  * <p>At sinks, the marker can be used to approximate the time a record needs to travel through the
  * dataflow.
  */
+// clouding 注释: 2022/7/23 19:08
+//          用来评估数据在整个流中的延迟. 在Source在产生, 绕过业务处理逻辑, 流转到Sink,近视评估处理延迟
 @PublicEvolving
 public final class LatencyMarker extends StreamElement {
 
     // ------------------------------------------------------------------------
 
     /** The time the latency mark is denoting. */
+    // clouding 注释: 2022/7/23 19:09
+    //          周期性的在Source中生成的时间戳
     private final long markedTime;
 
     private final OperatorID operatorId;
 
+    // clouding 注释: 2022/7/23 19:09
+    //          数据的task编号
     private final int subtaskIndex;
 
     /** Creates a latency mark with the given timestamp. */

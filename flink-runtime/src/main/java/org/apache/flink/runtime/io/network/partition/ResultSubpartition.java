@@ -30,6 +30,10 @@ import java.util.List;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /** A single subpartition of a {@link ResultPartition} instance. */
+/*********************
+ * clouding 注释: 2022/7/23 19:16
+ *  	    表示 结果分区的一部分, 负责实际的Buffer存储
+ *********************/
 public abstract class ResultSubpartition {
 
     /** The info of the subpartition to identify it globally within a task. */

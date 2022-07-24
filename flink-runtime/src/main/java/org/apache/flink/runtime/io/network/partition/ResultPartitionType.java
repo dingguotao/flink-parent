@@ -32,6 +32,8 @@ public enum ResultPartitionType {
      * {@link #PIPELINED} partitions), but only released through the scheduler, when it determines
      * that the partition is no longer needed.
      */
+    // clouding 注释: 2022/7/23 17:53
+    //          上游所有数据生成完毕,才发往下游
     BLOCKING(false, false, false, false),
 
     /**
@@ -57,6 +59,8 @@ public enum ResultPartitionType {
      * <p>This result partition type may keep an arbitrary amount of data in-flight, in contrast to
      * the {@link #PIPELINED_BOUNDED} variant.
      */
+    // clouding 注释: 2022/7/23 17:53
+    //          上游一产生数据,就一条一条发送到下游
     PIPELINED(true, true, false, false),
 
     /**

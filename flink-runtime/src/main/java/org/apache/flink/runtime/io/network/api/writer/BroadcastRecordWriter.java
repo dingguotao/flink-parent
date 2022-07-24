@@ -38,6 +38,11 @@ import static org.apache.flink.util.Preconditions.checkState;
  *
  * @param <T> the type of the record that can be emitted with this record writer
  */
+/*********************
+ * clouding 注释: 2022/7/23 22:20
+ *  	    通过广播形式,写出数据.
+ *  	    具体是写出数据到 编号是 0 的subpartition, 然后把这个发送给所有的下游,可以节省空间,不用全部都写
+ *********************/
 public final class BroadcastRecordWriter<T extends IOReadableWritable> extends RecordWriter<T> {
 
     /** The current buffer builder shared for all the channels. */

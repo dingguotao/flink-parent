@@ -32,6 +32,17 @@ import org.apache.flink.util.OutputTag;
  *
  * @param <T> The type of the elements that can be emitted.
  */
+/*********************
+ * clouding 注释: 2022/7/24 11:59
+ *  	    算子向下游发送数据的抽象, 主要的实现类:
+ *  	    WatermarkGaugeExposingOutput: 定义了统计WaterMark监控指标的Metric,将最后一次的Watermark作为其指标值
+ *  	    RecordWriterOutput: 使用RecordWriter把数据写出到网络中
+ *  	    DirectedOutput,CopyingDirectedOutput: 基于一组的outputSelector,选择发送给下游的Task
+ *  	        DirectedOutput使用共享对象模式, CopyingDirectedOutput使用非共享对象模式
+ *  	    CountingOutput: 记录向下游发送元素的个数
+ *  	    ChainingOutput,CopyingChainingOutput: 在operatorChain算子内部传递数据,这个不需要序列化的部分,
+ *  	                                          直接在output中调用processElement方法,节省网络开销
+ *********************/
 @PublicEvolving
 public interface Output<T> extends Collector<T> {
 

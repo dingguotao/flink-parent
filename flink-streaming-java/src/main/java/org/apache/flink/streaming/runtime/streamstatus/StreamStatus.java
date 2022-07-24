@@ -82,6 +82,12 @@ import org.apache.flink.streaming.runtime.tasks.StreamTask;
  * instead of {@link StreamStatus#IDLE}. Stream Status elements only serve as markers for temporary
  * status.
  */
+// clouding 注释: 2022/7/23 19:10
+//          用来通知上游Task是否继续接收上游的记录,
+//          StreamStatus在Source中生成, 向下沿着DataFlow传播;
+//          有两种状态:
+//              IDLE_STATUS : 空闲状态
+//              ACTIVE_STATUS :
 @Internal
 public final class StreamStatus extends StreamElement {
 

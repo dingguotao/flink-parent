@@ -62,6 +62,16 @@ import static org.apache.flink.util.Preconditions.checkArgument;
  * subpartition reached the quota. >>>>>>> f05c0f0418 ([FLINK-20651] Fix formatting that doesn't
  * work with google-java-format/checkstyle)
  */
+/*********************
+ * clouding 注释: 2022/7/23 17:40
+ *  	    BufferPool 主要用来管理 Buffer,就是NetworkBuffer {@link NetworkBuffer}
+ *  	    1. BufferPool的默认实现是 LocalBufferPool, 通过BufferPoolFactory对BufferPool来创建和销毁,
+ *  	    BufferPoolFactory实现类就是NetworkBufferPool
+ *  	    2. 每个TaskManager只有1个NetworkBufferPool, 在TaskManager启动时就会创建
+ *  	    3. NetworkBufferPool 持有了这个TaskManager上进行数据传递时的所有内存,
+ *  	    4. NetworkBufferPool 还作为Task 所需要的MemorySegment的提供者
+ *  	    5. 每个Task需要的内存,都是从 NetworkBufferPool 申请的
+ *********************/
 class LocalBufferPool implements BufferPool {
     private static final Logger LOG = LoggerFactory.getLogger(LocalBufferPool.class);
 
