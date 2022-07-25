@@ -189,12 +189,18 @@ public class Task
     private final TaskManagerRuntimeInfo taskManagerConfig;
 
     /** The memory manager to be used by this task. */
+    // clouding 注释: 2022/7/24 17:20
+    //          内存的管理,申请和释放
     private final MemoryManager memoryManager;
 
     /** The I/O manager to be used by this task. */
+    // clouding 注释: 2022/7/24 17:22
+    //          在批处理中, 排序或者Join场景, 负责将数据溢写磁盘和读取
     private final IOManager ioManager;
 
     /** The BroadcastVariableManager to be used by this task. */
+    // clouding 注释: 2022/7/24 17:24
+    //          广播变量管理器,Task可共享这个变量. 通过引用计数来管理,没有的话会清楚该广播变量
     private final BroadcastVariableManager broadcastVariableManager;
 
     private final TaskEventDispatcher taskEventDispatcher;
@@ -203,6 +209,8 @@ public class Task
     private final ExternalResourceInfoProvider externalResourceInfoProvider;
 
     /** The manager for state of operators running in this task/slot. */
+    // clouding 注释: 2022/7/24 17:17
+    //          负责状态管理
     private final TaskStateManager taskStateManager;
 
     /**
@@ -218,9 +226,13 @@ public class Task
     private final TaskManagerActions taskManagerActions;
 
     /** Input split provider for the task. */
+    // clouding 注释: 2022/7/24 17:19
+    //          数据源算子中,用来向JobMaster请求分配数据分片,处理该分片的数据
     private final InputSplitProvider inputSplitProvider;
 
     /** Checkpoint notifier used to communicate with the CheckpointCoordinator. */
+    // clouding 注释: 2022/7/24 17:19
+    //          和CheckpointCoordinator交互,汇报State状态
     private final CheckpointResponder checkpointResponder;
 
     /**
@@ -232,6 +244,8 @@ public class Task
     private final GlobalAggregateManager aggregateManager;
 
     /** The library cache, from which the task can request its class loader. */
+    // clouding 注释: 2022/7/24 17:20
+    //          该组件负责在Task启动时,从远程下载需要的jar文件
     private final LibraryCacheManager.ClassLoaderHandle classLoaderHandle;
 
     /** The cache for user-defined files that the invokable requires. */
@@ -250,6 +264,8 @@ public class Task
     private final TaskMetricGroup metrics;
 
     /** Partition producer state checker to request partition states from. */
+    // clouding 注释: 2022/7/24 17:24
+    //          分区状态检查器,用以检查生产端分区状态
     private final PartitionProducerStateChecker partitionProducerStateChecker;
 
     /** Executor to run future callbacks. */
@@ -322,6 +338,8 @@ public class Task
             FileCache fileCache,
             TaskManagerRuntimeInfo taskManagerConfig,
             @Nonnull TaskMetricGroup metricGroup,
+            // clouding 注释: 2022/7/24 17:22
+            //          用以通知生产者的结果分区可以消费了的通知器
             ResultPartitionConsumableNotifier resultPartitionConsumableNotifier,
             PartitionProducerStateChecker partitionProducerStateChecker,
             Executor executor) {

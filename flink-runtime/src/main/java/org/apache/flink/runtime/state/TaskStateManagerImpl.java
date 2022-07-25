@@ -70,6 +70,8 @@ public class TaskStateManagerImpl implements TaskStateManager {
     private final TaskLocalStateStore localStateStore;
 
     /** The checkpoint responder through which this manager can report to the job manager. */
+    // clouding 注释: 2022/7/24 17:16
+    //          负责和JobMaster交互,汇报检查点的状态
     private final CheckpointResponder checkpointResponder;
 
     private final ChannelStateReader channelStateReader;

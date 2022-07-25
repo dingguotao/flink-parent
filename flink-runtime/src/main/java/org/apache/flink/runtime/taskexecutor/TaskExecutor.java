@@ -679,6 +679,8 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             PartitionProducerStateChecker partitionStateChecker =
                     jobManagerConnection.getPartitionStateChecker();
 
+            // clouding 注释: 2022/7/24 17:25
+            //          本地存放state的地方,在恢复时优先从本地恢复, 不能从本地恢复的,再从hdfs恢复
             final TaskLocalStateStore localStateStore =
                     localStateStoresManager.localStateStoreForSubtask(
                             jobId,
