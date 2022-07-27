@@ -24,13 +24,19 @@ import org.apache.flink.annotation.Internal;
  *
  * @param <T> The type encapsulated with the stream record.
  */
+// clouding 注释: 2022/7/23 19:07
+//          数据流中的一条记录
 @Internal
 public final class StreamRecord<T> extends StreamElement {
 
     /** The actual value held by this record. */
+    // clouding 注释: 2022/7/23 19:07
+    //          数据值
     private T value;
 
     /** The timestamp of the record. */
+    // clouding 注释: 2022/7/23 19:07
+    //          数据的时间戳
     private long timestamp;
 
     /** Flag whether the timestamp is actually set. */

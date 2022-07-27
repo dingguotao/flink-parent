@@ -31,6 +31,9 @@ import java.io.UTFDataFormatException;
  * concrete sub classes must implement the methods to provide the next memory page once the boundary
  * is crossed.
  */
+// clouding 注释: 2022/7/23 17:23
+//          所有的输入,都会继承这个类, 可以支持page,也就是多个 MemorySegment,
+//          这一组MemorySegment就是一个内存页, 可以顺序读取
 public abstract class AbstractPagedInputView implements DataInputView {
 
     private MemorySegment currentSegment;

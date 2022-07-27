@@ -48,6 +48,14 @@ import java.nio.ByteBuffer;
  * modify either index, so the indices need to be updated manually via {@link #setReaderIndex(int)}
  * and {@link #setSize(int)}.
  */
+/*********************
+ * clouding 注释: 2022/7/23 17:35
+ *  	    上游处理完数据后, 会通过 Buffer 将数据发送到下游, Buffer 默认实现计就是 NetworkBuffer
+ *  	    1. Buffer是网络上传输数据和事件的抽象, 每个Network包含了一个MemorySegment
+ *  	    2. Buffer的底层就是MemorySegment, Buffer的申请释放是通过Flink引用计数管理的,当Buffer引用数为0时,就释放Buffer
+ *  	    3. NetworkBuffer 继承了 AbstractReferenceCountedByteBuf, 因此Network就具备了引用计数的能力
+ *  	    4. NetworkBuffer的申请,释放是由BufferPool来实现的
+ *********************/
 public interface Buffer {
 
     /**

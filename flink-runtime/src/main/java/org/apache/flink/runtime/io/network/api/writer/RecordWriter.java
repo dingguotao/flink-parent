@@ -59,6 +59,13 @@ import static org.apache.flink.util.Preconditions.checkState;
  *
  * @param <T> the type of the record that can be emitted with this record writer
  */
+/*********************
+ * clouding 注释: 2022/7/23 21:58
+ *  	    负责将Task数据输出到下游, 写出的数据就是StreamRecord
+ *  	    实现类有两个:
+ *  	        ChannelSelectorRecordWriter: 根据分区策略,将数据写入到subPartition
+ *  	        BroadcastRecordWriter: 写出到编号是0的subPartition
+ *********************/
 public abstract class RecordWriter<T extends IOReadableWritable> implements AvailabilityProvider {
 
     /** Default name for the output flush thread, if no name with a task reference is given. */
@@ -75,6 +82,9 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
     //          下游有多少的chennel需要写入的总数.
     protected final int numberOfChannels;
 
+    // clouding 注释: 2022/7/23 21:59
+    //          负责把 StreamRecord 序列化成二进制写入Buffer,
+    //          唯一的实现类 {@link SpanningRecordSerializer}
     protected final RecordSerializer<T> serializer;
 
     protected final Random rng = new XORShiftRandom();
@@ -128,6 +138,8 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
 
         // Make sure we don't hold onto the large intermediate serialization buffer for too long
         if (copyFromSerializerToTargetChannel(targetChannel)) {
+            // clouding 注释: 2022/7/23 22:26
+            //          执行成功后,会做些serializer中数据清理, 数据最开始是写在了serializer中
             serializer.prune();
         }
     }
@@ -142,6 +154,8 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
         // copying, so the serialization results can be copied to multiple target buffers.
         serializer.reset();
 
+        // clouding 注释: 2022/7/23 22:29
+        //          是否执行清理
         boolean pruneTriggered = false;
         BufferBuilder bufferBuilder = getBufferBuilder(targetChannel);
         SerializationResult result = serializer.copyToBufferBuilder(bufferBuilder);
@@ -163,6 +177,8 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
         checkState(!serializer.hasSerializedData(), "All data should be written at once");
 
         if (flushAlways) {
+            // clouding 注释: 2022/7/23 22:31
+            //          发送数据
             flushTargetPartition(targetChannel);
         }
         return pruneTriggered;

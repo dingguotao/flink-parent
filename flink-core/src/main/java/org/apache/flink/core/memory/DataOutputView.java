@@ -28,6 +28,8 @@ import java.io.IOException;
  * the memory. The view is typically backed by one or more {@link
  * org.apache.flink.core.memory.MemorySegment}.
  */
+// clouding 注释: 2022/7/23 17:26
+//          数据写入的抽象入口, 封装了对MemorySegment的操作
 @Public
 public interface DataOutputView extends DataOutput {
 

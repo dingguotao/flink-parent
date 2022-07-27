@@ -27,6 +27,13 @@ import java.io.IOException;
 public interface RecordSerializer<T extends IOReadableWritable> {
 
     /** Status of the serialization result. */
+    /*********************
+     * clouding 注释: 2022/7/23 22:32
+     *  	    用来标识数据序列化到 BufferBuilder (MemorySegment的封装) 中的3中情况:
+     *  	    PARTIAL_RECORD_MEMORY_SEGMENT_FULL: 写入了部分数据,但是BufferBuilder满了,需要申请新的BufferBuilder
+     *  	    FULL_RECORD_MEMORY_SEGMENT_FULL: 写入了Record的整个数据,并且BufferBuilder满了
+     *  	    FULL_RECORD: 写入了全部的Record, 并且 BufferBuilder 没有满
+     *********************/
     enum SerializationResult {
         PARTIAL_RECORD_MEMORY_SEGMENT_FULL(false, true),
         FULL_RECORD_MEMORY_SEGMENT_FULL(true, true),

@@ -35,6 +35,10 @@ import static org.apache.flink.util.Preconditions.checkState;
  *
  * @param <T> the type of the record that can be emitted with this record writer
  */
+/*********************
+ * clouding 注释: 2022/7/23 22:06
+ *  	    根据 ChannelSelector, 将数据流中的每一条数据写出到对应的SubPartition, 默认的ChannelSelector 是 RoundRobinChannelSelector
+ *********************/
 public final class ChannelSelectorRecordWriter<T extends IOReadableWritable>
         extends RecordWriter<T> {
 
