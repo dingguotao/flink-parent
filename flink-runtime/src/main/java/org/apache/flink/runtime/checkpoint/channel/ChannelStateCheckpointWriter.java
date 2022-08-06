@@ -60,6 +60,8 @@ class ChannelStateCheckpointWriter {
     private final DataOutputStream dataStream;
     private final CheckpointStateOutputStream checkpointStream;
     private final ChannelStateWriteResult result;
+    // clouding 注释: 2022/8/6 20:22
+    //          存储 buffer
     private final Map<InputChannelInfo, StateContentMetaInfo> inputChannelOffsets = new HashMap<>();
     // clouding 注释: 2022/7/7 00:03
     //          用来存储写入的buffer信息
@@ -133,6 +135,11 @@ class ChannelStateCheckpointWriter {
                         long offset = checkpointStream.getPos();
                         serializer.writeData(dataStream, buffer);
                         long size = checkpointStream.getPos() - offset;
+                        // clouding 注释: 2022/8/9 10:57
+                        //    这里offsets,就是存放这个的map,key是InputChannelInfo或者ResultSubpartitionInfo.
+                        //    StateContentMetaInfo 里面是个List<Long>, 存放开始offset和结束offset
+                        //    private final Map<InputChannelInfo, StateContentMetaInfo> inputChannelOffsets
+                        //    private final Map<ResultSubpartitionInfo, StateContentMetaInfo> resultSubpartitionOffsets
                         offsets.computeIfAbsent(key, unused -> new StateContentMetaInfo())
                                 .withDataAdded(offset, size);
                     });

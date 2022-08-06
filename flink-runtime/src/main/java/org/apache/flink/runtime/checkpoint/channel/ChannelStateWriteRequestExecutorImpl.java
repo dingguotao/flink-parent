@@ -94,6 +94,8 @@ class ChannelStateWriteRequestExecutorImpl implements ChannelStateWriteRequestEx
     private void loop() throws Exception {
         while (!wasClosed) {
             try {
+                // clouding 注释: 2022/8/6 18:56
+                //          写入后会自动触发这里进行操作
                 dispatcher.dispatch(deque.take());
             } catch (InterruptedException e) {
                 if (!wasClosed) {

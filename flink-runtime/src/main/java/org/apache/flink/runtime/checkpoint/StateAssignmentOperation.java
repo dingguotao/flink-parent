@@ -114,6 +114,8 @@ public class StateAssignmentOperation {
                 operatorStates.add(operatorState);
             }
             if (!statelessSubTasks) { // skip tasks where no operator has any state
+                // clouding 注释: 2022/8/10 15:46
+                //          operatorStates 是这个executionJobVertex的所有状态
                 assignAttemptState(executionJobVertex, operatorStates);
             }
         }
@@ -168,14 +170,20 @@ public class StateAssignmentOperation {
                         OperatorSubtaskState::getRawOperatorState,
                         RoundRobinOperatorStateRepartitioner.INSTANCE);
 
+        // clouding 注释: 2022/8/10 15:55
+        //          input channel 状态重分配
         final Map<OperatorInstanceID, List<InputChannelStateHandle>> newInputChannelState =
                 reDistributePartitionableStates(
                         operatorStates,
                         newParallelism,
                         operatorIDs,
                         OperatorSubtaskState::getInputChannelState,
+                        // clouding 注释: 2022/8/10 15:55
+                        //          不支持rescale的partitioner
                         channelStateNonRescalingRepartitioner("input channel"));
 
+        // clouding 注释: 2022/8/10 15:55
+        //          result sub partition 状态重分配
         final Map<OperatorInstanceID, List<ResultSubpartitionStateHandle>>
                 newResultSubpartitionState =
                         reDistributePartitionableStates(
@@ -183,6 +191,8 @@ public class StateAssignmentOperation {
                                 newParallelism,
                                 operatorIDs,
                                 OperatorSubtaskState::getResultSubpartitionState,
+                                // clouding 注释: 2022/8/10 15:55
+                                //          不支持rescale的partitioner
                                 channelStateNonRescalingRepartitioner("result subpartition"));
 
         Map<OperatorInstanceID, List<KeyedStateHandle>> newManagedKeyedState =

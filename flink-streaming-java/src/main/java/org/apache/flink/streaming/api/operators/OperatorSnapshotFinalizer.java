@@ -59,9 +59,13 @@ public class OperatorSnapshotFinalizer {
         SnapshotResult<OperatorStateHandle> operatorRaw =
                 FutureUtils.runIfNotDoneAndGet(snapshotFutures.getOperatorStateRawFuture());
 
+        // clouding 注释: 2022/8/6 21:19
+        //          获取input channel写入数据
         SnapshotResult<StateObjectCollection<InputChannelStateHandle>> inputChannel =
                 snapshotFutures.getInputChannelStateFuture().get();
 
+        // clouding 注释: 2022/8/6 21:19
+        //          获取 result sub partition写入数据
         SnapshotResult<StateObjectCollection<ResultSubpartitionStateHandle>> resultSubpartition =
                 snapshotFutures.getResultSubpartitionStateFuture().get();
 

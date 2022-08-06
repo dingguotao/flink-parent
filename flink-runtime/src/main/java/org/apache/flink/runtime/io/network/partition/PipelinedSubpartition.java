@@ -175,6 +175,8 @@ public class PipelinedSubpartition extends ResultSubpartition {
             }
 
             // Add the bufferConsumer and update the stats
+            // clouding 注释: 2022/8/7 22:22
+            //          加入到了flight data中
             handleAddingBarrier(bufferConsumer, insertAsHead);
             updateStatistics(bufferConsumer);
             // clouding 注释: 2022/7/23 19:22

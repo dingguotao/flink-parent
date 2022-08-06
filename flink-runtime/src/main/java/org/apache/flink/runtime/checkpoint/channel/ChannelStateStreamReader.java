@@ -77,6 +77,8 @@ class ChannelStateStreamReader implements Closeable {
 
     private ReadResult readInto(ChannelStateByteBuffer buffer) throws IOException {
         Preconditions.checkState(!closed, "reader is closed");
+        // clouding 注释: 2022/8/10 16:05
+        //          读取 inflight data中的数据
         readWhilePossible(buffer);
         if (haveMoreData()) {
             return HAS_MORE_DATA;

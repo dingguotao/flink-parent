@@ -67,6 +67,8 @@ public class ChannelStateWriterImpl implements ChannelStateWriter {
 
     private final String taskName;
     private final ChannelStateWriteRequestExecutor executor;
+    // clouding 注释: 2022/8/6 21:12
+    //          存放channel state写入结果的地方
     private final ConcurrentMap<Long, ChannelStateWriteResult> results;
     private final int maxCheckpoints;
 

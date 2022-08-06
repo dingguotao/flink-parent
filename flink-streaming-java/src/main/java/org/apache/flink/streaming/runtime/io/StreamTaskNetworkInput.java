@@ -261,6 +261,8 @@ public final class StreamTaskNetworkInput<T> implements StreamTaskInput<T> {
             checkpointedInputGate.spillInflightBuffers(
                     checkpointId, channelIndex, channelStateWriter);
         }
+        // clouding 注释: 2022/8/7 17:00
+        //          等待所有input channel的 barrier都接收到
         return checkpointedInputGate.getAllBarriersReceivedFuture(checkpointId);
     }
 

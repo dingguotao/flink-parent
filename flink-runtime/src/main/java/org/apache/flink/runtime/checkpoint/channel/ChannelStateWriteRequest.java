@@ -209,6 +209,8 @@ final class CheckpointInProgressRequest implements ChannelStateWriteRequest {
     void execute(ChannelStateCheckpointWriter channelStateCheckpointWriter) throws Exception {
         Preconditions.checkState(state.compareAndSet(NEW, EXECUTING));
         try {
+            // clouding 注释: 2022/8/7 22:12
+            //          写出数据
             action.accept(channelStateCheckpointWriter);
             state.set(COMPLETED);
         } catch (Exception e) {

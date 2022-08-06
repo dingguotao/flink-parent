@@ -68,6 +68,8 @@ final class ChannelStateWriteRequestDispatcherImpl implements ChannelStateWriteR
             checkState(
                     !writers.containsKey(request.getCheckpointId()),
                     "writer not found for request " + request);
+            // clouding 注释: 2022/8/6 18:59
+            //          在开始写checkpoint时,构建了本次checkpoint的writer,记录在了 writers
             writers.put(request.getCheckpointId(), buildWriter((CheckpointStartRequest) request));
         } else if (request instanceof CheckpointInProgressRequest) {
             ChannelStateCheckpointWriter writer = writers.get(request.getCheckpointId());
@@ -75,6 +77,8 @@ final class ChannelStateWriteRequestDispatcherImpl implements ChannelStateWriteR
             if (writer == null) {
                 req.onWriterMissing();
             } else {
+                // clouding 注释: 2022/8/6 19:57
+                //          写channel数据
                 req.execute(writer);
             }
         } else {
@@ -89,6 +93,8 @@ final class ChannelStateWriteRequestDispatcherImpl implements ChannelStateWriteR
                 streamFactoryResolver.resolveCheckpointStorageLocation(
                         request.getCheckpointId(), request.getLocationReference()),
                 serializer,
+                // clouding 注释: 2022/8/6 19:01
+                //          checkpoint结束或者异常处理逻辑
                 () -> writers.remove(request.getCheckpointId()));
     }
 

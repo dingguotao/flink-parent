@@ -305,11 +305,13 @@ public class CheckpointBarrierUnaligner extends CheckpointBarrierHandler {
                 CheckpointBarrier barrier, InputChannelInfo channelInfo) throws IOException {
             long barrierId = barrier.getId();
 
-            // clouding 注释: 2022/7/6 11:58
-            //          来了个新的checkpoint
             if (currentReceivedCheckpointId < barrierId) {
+                // clouding 注释: 2022/7/6 11:58
+                //          来了个新的checkpoint
                 handleNewCheckpoint(barrier);
                 handler.executeInTaskThread(
+                        // clouding 注释: 2022/8/7 21:08
+                        //          在第一个barrier到达时, 触发 task的 checkpoint操作
                         () -> handler.notifyCheckpoint(barrier), "notifyCheckpoint");
             }
 
@@ -322,6 +324,8 @@ public class CheckpointBarrierUnaligner extends CheckpointBarrierHandler {
                             barrierId);
                 }
 
+                // clouding 注释: 2022/8/7 21:07
+                //          标识当前 input channel 已到达,不需要继续持久化数据了
                 storeNewBuffers.put(channelInfo, false);
 
                 if (++numBarriersReceived == numOpenChannels) {
@@ -332,6 +336,9 @@ public class CheckpointBarrierUnaligner extends CheckpointBarrierHandler {
             }
         }
 
+        /**
+         * 侦听buffer的监听器
+         */
         @Override
         public synchronized void notifyBufferReceived(Buffer buffer, InputChannelInfo channelInfo) {
             // clouding 注释: 2022/7/6 14:12
@@ -360,7 +367,7 @@ public class CheckpointBarrierUnaligner extends CheckpointBarrierHandler {
                 throws IOException {
             long barrierId = barrier.getId();
             // clouding 注释: 2022/7/6 11:59
-            //          上一个的barrier是否全部到了
+            //          上一个的barrier是否全部到了,如果没有完成,则取消上一个checkpoint
             if (!allBarriersReceivedFuture.isDone()) {
                 CheckpointException exception =
                         new CheckpointException(

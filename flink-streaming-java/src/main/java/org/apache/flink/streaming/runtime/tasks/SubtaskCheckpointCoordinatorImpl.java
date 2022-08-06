@@ -309,10 +309,12 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
         // streaming topology
 
         // clouding 注释: 2022/5/4 18:27
-        //          拍摄状态快照。这在很大程度上应该是异步的，不影响流拓扑的进度
+        //          拍摄状态快照。这在很大程度上应该是异步的，不影响流数据流的进度
         Map<OperatorID, OperatorSnapshotFutures> snapshotFutures =
                 new HashMap<>(operatorChain.getNumberOfOperators());
         try {
+            // clouding 注释: 2022/8/9 16:25
+            //          同步做快照
             if (takeSnapshotSync(
                     snapshotFutures, metadata, metrics, options, operatorChain, isRunning)) {
                 // clouding 注释: 2022/5/4 18:34
@@ -512,7 +514,7 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
             }
         }
         // clouding 注释: 2022/7/6 14:23
-        //          写入output
+        //          这里在上述做完后，可以直接完成对result partition的写出
         channelStateWriter.finishOutput(checkpointId);
         prepareInputSnapshot
                 // clouding 注释: 2022/7/6 14:23
@@ -523,7 +525,7 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
                 .apply(channelStateWriter, checkpointId)
                 .whenComplete(
                         // clouding 注释: 2022/7/6 14:32
-                        //          apply返回的时候, 表示要么报错了,要么 input 结束了
+                        //          apply返回的时候, 表示barrier已经全部接收到了,或者是Checkpoint被取消了
                         (unused, ex) -> {
                             if (ex != null) {
                                 channelStateWriter.abort(
@@ -655,14 +657,22 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
         OperatorSnapshotFutures snapshotInProgress =
                 checkpointStreamOperator(
                         op, checkpointMetaData, checkpointOptions, storage, isRunning);
+        // clouding 注释: 2022/8/6 21:14
+        //          input channel 写在head的operator id对应状态中
         if (op == operatorChain.getHeadOperator()) {
+            // clouding 注释: 2022/8/6 21:13
+            //          input channel的写入数据结果
             snapshotInProgress.setInputChannelStateFuture(
                     channelStateWriteResult
                             .getInputChannelStateHandles()
                             .thenApply(StateObjectCollection::new)
                             .thenApply(SnapshotResult::of));
         }
+        // clouding 注释: 2022/8/6 21:15
+        //          result sub partition 写在 尾结点对应operator id中
         if (op == operatorChain.getTailOperator()) {
+            // clouding 注释: 2022/8/6 21:13
+            //          result sub partition的写入结果
             snapshotInProgress.setResultSubpartitionStateFuture(
                     channelStateWriteResult
                             .getResultSubpartitionStateHandles()

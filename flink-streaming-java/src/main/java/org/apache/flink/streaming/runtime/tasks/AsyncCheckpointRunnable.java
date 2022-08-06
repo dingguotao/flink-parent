@@ -110,6 +110,8 @@ final class AsyncCheckpointRunnable implements Runnable, Closeable {
                 OperatorSnapshotFutures snapshotInProgress = entry.getValue();
 
                 // finalize the async part of all by executing all snapshot runnables
+                // clouding 注释: 2022/8/6 21:20
+                //          拿到所有同步写入的结果
                 OperatorSnapshotFinalizer finalizedSnapshots =
                         new OperatorSnapshotFinalizer(snapshotInProgress);
 

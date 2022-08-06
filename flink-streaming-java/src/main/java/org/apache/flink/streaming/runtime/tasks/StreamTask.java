@@ -324,6 +324,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
                         getEnvironment(),
                         this,
                         configuration.isUnalignedCheckpointsEnabled(),
+                        // clouding 注释: 2022/8/6 21:30
+                        //          这个是用来做什么的?
                         this::prepareInputSnapshot);
 
         // if the clock is not already set, then assign a default TimeServiceProvider
