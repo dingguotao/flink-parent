@@ -82,9 +82,18 @@ public class OneInputStreamTask<IN, OUT> extends StreamTask<OUT, OneInputStreamO
         int numberOfInputs = configuration.getNumberOfInputs();
 
         if (numberOfInputs > 0) {
+            // clouding 注释: 2022/8/14 21:03
+            //          创建了 CheckpointedInputGate, 就是InputGate中带了barrier的处理.
+            //          CheckpointedInputGate是对 IndexedInputGate 的封装
             CheckpointedInputGate inputGate = createCheckpointedInputGate();
+            // clouding 注释: 2022/8/14 21:11
+            //          创建输出 StreamTaskNetworkOutput
             DataOutput<IN> output = createDataOutput();
+            // clouding 注释: 2022/8/14 21:12
+            //          创建输入 StreamTaskNetworkInput
             StreamTaskInput<IN> input = createTaskInput(inputGate, output);
+            // clouding 注释: 2022/8/14 21:13
+            //          封装了输入和输出.用以组装输入和输出
             inputProcessor = new StreamOneInputProcessor<>(input, output, operatorChain);
         }
         headOperator

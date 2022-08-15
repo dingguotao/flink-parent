@@ -134,9 +134,13 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
     protected void emit(T record, int targetChannel) throws IOException, InterruptedException {
         checkErroneous();
 
+        // clouding 注释: 2022/8/15 00:21
+        //          数据序列化后,写入 serializer
         serializer.serializeRecord(record);
 
         // Make sure we don't hold onto the large intermediate serialization buffer for too long
+        // clouding 注释: 2022/8/15 00:21
+        //          序列化在serializer中的数据,写入到对应subpartition
         if (copyFromSerializerToTargetChannel(targetChannel)) {
             // clouding 注释: 2022/7/23 22:26
             //          执行成功后,会做些serializer中数据清理, 数据最开始是写在了serializer中
@@ -152,6 +156,8 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
             throws IOException, InterruptedException {
         // We should reset the initial position of the intermediate serialization buffer before
         // copying, so the serialization results can be copied to multiple target buffers.
+        // clouding 注释: 2022/8/15 00:23
+        //          reset,从头开始复制数据
         serializer.reset();
 
         // clouding 注释: 2022/7/23 22:29
@@ -165,12 +171,16 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
             // If this was a full record, we are done. Not breaking out of the loop at this point
             // will lead to another buffer request before breaking out (that would not be a
             // problem per se, but it can lead to stalls in the pipeline).
+            // clouding 注释: 2022/8/15 00:26
+            //          如果数据读完了,刚好是条完整记录,就返回
             if (result.isFullRecord()) {
                 pruneTriggered = true;
                 emptyCurrentBufferBuilder(targetChannel);
                 break;
             }
 
+            // clouding 注释: 2022/8/15 00:26
+            //          不是完整的记录,说明后半部分还在 serializer中,再申请buffer去读
             bufferBuilder = requestNewBufferBuilder(targetChannel);
             result = serializer.copyToBufferBuilder(bufferBuilder);
         }

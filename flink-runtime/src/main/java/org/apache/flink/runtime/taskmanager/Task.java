@@ -792,7 +792,7 @@ public class Task
 
             // notify everyone that we switched to running
             // clouding 注释: 2022/6/5 17:23
-            //          通知相关组件, 任务进入 RUNNING状态
+            //          通知JobMaster, 任务进入 RUNNING状态
             taskManagerActions.updateTaskExecutionState(
                     new TaskExecutionState(jobId, executionId, ExecutionState.RUNNING));
 

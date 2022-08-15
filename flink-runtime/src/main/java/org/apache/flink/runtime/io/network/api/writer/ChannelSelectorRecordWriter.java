@@ -66,8 +66,6 @@ public final class ChannelSelectorRecordWriter<T extends IOReadableWritable>
     public void emit(T record) throws IOException, InterruptedException {
         // clouding 注释: 2022/1/26 14:34
         //          选择下一个channel
-        System.out.println("----------");
-        System.out.println(channelSelector.getClass());
         emit(record, channelSelector.selectChannel(record));
     }
 

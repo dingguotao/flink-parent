@@ -86,6 +86,8 @@ public class CheckpointedInputGate implements PullingAsyncDataInput<BufferOrEven
             if (bufferOrEvent.isBuffer()) {
                 return next;
             } else if (bufferOrEvent.getEvent().getClass() == CheckpointBarrier.class) {
+                // clouding 注释: 2022/8/14 16:52
+                //          触发checkpoint的地方
                 CheckpointBarrier checkpointBarrier = (CheckpointBarrier) bufferOrEvent.getEvent();
                 barrierHandler.processBarrier(checkpointBarrier, bufferOrEvent.getChannelInfo());
                 return next;

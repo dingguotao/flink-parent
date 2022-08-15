@@ -166,6 +166,8 @@ public final class StreamTaskNetworkInput<T> implements StreamTaskInput<T> {
                 }
             }
 
+            // clouding 注释: 2022/8/14 23:19
+            //          如果还没读到数据,就使用inputGate拉取
             Optional<BufferOrEvent> bufferOrEvent = checkpointedInputGate.pollNext();
             if (bufferOrEvent.isPresent()) {
                 // return to the mailbox after receiving a checkpoint barrier to avoid processing of
@@ -175,6 +177,8 @@ public final class StreamTaskNetworkInput<T> implements StreamTaskInput<T> {
                         && bufferOrEvent.get().getEvent() instanceof CheckpointBarrier) {
                     return InputStatus.MORE_AVAILABLE;
                 }
+                // clouding 注释: 2022/8/14 23:20
+                //          处理BufferOrEvent
                 processBufferOrEvent(bufferOrEvent.get());
             } else {
                 if (checkpointedInputGate.isFinished()) {
@@ -213,6 +217,8 @@ public final class StreamTaskNetworkInput<T> implements StreamTaskInput<T> {
                     currentRecordDeserializer != null,
                     "currentRecordDeserializer has already been released");
 
+            // clouding 注释: 2022/8/14 23:20
+            //          把获取到的buffer,放入对应序列化器
             currentRecordDeserializer.setNextBuffer(bufferOrEvent.getBuffer());
         } else {
             // Event received
