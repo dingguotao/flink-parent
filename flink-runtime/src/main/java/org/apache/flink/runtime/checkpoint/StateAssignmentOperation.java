@@ -81,6 +81,8 @@ public class StateAssignmentOperation {
     }
 
     public void assignStates() {
+        // clouding 注释: 2022/8/15 16:57
+        //          这个是checkpoint中的state的map
         Map<OperatorID, OperatorState> localOperators = new HashMap<>(operatorStates);
 
         // clouding 注释: 2022/1/11 17:03
@@ -405,7 +407,11 @@ public class StateAssignmentOperation {
         List<List<List<T>>> oldStates =
                 splitManagedAndRawOperatorStates(oldOperatorStates, extractHandle);
 
+        // clouding 注释: 2022/8/15 16:23
+        //          把旧状态转换到新的
         Map<OperatorInstanceID, List<T>> result = new HashMap<>();
+        // clouding 注释: 2022/8/15 16:24
+        //          按照operator id,依次去分配状态
         for (int operatorIndex = 0; operatorIndex < newOperatorIDs.size(); operatorIndex++) {
             result.putAll(
                     applyRepartitioner(
@@ -419,6 +425,10 @@ public class StateAssignmentOperation {
         return result;
     }
 
+    /*********************
+     * clouding 注释: 2022/8/15 16:21
+     *  	    获取每个task的对应的状态.每个Task的状态是List<>, 因此一起的返回值就是 List<List<List<T>>>
+     *********************/
     private static <T extends StateObject> List<List<List<T>>> splitManagedAndRawOperatorStates(
             List<OperatorState> operatorStates,
             Function<OperatorSubtaskState, StateObjectCollection<T>> extracthandle) {
