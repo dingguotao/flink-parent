@@ -1320,10 +1320,17 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
         if (outputPartitioner instanceof ConfigurableStreamPartitioner) {
             int numKeyGroups = bufferWriter.getNumTargetKeyGroups();
             if (0 < numKeyGroups) {
+                // clouding 注释: 2022/10/1 23:20
+                //          完成对 ConfigurableStreamPartitioner 类型的初始化
                 ((ConfigurableStreamPartitioner) outputPartitioner).configure(numKeyGroups);
             }
         }
 
+        // clouding 注释: 2022/10/1 23:22
+        //          创建 RecordWriter, 这里比较关键的是 ChannelSelector. ChannelSelector 有3种:
+        //          1. StreamPartitioner 用户指定的分区器;
+        //          2. RoundRobinChannelSelector 默认的分区器实现
+        //          3. OutputEmitter 批处理任务的
         RecordWriter<SerializationDelegate<StreamRecord<OUT>>> output =
                 new RecordWriterBuilder<SerializationDelegate<StreamRecord<OUT>>>()
                         .setChannelSelector(outputPartitioner)

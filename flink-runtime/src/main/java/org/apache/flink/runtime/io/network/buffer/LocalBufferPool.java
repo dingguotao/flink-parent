@@ -274,6 +274,9 @@ class LocalBufferPool implements BufferPool {
 
     @Override
     public BufferBuilder requestBufferBuilder(int targetChannel) throws IOException {
+        // clouding 注释: 2022/10/1 23:39
+        //          1. 请求MemorySegment
+        //          2. 封装成BufferBuilder
         return toBufferBuilder(requestMemorySegment(targetChannel), targetChannel);
     }
 

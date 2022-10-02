@@ -99,9 +99,13 @@ public final class ChannelSelectorRecordWriter<T extends IOReadableWritable>
     @Override
     public BufferBuilder getBufferBuilder(int targetChannel)
             throws IOException, InterruptedException {
+        // clouding 注释: 2022/10/1 23:36
+        //          当前如果还有,就使用当前的,直至写满时会清空
         if (bufferBuilders[targetChannel] != null) {
             return bufferBuilders[targetChannel];
         } else {
+            // clouding 注释: 2022/10/1 23:35
+            //          请求1个新的BufferBuilder
             return requestNewBufferBuilder(targetChannel);
         }
     }
@@ -113,6 +117,8 @@ public final class ChannelSelectorRecordWriter<T extends IOReadableWritable>
                 bufferBuilders[targetChannel] == null
                         || bufferBuilders[targetChannel].isFinished());
 
+        // clouding 注释: 2022/10/1 23:36
+        //          请求 NewBufferBuilder, 这里super就是 RecordWriter
         BufferBuilder bufferBuilder = super.requestNewBufferBuilder(targetChannel);
         addBufferConsumer(bufferBuilder.createBufferConsumer(), targetChannel);
         bufferBuilders[targetChannel] = bufferBuilder;

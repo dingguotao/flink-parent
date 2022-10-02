@@ -226,6 +226,8 @@ public class ResultPartition implements ResultPartitionWriter, BufferPoolOwner {
 
     @Override
     public BufferBuilder tryGetBufferBuilder(int targetChannel) throws IOException {
+        // clouding 注释: 2022/10/1 23:38
+        //          bufferPool中请求buffer
         BufferBuilder bufferBuilder = bufferPool.requestBufferBuilder(targetChannel);
         return bufferBuilder;
     }

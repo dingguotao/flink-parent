@@ -135,7 +135,7 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
         checkErroneous();
 
         // clouding 注释: 2022/8/15 00:21
-        //          数据序列化后,写入 serializer
+        //          数据序列化后,写入 serializer, 数据存在serializer的ByteBuffer中
         serializer.serializeRecord(record);
 
         // Make sure we don't hold onto the large intermediate serialization buffer for too long
@@ -163,9 +163,13 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
         // clouding 注释: 2022/7/23 22:29
         //          是否执行清理
         boolean pruneTriggered = false;
+        // clouding 注释: 2022/10/1 23:35
+        //          这里会获取一个bufferBuilder,如果已经有,就复用,没有就申请
         BufferBuilder bufferBuilder = getBufferBuilder(targetChannel);
         SerializationResult result = serializer.copyToBufferBuilder(bufferBuilder);
         while (result.isFullBuffer()) {
+            // clouding 注释: 2022/10/1 23:41
+            //          这个buffer 满了
             finishBufferBuilder(bufferBuilder);
 
             // If this was a full record, we are done. Not breaking out of the loop at this point
@@ -186,6 +190,12 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
         }
         checkState(!serializer.hasSerializedData(), "All data should be written at once");
 
+        // clouding 注释: 2022/10/1 23:42
+        //          这个 flushAlways 决定了什么时候发送数据通知.
+        //          有两种:
+        //              1. timeout == 0, 那么每次都flush.
+        //              2. 带 timeout的,是定时任务, 来触发所有targetChannel的flush方法. targetPartition.flushAll(); 默认就是这个
+        //          flush() 就是 让NetworkSequenceViewReader组件开始消费ResultSubPartition中的BufferConsumer对象
         if (flushAlways) {
             // clouding 注释: 2022/7/23 22:31
             //          发送数据
@@ -320,6 +330,8 @@ public abstract class RecordWriter<T extends IOReadableWritable> implements Avai
     /** Requests a new {@link BufferBuilder} for the target channel and returns it. */
     public BufferBuilder requestNewBufferBuilder(int targetChannel)
             throws IOException, InterruptedException {
+        // clouding 注释: 2022/10/1 23:37
+        //          尝试给 targetChannel 拿到一个Buffer, 从bufferPool中申请buffer
         BufferBuilder builder = targetPartition.tryGetBufferBuilder(targetChannel); // todo 尝试去获取bufferBuilder
         if (builder == null) {
             long start = System.currentTimeMillis();

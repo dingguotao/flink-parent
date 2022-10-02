@@ -160,7 +160,7 @@ public final class StreamTaskNetworkInput<T> implements StreamTaskInput<T> {
 
                 if (result.isFullRecord()) {
                     // clouding 注释: 2022/5/15 17:39
-                    //          读到了数据,反序列化对象到output里
+                    //          读到了数据,反序列化对象到output里. 这里会判断数据类型处理
                     processElement(deserializationDelegate.getInstance(), output);
                     return InputStatus.MORE_AVAILABLE;
                 }
@@ -195,13 +195,19 @@ public final class StreamTaskNetworkInput<T> implements StreamTaskInput<T> {
     private void processElement(StreamElement recordOrMark, DataOutput<T> output) throws Exception {
         if (recordOrMark.isRecord()) {
             // clouding 注释: 2022/5/15 17:39
-            //          output 接到数据,并交给operator处理
+            //          output 接到数据,并交给operator处理,通过output转交到 operatorChain中的headOperator
             output.emitRecord(recordOrMark.asRecord());
         } else if (recordOrMark.isWatermark()) {
+            // clouding 注释: 2022/5/15 17:39
+            //          处理watermark
             statusWatermarkValve.inputWatermark(recordOrMark.asWatermark(), lastChannel);
         } else if (recordOrMark.isLatencyMarker()) {
+            // clouding 注释: 2022/5/15 17:39
+            //          处理 LatencyMarker
             output.emitLatencyMarker(recordOrMark.asLatencyMarker());
         } else if (recordOrMark.isStreamStatus()) {
+            // clouding 注释: 2022/5/15 17:39
+            //          处理 StreamStatus
             statusWatermarkValve.inputStreamStatus(recordOrMark.asStreamStatus(), lastChannel);
         } else {
             throw new UnsupportedOperationException("Unknown type of StreamElement");
