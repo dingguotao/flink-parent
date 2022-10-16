@@ -389,6 +389,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
     public void initInputsCheckpoint(long id, CheckpointOptions checkpointOptions)
             throws CheckpointException {
         if (checkpointOptions.isUnalignedCheckpoint()) {
+            // clouding 注释: 2022/10/15 17:44
+            //          初始化 input channel的相关准备工作
             channelStateWriter.start(id, checkpointOptions);
 
             prepareInflightDataSnapshot(id);

@@ -152,6 +152,8 @@ public class PipelinedSubpartition extends ResultSubpartition
             }
 
             // Add the bufferConsumer and update the stats
+            // clouding 注释: 2022/10/15 22:36
+            //          增加buffer到buffers队列中,这里会判断是否是优先的事件,也就是unaligned barrier
             if (addBuffer(bufferConsumer, partialRecordLength)) {
                 prioritySequenceNumber = sequenceNumber;
             }
@@ -162,6 +164,8 @@ public class PipelinedSubpartition extends ResultSubpartition
             isFinished |= finish;
         }
 
+        // clouding 注释: 2022/10/15 22:40
+        //          立刻写出数据
         if (prioritySequenceNumber != -1) {
             notifyPriorityEvent(prioritySequenceNumber);
         }
@@ -175,6 +179,8 @@ public class PipelinedSubpartition extends ResultSubpartition
     private boolean addBuffer(BufferConsumer bufferConsumer, int partialRecordLength) {
         assert Thread.holdsLock(buffers);
         if (bufferConsumer.getDataType().hasPriority()) {
+            // clouding 注释: 2022/10/15 22:12
+            //          如果是,就processPriorityBuffer,会对buffers中做持久化
             return processPriorityBuffer(bufferConsumer, partialRecordLength);
         }
         buffers.add(new BufferConsumerWithPartialRecordLength(bufferConsumer, partialRecordLength));
@@ -182,6 +188,8 @@ public class PipelinedSubpartition extends ResultSubpartition
     }
 
     private boolean processPriorityBuffer(BufferConsumer bufferConsumer, int partialRecordLength) {
+        // clouding 注释: 2022/10/15 22:16
+        //          添加优先事件,直接加到队列头部
         buffers.addPriorityElement(
                 new BufferConsumerWithPartialRecordLength(bufferConsumer, partialRecordLength));
         final int numPriorityElements = buffers.getNumPriorityElements();
@@ -191,7 +199,11 @@ public class PipelinedSubpartition extends ResultSubpartition
             checkState(
                     barrier.getCheckpointOptions().isUnalignedCheckpoint(),
                     "Only unaligned checkpoints should be priority events");
+            // clouding 注释: 2022/10/15 22:14
+            //          获取buffers中所有的inflightBuffers,写入到channel state中
             final Iterator<BufferConsumerWithPartialRecordLength> iterator = buffers.iterator();
+            // clouding 注释: 2022/10/15 22:18
+            //          advance: 将 iterator 向前进 numPriorityElements个元素
             Iterators.advance(iterator, numPriorityElements);
             List<Buffer> inflightBuffers = new ArrayList<>();
             while (iterator.hasNext()) {

@@ -155,6 +155,8 @@ public class CheckpointedInputGate implements PullingAsyncDataInput<BufferOrEven
         BufferOrEvent bufferOrEvent = next.get();
 
         if (bufferOrEvent.isEvent()) {
+            // clouding 注释: 2022/10/15 16:55
+            //          处理所有的event事件
             return handleEvent(bufferOrEvent);
         } else if (bufferOrEvent.isBuffer()) {
             /**

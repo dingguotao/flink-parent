@@ -196,6 +196,8 @@ public class SingleCheckpointBarrierHandler extends CheckpointBarrierHandler {
         long barrierId = barrier.getId();
         LOG.debug("{}: Received barrier from channel {} @ {}.", taskName, channelInfo, barrierId);
 
+        // clouding 注释: 2022/10/15 16:57
+        //          来了一个过时的 CheckpointBarrier
         if (currentCheckpointId > barrierId
                 || (currentCheckpointId == barrierId && !isCheckpointPending())) {
             if (!barrier.getCheckpointOptions().isUnalignedCheckpoint()) {
@@ -204,6 +206,8 @@ public class SingleCheckpointBarrierHandler extends CheckpointBarrierHandler {
             return;
         }
 
+        // clouding 注释: 2022/10/15 16:58
+        //          检查是否来了个新的 Checkpoint
         checkNewCheckpoint(barrier);
         checkState(currentCheckpointId == barrierId);
 
@@ -224,6 +228,7 @@ public class SingleCheckpointBarrierHandler extends CheckpointBarrierHandler {
         }
 
         try {
+
             currentState = currentState.barrierReceived(context, channelInfo, barrier);
         } catch (CheckpointException e) {
             abortInternal(barrier.getId(), e);
@@ -303,6 +308,12 @@ public class SingleCheckpointBarrierHandler extends CheckpointBarrierHandler {
         if (isCheckpointPending()) {
             cancelSubsumedCheckpoint(barrierId);
         }
+        // clouding 注释: 2022/10/15 16:58
+        //          为新的Checkpoint生成必要的信息
+        //          currentCheckpointId 记录当前的CheckpointId,
+        //          numBarriersReceived 接收到的barrier数量,
+        //          allBarriersReceivedFuture 用来结束写入inputChannel的数据的
+        //          firstBarrierArrivalTime 首次接收到barrier的时间,用来做timeout的
         currentCheckpointId = barrierId;
         numBarriersReceived = 0;
         allBarriersReceivedFuture = new CompletableFuture<>();

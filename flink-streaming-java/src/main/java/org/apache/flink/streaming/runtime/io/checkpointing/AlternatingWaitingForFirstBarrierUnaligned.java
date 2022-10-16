@@ -62,6 +62,8 @@ final class AlternatingWaitingForFirstBarrierUnaligned implements BarrierHandler
             CheckpointBarrier checkpointBarrier)
             throws CheckpointException, IOException {
 
+        // clouding 注释: 2022/10/15 17:40
+        //          如果接收到了一个 aligned barrier,就block channel.
         // we received an out of order aligned barrier, we should book keep this channel as blocked,
         // as it is being blocked by the credit-based network
         if (!checkpointBarrier.getCheckpointOptions().isUnalignedCheckpoint()) {
@@ -69,7 +71,11 @@ final class AlternatingWaitingForFirstBarrierUnaligned implements BarrierHandler
         }
 
         CheckpointBarrier unalignedBarrier = checkpointBarrier.asUnaligned();
+        // clouding 注释: 2022/10/15 17:42
+        //          初始化 input channel的
         controller.initInputsCheckpoint(unalignedBarrier);
+        // clouding 注释: 2022/10/15 19:36
+        //          input channel的持久化
         for (CheckpointableInput input : channelState.getInputs()) {
             input.checkpointStarted(unalignedBarrier);
         }

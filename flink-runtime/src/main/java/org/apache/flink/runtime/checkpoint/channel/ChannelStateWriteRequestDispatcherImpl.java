@@ -68,10 +68,14 @@ final class ChannelStateWriteRequestDispatcherImpl implements ChannelStateWriteR
     }
 
     private void dispatchInternal(ChannelStateWriteRequest request) throws Exception {
+        // clouding 注释: 2022/10/15 17:46
+        //          如果是 CheckpointStartRequest,初始化各种目录,文件
         if (request instanceof CheckpointStartRequest) {
             checkState(
                     !writers.containsKey(request.getCheckpointId()),
                     "writer not found for request " + request);
+            // clouding 注释: 2022/10/15 19:11
+            //          buildWriter 初始化 fileSystem
             writers.put(request.getCheckpointId(), buildWriter((CheckpointStartRequest) request));
         } else if (request instanceof CheckpointInProgressRequest) {
             ChannelStateCheckpointWriter writer = writers.get(request.getCheckpointId());
