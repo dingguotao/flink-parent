@@ -196,6 +196,8 @@ class PartitionRequestQueue extends ChannelInboundHandlerAdapter {
         writeAndFlushNextMessageIfPossible(ctx.channel());
     }
 
+    // clouding 注释: 2022/10/16 12:51
+    //          采用通知机制,避免 writeAndFlushNextMessageIfPossible 空轮训
     private void writeAndFlushNextMessageIfPossible(final Channel channel) throws IOException {
         if (fatalError || !channel.isWritable()) {
             return;
@@ -216,6 +218,8 @@ class PartitionRequestQueue extends ChannelInboundHandlerAdapter {
                     return;
                 }
 
+                // clouding 注释: 2022/10/16 12:49
+                //          获取buffer数据,发送到下游的网络中
                 next = reader.getNextBuffer();
                 if (next == null) {
                     if (!reader.isReleased()) {

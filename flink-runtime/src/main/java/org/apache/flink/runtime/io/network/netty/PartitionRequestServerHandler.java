@@ -46,6 +46,10 @@ class PartitionRequestServerHandler extends SimpleChannelInboundHandler<NettyMes
 
     private final TaskEventPublisher taskEventPublisher;
 
+    // clouding 注释: 2022/10/17 16:08
+    //          PartitionRequestQueue 则包含了一个可以从中读取数据的 NetworkSequenceViewReader 队列，
+    //          它会监听 Netty Channel 的可写入状态，一旦可以写入数据，
+    //          就会从 NetworkSequenceViewReader 消费数据写入 Netty Channel
     private final PartitionRequestQueue outboundQueue;
 
     PartitionRequestServerHandler(

@@ -312,6 +312,8 @@ public class PipelinedSubpartition extends ResultSubpartition {
             // It will be reported for reading either on flush or when the number of buffers in the
             // queue
             // will be 2 or more.
+            // clouding 注释: 2022/10/16 12:49
+            //          构造成 BufferAndBacklog 结构
             return new BufferAndBacklog(
                     buffer,
                     isDataAvailableUnsafe(),
@@ -359,7 +361,11 @@ public class PipelinedSubpartition extends ResultSubpartition {
                     getSubPartitionIndex(),
                     parent.getPartitionId());
 
+            // clouding 注释: 2022/10/16 12:28
+            //          创建 PipelinedSubpartitionView
             readView = new PipelinedSubpartitionView(this, availabilityListener);
+            // clouding 注释: 2022/10/16 12:27
+            //          buffers不为空,则发送数据
             notifyDataAvailable = !buffers.isEmpty();
         }
         if (notifyDataAvailable) {

@@ -325,7 +325,7 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>> extends Ab
                         this,
                         configuration.isUnalignedCheckpointsEnabled(),
                         // clouding 注释: 2022/8/6 21:30
-                        //          这个是用来做什么的?
+                        //          用来触发input channel 存在buffers的写入以及结束输入
                         this::prepareInputSnapshot);
 
         // if the clock is not already set, then assign a default TimeServiceProvider

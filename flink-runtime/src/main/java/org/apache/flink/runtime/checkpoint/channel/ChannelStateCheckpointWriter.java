@@ -137,7 +137,7 @@ class ChannelStateCheckpointWriter {
                         long size = checkpointStream.getPos() - offset;
                         // clouding 注释: 2022/8/9 10:57
                         //    这里offsets,就是存放这个的map,key是InputChannelInfo或者ResultSubpartitionInfo.
-                        //    StateContentMetaInfo 里面是个List<Long>, 存放开始offset和结束offset
+                        //    StateContentMetaInfo 里面是个List<Long>, 存放开始offset和size大小
                         //    private final Map<InputChannelInfo, StateContentMetaInfo> inputChannelOffsets
                         //    private final Map<ResultSubpartitionInfo, StateContentMetaInfo> resultSubpartitionOffsets
                         offsets.computeIfAbsent(key, unused -> new StateContentMetaInfo())
