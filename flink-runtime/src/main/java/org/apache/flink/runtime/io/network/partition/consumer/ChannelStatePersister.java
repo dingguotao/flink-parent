@@ -48,8 +48,14 @@ public final class ChannelStatePersister {
     private final InputChannelInfo channelInfo;
 
     private enum CheckpointStatus {
+        // clouding 注释:  2022/10/15 19:36
+        //          Checkpoint channel state接收完毕
         COMPLETED,
+        // clouding 注释:  2022/10/15 19:36
+        //          开始了Checkpoint,但是还没收到barrier
         BARRIER_PENDING,
+        // clouding 注释:  2022/10/15 19:36
+        //          已经接收到了barrier
         BARRIER_RECEIVED
     }
 
@@ -79,6 +85,8 @@ public final class ChannelStatePersister {
                     CheckpointFailureReason
                             .CHECKPOINT_SUBSUMED); // currently, at most one active unaligned
         }
+        // clouding 注释:  2022/10/15 19:36
+        //          开始一次新的 unaligned Checkpoint
         if (lastSeenBarrier < barrierId) {
             // Regardless of the current checkpointStatus, if we are notified about a more recent
             // checkpoint then we have seen so far, always mark that this more recent barrier is
@@ -90,6 +98,8 @@ public final class ChannelStatePersister {
             checkpointStatus = CheckpointStatus.BARRIER_PENDING;
             lastSeenBarrier = barrierId;
         }
+        // clouding 注释: 2022/10/18 00:37
+        //          持久化 传过来的buffer,这里是remoteChannel已经接收到的buffer
         if (knownBuffers.size() > 0) {
             channelStateWriter.addInputData(
                     barrierId,
@@ -99,6 +109,8 @@ public final class ChannelStatePersister {
         }
     }
 
+    // clouding 注释: 2022/10/18 00:36
+    //          用来结束本次Checkpoint
     protected void stopPersisting(long id) {
         logEvent("stopPersisting", id);
         if (id >= lastSeenBarrier) {
@@ -108,6 +120,8 @@ public final class ChannelStatePersister {
     }
 
     protected void maybePersist(Buffer buffer) {
+        // clouding 注释: 2022/10/18 00:36
+        //          如果开始了Checkpoint,并且是buffer,就把网络接收到的buffer进行持久化
         if (checkpointStatus == CheckpointStatus.BARRIER_PENDING && buffer.isBuffer()) {
             channelStateWriter.addInputData(
                     lastSeenBarrier,

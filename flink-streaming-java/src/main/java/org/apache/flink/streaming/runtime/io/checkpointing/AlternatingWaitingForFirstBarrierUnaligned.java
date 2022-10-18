@@ -72,14 +72,16 @@ final class AlternatingWaitingForFirstBarrierUnaligned implements BarrierHandler
 
         CheckpointBarrier unalignedBarrier = checkpointBarrier.asUnaligned();
         // clouding 注释: 2022/10/15 17:42
-        //          初始化 input channel的
+        //          初始化 input channel的,这里会持久化serial中没有反序列化的buffer
         controller.initInputsCheckpoint(unalignedBarrier);
         // clouding 注释: 2022/10/15 19:36
-        //          input channel的持久化
+        //          input channel的持久化, 对input channel中的buffer做持久化
         for (CheckpointableInput input : channelState.getInputs()) {
             input.checkpointStarted(unalignedBarrier);
         }
         controller.triggerGlobalCheckpoint(unalignedBarrier);
+        // clouding 注释:  2022/10/15 19:36
+        //          用来结束 持久化
         if (controller.allBarriersReceived()) {
             for (CheckpointableInput input : channelState.getInputs()) {
                 input.checkpointStopped(unalignedBarrier.getId());

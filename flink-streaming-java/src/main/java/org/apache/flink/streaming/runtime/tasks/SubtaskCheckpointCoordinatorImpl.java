@@ -498,6 +498,8 @@ class SubtaskCheckpointCoordinatorImpl implements SubtaskCheckpointCoordinator {
     }
 
     private void prepareInflightDataSnapshot(long checkpointId) throws CheckpointException {
+        // clouding 注释: 2022/10/17 20:22
+        //          prepareInputSnapshot = org.apache.flink.streaming.runtime.tasks.StreamTask.prepareInputSnapshot
         prepareInputSnapshot
                 .apply(channelStateWriter, checkpointId)
                 .whenComplete(

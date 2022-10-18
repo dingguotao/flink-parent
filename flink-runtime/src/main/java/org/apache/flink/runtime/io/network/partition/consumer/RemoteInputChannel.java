@@ -487,6 +487,8 @@ public class RemoteInputChannel extends InputChannel {
                         firstPriorityEvent = addPriorityBuffer(announce(sequenceBuffer));
                     }
                 }
+                // clouding 注释:  2022/10/15 19:36
+                //          对input channel中的barrier到来前接收的barrier做持久化
                 channelStatePersister
                         .checkForBarrier(sequenceBuffer.buffer)
                         .filter(id -> id > lastBarrierId)
