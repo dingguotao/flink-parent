@@ -107,6 +107,8 @@ public class StreamSource<OUT, SRC extends SourceFunction<OUT>>
                         -1);
 
         try {
+            // clouding 注释: 2022/10/30 10:58
+            //          调用 Source,读取数据的核心入口
             userFunction.run(ctx);
 
             // if we get here, then the user function either exited after being done (finite source)

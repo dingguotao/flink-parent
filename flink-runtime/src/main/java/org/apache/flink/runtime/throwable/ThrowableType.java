@@ -25,17 +25,25 @@ public enum ThrowableType {
      * This indicates error that would not succeed even with retry, such as DivideZeroException. No
      * recovery attempt should happen for such an error. Instead, the job should fail immediately.
      */
+    // clouding 注释: 2022/10/30 16:36
+    //          不可恢复的错误
     NonRecoverableError,
 
     /** Data consumption error, which indicates that we should revoke the producer. */
+    // clouding 注释: 2022/10/30 16:36
+    //          分区访问错误,需要重启上游的task
     PartitionDataMissingError,
 
     /**
      * This indicates an error related to the running environment, such as hardware error, service
      * issue, in which case we should consider blacklisting the machine.
      */
+    // clouding 注释: 2022/10/30 16:37
+    //          环境的错误,多是机器产生的问题
     EnvironmentError,
 
     /** This indicates a problem that is recoverable. */
+    // clouding 注释: 2022/10/30 16:37
+    //          可以恢复的错误
     RecoverableError
 }

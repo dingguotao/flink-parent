@@ -132,6 +132,8 @@ public class TaskManagerRunner implements FatalErrorHandler {
 
         timeout = AkkaUtils.getTimeoutAsTime(configuration);
 
+        // clouding 注释: 2022/10/27 16:41
+        //          TaskManager 内部线程池,用来处理从节点内部各个组件的Io的线程池,大小是当前cpu core个数
         this.executor =
                 java.util.concurrent.Executors.newScheduledThreadPool(
                         Hardware.getNumberCPUCores(),

@@ -659,7 +659,7 @@ public class Task
             LOG.info("Loading JAR files for task {}.", this);
 
             // clouding 注释: 2022/6/5 17:14
-            //          加载用户的jar文件
+            //          加载用户的jar文件, 避免不同job执行时 jar冲突
             userCodeClassLoader = createUserCodeClassloader();
             final ExecutionConfig executionConfig =
                     serializedExecutionConfig.deserializeValue(userCodeClassLoader);
@@ -762,7 +762,7 @@ public class Task
             // We are setting the correct context class loader before instantiating the invokable
             // so that it is available to the invokable during its entire lifetime.
             // clouding 注释: 2022/6/5 17:21
-            //          设置线程的类加载器
+            //          设置线程的类加载器,线程里默认用这个classLoader
             executingThread.setContextClassLoader(userCodeClassLoader);
 
             /*********************
@@ -785,7 +785,7 @@ public class Task
             // switch to the RUNNING state, if that fails, we have been canceled/failed in the
             // meantime
             // clouding 注释: 2022/6/5 17:23
-            //          切换状态
+            //          切换状态,切换到RUNNING状态
             if (!transitionState(ExecutionState.DEPLOYING, ExecutionState.RUNNING)) {
                 throw new CancelTaskException();
             }
@@ -818,7 +818,7 @@ public class Task
 
             // finish the produced partitions. if this fails, we consider the execution failed.
             // clouding 注释: 2022/6/5 17:25
-            //          把没有写到下游的数据, 统一执行 flush, 如果flush失败, 抛出异常, task也会失败
+            //          这里是finished的部分,把没有写到下游的数据, 统一执行 flush, 如果flush失败, 抛出异常, task也会失败
             for (ResultPartitionWriter partitionWriter : consumableNotifyingPartitionWriters) {
                 if (partitionWriter != null) {
                     partitionWriter.finish();
@@ -827,6 +827,8 @@ public class Task
 
             // try to mark the task as finished
             // if that fails, the task was canceled/failed in the meantime
+            // clouding 注释: 2022/10/30 15:50
+            //          切换到Finished状态
             if (!transitionState(ExecutionState.RUNNING, ExecutionState.FINISHED)) {
                 throw new CancelTaskException();
             }
@@ -970,12 +972,16 @@ public class Task
     public static void setupPartitionsAndGates(
             ResultPartitionWriter[] producedPartitions, InputGate[] inputGates) throws IOException {
 
+        // clouding 注释: 2022/10/30 15:53
+        //          初始化 result partition
         for (ResultPartitionWriter partition : producedPartitions) {
             partition.setup();
         }
 
         // InputGates must be initialized after the partitions, since during InputGate#setup
         // we are requesting partitions
+        // clouding 注释: 2022/10/30 15:53
+        //          初始化 input gate
         for (InputGate gate : inputGates) {
             gate.setup();
         }

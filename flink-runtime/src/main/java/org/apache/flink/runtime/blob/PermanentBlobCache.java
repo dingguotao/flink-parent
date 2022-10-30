@@ -97,9 +97,15 @@ public class PermanentBlobCache extends AbstractBlobCache implements PermanentBl
                 serverAddress);
 
         // Initializing the clean up task
+        // clouding 注释: 2022/10/27 20:10
+        //          清理缓存文件的task
         this.cleanupTimer = new Timer(true);
 
+        // clouding 注释: 2022/10/27 20:10
+        //          配置的清理间隔,默认是 1h
         this.cleanupInterval = blobClientConfig.getLong(BlobServerOptions.CLEANUP_INTERVAL) * 1000;
+        // clouding 注释: 2022/10/27 20:10
+        //          定时清理
         this.cleanupTimer.schedule(
                 new PermanentBlobCleanupTask(), cleanupInterval, cleanupInterval);
     }
@@ -228,6 +234,8 @@ public class PermanentBlobCache extends AbstractBlobCache implements PermanentBl
                     Map.Entry<JobID, RefCount> entry = entryIter.next();
                     RefCount ref = entry.getValue();
 
+                    // clouding 注释: 2022/10/27 20:15
+                    //          如果引用次数小于 0,就清理
                     if (ref.references <= 0
                             && ref.keepUntil > 0
                             && currentTimeMillis >= ref.keepUntil) {
@@ -247,6 +255,8 @@ public class PermanentBlobCache extends AbstractBlobCache implements PermanentBl
 
                         boolean success = false;
                         try {
+                            // clouding 注释: 2022/10/27 20:15
+                            //          删除目录
                             FileUtils.deleteDirectory(localFile);
                             success = true;
                         } catch (Throwable t) {

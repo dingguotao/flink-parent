@@ -53,7 +53,11 @@ public class BlobCacheService implements BlobService {
             throws IOException {
 
         this(
+                // clouding 注释: 2022/10/27 20:07
+                //          持久化
                 new PermanentBlobCache(blobClientConfig, blobView, serverAddress),
+                // clouding 注释: 2022/10/27 20:07
+                //          临时缓存
                 new TransientBlobCache(blobClientConfig, serverAddress));
     }
 

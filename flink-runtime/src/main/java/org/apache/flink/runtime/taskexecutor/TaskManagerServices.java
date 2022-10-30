@@ -306,7 +306,7 @@ public class TaskManagerServices {
         final BroadcastVariableManager broadcastVariableManager = new BroadcastVariableManager();
 
         // clouding 注释: 2021/6/5 19:26
-        //          当前的Slot和Task的映射关系，管理的对象就是taskSLotTable
+        //          当前的Slot和Task的映射关系，管理的对象就是taskSLotTable,是TaskExecutor中非常重要的1个Table
         final TaskSlotTable<Task> taskSlotTable =
                 createTaskSlotTable(
                         taskManagerServicesConfiguration.getNumberOfSlots(),

@@ -128,6 +128,8 @@ public class JobManagerRunnerImpl
         // libraries and class loader first
         final ClassLoader userCodeLoader;
         try {
+            // clouding 注释: 2022/10/28 11:11
+            //          下载 class path
             userCodeLoader =
                     classLoaderLease.getOrResolveClassLoader(
                             jobGraph.getUserJarBlobKeys(), jobGraph.getClasspaths());
