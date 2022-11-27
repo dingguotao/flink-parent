@@ -152,6 +152,8 @@ public class SchedulerImpl implements Scheduler {
         CompletableFuture<LogicalSlot> allocationFuture =
                 scheduledUnit.getSlotSharingGroupId() == null
                         ? allocateSingleSlot(slotRequestId, slotProfile, allocationTimeout)
+                        // clouding 注释: 2022/10/30 22:10
+                        //          申请 shared slot,MultiTaskSlot
                         : allocateSharedSlot(
                                 slotRequestId, scheduledUnit, slotProfile, allocationTimeout);
 
@@ -502,6 +504,8 @@ public class SchedulerImpl implements Scheduler {
                                 bestResolvedRootSlotWithLocality.getLocality())
                         : null;
 
+        // clouding 注释: 2022/10/30 22:17
+        //          如果找到了可以共享的slot,就返回
         if (multiTaskSlotLocality != null
                 && multiTaskSlotLocality.getLocality() == Locality.LOCAL) {
             return multiTaskSlotLocality;

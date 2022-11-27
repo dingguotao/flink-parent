@@ -575,6 +575,8 @@ public class ExecutionVertex
      */
     public Collection<CompletableFuture<TaskManagerLocation>> getPreferredLocationsBasedOnInputs() {
         // otherwise, base the preferred locations on the input connections
+        // clouding 注释: 2022/10/30 22:05
+        //          如果当前没有上游input,返回一个空集合,标识没有位置偏好
         if (inputEdges == null) {
             return Collections.emptySet();
         } else {
@@ -584,6 +586,9 @@ public class ExecutionVertex
                     new HashSet<>(getTotalNumberOfParallelSubtasks());
 
             // go over all inputs
+            // clouding 注释: 2022/10/30 22:06
+            //          如果有上游输入,根据上游input来选择位置.
+            //          如果超过了 MAX_DISTINCT_LOCATIONS_TO_CONSIDER(8个)不同位置,就不能根据输入来作为位置偏好选择
             for (int i = 0; i < inputEdges.length; i++) {
                 inputLocations.clear();
                 ExecutionEdge[] sources = inputEdges[i];

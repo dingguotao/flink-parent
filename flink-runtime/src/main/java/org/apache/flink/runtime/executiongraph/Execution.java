@@ -444,6 +444,10 @@ public class Execution
 
         assertRunningInJobMasterMainThread();
         try {
+            // clouding 注释: 2022/10/30 21:48
+            //          根据之前calculatePreferredLocations来寻找到slot的位置偏好,
+            //          然后使用allocationSlot分配slot
+            //          会根据slot共享来设置不同的调用方法,Flink有默认的Default共享组
             final CompletableFuture<Execution> allocationFuture =
                     allocateResourcesForExecution(
                             slotProviderStrategy,
@@ -557,6 +561,9 @@ public class Execution
                             : Collections.emptyList();
 
             // calculate the preferred locations
+            // clouding 注释: 2022/10/30 21:51
+            //          获取到task的偏好位置集合.
+            //          从source开始分配到sink,上游的分配会影响到下游的分配结果
             final CompletableFuture<Collection<TaskManagerLocation>> preferredLocationsFuture =
                     calculatePreferredLocations(locationPreferenceConstraint);
 
@@ -1694,15 +1701,22 @@ public class Execution
     @VisibleForTesting
     public CompletableFuture<Collection<TaskManagerLocation>> calculatePreferredLocations(
             LocationPreferenceConstraint locationPreferenceConstraint) {
+        // clouding 注释: 2022/10/30 21:54
+        //          回去判断有没有历史状态,如果有,根据历史状态的偏好信息.
+        //          比如从checkpoint恢复的,上次的TaskManager就是偏好位置
         final Collection<CompletableFuture<TaskManagerLocation>> preferredLocationFutures =
                 getVertex().getPreferredLocations();
         final CompletableFuture<Collection<TaskManagerLocation>> preferredLocationsFuture;
 
         switch (locationPreferenceConstraint) {
             case ALL:
+                // clouding 注释: 2022/10/30 21:52
+                //          默认状态,前面的偏好列表是可以使用的
                 preferredLocationsFuture = FutureUtils.combineAll(preferredLocationFutures);
                 break;
             case ANY:
+                // clouding 注释: 2022/10/30 21:53
+                //          遍历所有的输入,关注已分配的偏好设置
                 final ArrayList<TaskManagerLocation> completedTaskManagerLocations =
                         new ArrayList<>(preferredLocationFutures.size());
 
