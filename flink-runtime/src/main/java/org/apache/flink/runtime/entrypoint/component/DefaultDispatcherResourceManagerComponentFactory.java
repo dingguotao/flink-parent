@@ -123,6 +123,7 @@ public class DefaultDispatcherResourceManagerComponentFactory
             resourceManagerRetrievalService =
                     highAvailabilityServices.getResourceManagerLeaderRetriever();
 
+            // TODO 此处获取 DispatcherGateway 的地址
             final LeaderGatewayRetriever<DispatcherGateway> dispatcherGatewayRetriever =
                     new RpcGatewayRetriever<>(
                             rpcService,
