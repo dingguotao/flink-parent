@@ -75,6 +75,8 @@ class AkkaInvocationHandler implements InvocationHandler, AkkaBasedEndpoint, Rpc
     /** Hostname of the host, {@link #rpcEndpoint} is running on. */
     private final String hostname;
 
+    // clouding 注释: 2024/3/13 11:28
+    //          向远程发送消息的actor
     private final ActorRef rpcEndpoint;
 
     // whether the actor ref is local and thus no message serialization is needed

@@ -34,7 +34,8 @@ import java.util.concurrent.TimeUnit;
  * procedures.
  */
 // CLOUDING 注释: 2021/5/30 10:33
-//   RPCService 就是对ActorSystem的封装，可以理解成ActorSystem
+//   RPCService 就是对ActorSystem的封装，可以理解成ActorSystem.
+//   用来启动RpcEndpoint和连接其他RpcServer
 public interface RpcService {
 
     /**
