@@ -64,6 +64,9 @@ public class SharedStateRegistryImpl implements SharedStateRegistry {
     private final Executor asyncDisposalExecutor;
 
     /** Checkpoint ID below which no state is discarded, inclusive. */
+    // dingguotao 注释: 2024/10/14 11:44
+    //          支持 no_claim模式,小于 highestNotClaimedCheckpointID的Checkpoint都不会删除.
+    //          会在restore的时候,赋值 highestNotClaimedCheckpointID
     private long highestNotClaimedCheckpointID = -1L;
 
     /** Default uses direct executor to delete unreferenced state */
