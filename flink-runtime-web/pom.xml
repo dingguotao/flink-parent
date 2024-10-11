@@ -273,10 +273,11 @@ under the License.
 							<goal>npm</goal>
 						</goals>
 						<configuration>
-							<arguments>ci --cache-max=0 --no-save ${npm.proxy}</arguments>
+							<arguments>ci</arguments>
 							<environmentVariables>
 								<HUSKY_SKIP_INSTALL>true</HUSKY_SKIP_INSTALL>
 							</environmentVariables>
+							<npmRegistryURL>https://registry.npmmirror.com/</npmRegistryURL>
 						</configuration>
 					</execution>
 					<execution>
@@ -286,6 +287,7 @@ under the License.
 						</goals>
 						<configuration>
 							<arguments>run ci-check</arguments>
+							<npmRegistryURL>https://registry.npmmirror.com/</npmRegistryURL>
 						</configuration>
 					</execution>
 				</executions>
