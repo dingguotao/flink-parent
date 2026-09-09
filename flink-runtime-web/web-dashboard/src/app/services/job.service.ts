@@ -34,6 +34,7 @@ import {
   JobException,
   JobFlameGraph,
   JobOverview,
+  JobParallelismConfig,
   JobsItem,
   JobSubTaskTime,
   JobVertexTaskManager,
@@ -203,6 +204,13 @@ export class JobService {
           );
         })
       );
+  }
+
+  /**
+   * Load job parallelism configuration
+   */
+  public loadJobParallelismConfig(jobId: string): Observable<JobParallelismConfig> {
+    return this.httpClient.get<JobParallelismConfig>(`${this.configService.BASE_URL}/jobs/${jobId}/parallelism`);
   }
 
   /** nodes to nodes links in order to generate graph */

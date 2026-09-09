@@ -89,9 +89,13 @@ public class ParserImpl implements Parser {
      */
     @Override
     public List<Operation> parse(String statement) {
+        // dingguotao 注释: 2024/10/19 17:01
+        //          获取一个Calcite Parser的包装对象,里面会调用calcite来解析SQL
         CalciteParser parser = calciteParserSupplier.get();
         FlinkPlannerImpl planner = validatorSupplier.get();
 
+        // dingguotao 注释: 2024/10/19 17:00
+        //          用来处理一些非SQL的语句.比如set 变量,clear 清屏操作等等
         Optional<Operation> command = EXTENDED_PARSER.parse(statement);
         if (command.isPresent()) {
             return Collections.singletonList(command.get());
@@ -99,6 +103,8 @@ public class ParserImpl implements Parser {
 
         // parse the sql query
         // use parseSqlList here because we need to support statement end with ';' in sql client.
+        // dingguotao 注释: 2024/10/19 17:03
+        //          解析SQL,调用calcite来解析SQL.这里用parseSqlList,就是可能是多条用;隔开的语句.
         SqlNodeList sqlNodeList = parser.parseSqlList(statement);
         List<SqlNode> parsed = sqlNodeList.getList();
         Preconditions.checkArgument(parsed.size() == 1, "only single statement supported");

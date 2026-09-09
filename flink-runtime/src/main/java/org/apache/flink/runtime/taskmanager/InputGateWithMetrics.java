@@ -127,6 +127,8 @@ public class InputGateWithMetrics extends IndexedInputGate {
 
     @Override
     public Optional<BufferOrEvent> pollNext() throws IOException, InterruptedException {
+        // clouding 注释: 2025/8/23 21:17
+        //          只用来更新metrics
         return inputGate.pollNext().map(this::updateMetrics);
     }
 

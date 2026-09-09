@@ -71,6 +71,16 @@ export const RUNNING_JOB_ROUTES: Routes = [
         }
       },
       {
+        path: 'parallelism',
+        loadComponent: () =>
+          import('@flink-runtime-web/pages/job/parallelism/job-parallelism.component').then(
+            m => m.JobParallelismComponent
+          ),
+        data: {
+          path: 'parallelism'
+        }
+      },
+      {
         path: 'configuration',
         loadComponent: () =>
           import('@flink-runtime-web/pages/job/configuration/job-configuration.component').then(

@@ -100,6 +100,8 @@ public abstract class AbstractStreamTaskNetworkInput<
             if (currentRecordDeserializer != null) {
                 RecordDeserializer.DeserializationResult result;
                 try {
+                    // clouding 注释: 2025/6/21 19:14
+                    //          反序列化数据
                     result = currentRecordDeserializer.getNextRecord(deserializationDelegate);
                 } catch (IOException e) {
                     throw new IOException(
@@ -119,6 +121,8 @@ public abstract class AbstractStreamTaskNetworkInput<
                 }
             }
 
+            // clouding 注释: 2025/6/21 19:15
+            //          没有数据时,就从网络上获取
             Optional<BufferOrEvent> bufferOrEvent = checkpointedInputGate.pollNext();
             if (bufferOrEvent.isPresent()) {
                 // return to the mailbox after receiving a checkpoint barrier to avoid processing of

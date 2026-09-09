@@ -66,7 +66,7 @@ public final class UpdatingTopCityExample {
         // create an empty temporary CSV directory for this example
         final String populationDirPath = createTemporaryDirectory();
 
-        // register a table in the catalog that points to the CSV file
+        // register a table  in the catalog that points to the CSV file
         env.executeSql(
                 "CREATE TABLE PopulationUpdates ("
                         + "  city STRING,"

@@ -253,21 +253,21 @@ public class RemoteInputChannel extends InputChannel {
     }
 
     @Override
-    public Optional<BufferAndAvailability> getNextBuffer() throws IOException {
+    public Optional<BufferAndAvailability>  getNextBuffer() throws IOException {
         checkPartitionRequestQueueInitialized();
 
         final SequenceBuffer next;
         final DataType nextDataType;
 
         synchronized (receivedBuffers) {
-            next = receivedBuffers.poll();
+            next = receivedBuffers.poll(); // clouding 注释: 2025/8/24 17:40 从队列中取出Buffer
 
             if (next != null) {
                 totalQueueSizeInBytes -= next.buffer.getSize();
             }
             nextDataType =
                     receivedBuffers.peek() != null
-                            ? receivedBuffers.peek().buffer.getDataType()
+                            ? receivedBuffers.peek().buffer.getDataType() // clouding 注释: 2025/8/24 17:40 判断下一个数据的类型,可用来判断是否有数据
                             : DataType.NONE;
         }
 

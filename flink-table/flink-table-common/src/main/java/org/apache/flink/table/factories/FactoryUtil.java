@@ -94,7 +94,7 @@ public final class FactoryUtil {
                     .noDefaultValue()
                     .withDescription(
                             "Uniquely identifies the connector of a dynamic table that is used for accessing data in "
-                                    + "an external system. Its value is used during table source and table sink discovery.");
+                                     + "an external system. Its value is used during table source and table sink discovery.");
 
     public static final ConfigOption<String> FORMAT =
             ConfigOptions.key("format")

@@ -45,13 +45,13 @@ import static org.apache.flink.util.Preconditions.checkState;
 
 public class IntermediateResult {
 
-    private final IntermediateDataSet intermediateDataSet;
+    private final IntermediateDataSet intermediateDataSet; // clouding 注释: 2025/9/6 17:14 IntermediateResult 对应JobGraph中的IntermediateDataSet
 
     private final IntermediateDataSetID id;
 
-    private final ExecutionJobVertex producer;
+    private final ExecutionJobVertex producer;  // clouding 注释: 2025/9/6 17:14 结果分区生产的jobVertex
 
-    private final IntermediateResultPartition[] partitions;
+    private final IntermediateResultPartition[] partitions; // clouding 注释: 2025/9/6 17:14 具体的结果分区,相当于是IntermediateResult的并行化
 
     /**
      * Maps intermediate result partition IDs to a partition index. This is used for ID lookups of

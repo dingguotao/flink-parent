@@ -158,6 +158,8 @@ public class SingleInputGate extends IndexedInputGate {
     private final InputChannel[] channels;
 
     /** Channels, which notified this input gate about available data. */
+    // clouding 注释: 2025/8/24 17:38
+    //          存放有数据的channel
     private final PrioritizedDeque<InputChannel> inputChannelsWithData = new PrioritizedDeque<>();
 
     /**
@@ -350,6 +352,8 @@ public class SingleInputGate extends IndexedInputGate {
                 }
 
                 convertRecoveredInputChannels();
+                // clouding 注释: 2025/7/7 11:09
+                //          请求partition
                 internalRequestPartitions();
             }
 
@@ -851,12 +855,17 @@ public class SingleInputGate extends IndexedInputGate {
             throws IOException, InterruptedException {
         while (true) {
             synchronized (inputChannelsWithData) {
+                // clouding 注释: 2025/6/22 17:28
+                //          获取到一个有数据的input channel. 先拿到有数据的channel,再从channel中读buffer数据
+                //          如果是blocking=true,则会一直阻塞直到有数据.否则没数据时,返回一个空的
                 Optional<InputChannel> inputChannelOpt = getChannel(blocking);
                 if (!inputChannelOpt.isPresent()) {
                     return Optional.empty();
                 }
 
                 final InputChannel inputChannel = inputChannelOpt.get();
+                // clouding 注释: 2025/6/22 17:34
+                //          从input channel中读取buffer
                 Optional<Buffer> buffer = readRecoveredOrNormalBuffer(inputChannel);
                 if (!buffer.isPresent()) {
                     checkUnavailability();
@@ -886,6 +895,8 @@ public class SingleInputGate extends IndexedInputGate {
                     }
                 }
 
+                // clouding 注释: 2025/6/22 17:35
+                //          判断是否含有优先级的buffer
                 final boolean morePriorityEvents =
                         inputChannelsWithData.getNumPriorityElements() > 0;
                 if (buffer.get().getDataType().hasPriority()) {
@@ -894,6 +905,12 @@ public class SingleInputGate extends IndexedInputGate {
                     }
                 }
                 checkUnavailability();
+                // clouding 注释: 2025/6/22 17:36
+                //          封装成InputWithData返回.这里包含
+                //          1. 数据的input channel
+                //          2. 对应buffer
+                //          3. 是否还有数据等待读取
+                //          4. 是否还有优先级的event
                 return Optional.of(
                         new InputWithData<>(
                                 inputChannel,
@@ -914,6 +931,8 @@ public class SingleInputGate extends IndexedInputGate {
             }
         }
 
+        // clouding 注释: 2025/6/22 17:29
+        //          支持分层存储. 默认走的 readBufferFromInputChannel
         //  After the recovered buffers are read, read the normal buffers
         return enabledTieredStorage()
                 ? readBufferFromTieredStore(inputChannel)
@@ -922,6 +941,8 @@ public class SingleInputGate extends IndexedInputGate {
 
     private Optional<Buffer> readBufferFromInputChannel(InputChannel inputChannel)
             throws IOException, InterruptedException {
+        // clouding 注释: 2025/8/24 17:39
+        //          从input channel 读取数据,以及后续时候还有数据等的可用性信息,用来判断是否需要重新入队列
         Optional<BufferAndAvailability> bufferAndAvailabilityOpt = inputChannel.getNextBuffer();
         if (!bufferAndAvailabilityOpt.isPresent()) {
             return Optional.empty();
@@ -929,7 +950,7 @@ public class SingleInputGate extends IndexedInputGate {
         final BufferAndAvailability bufferAndAvailability = bufferAndAvailabilityOpt.get();
         if (bufferAndAvailability.moreAvailable()) {
             // enqueue the inputChannel at the end to avoid starvation
-            queueChannelUnsafe(inputChannel, bufferAndAvailability.morePriorityEvents());
+            queueChannelUnsafe(inputChannel, bufferAndAvailability.morePriorityEvents()); // clouding 注释: 2025/8/24 17:41 后续还有数据,则重新入队
         }
         if (bufferAndAvailability.hasPriority()) {
             lastPrioritySequenceNumber[inputChannel.getChannelIndex()] =

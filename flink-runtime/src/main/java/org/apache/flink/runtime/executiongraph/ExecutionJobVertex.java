@@ -94,11 +94,13 @@ public class ExecutionJobVertex
 
     private final JobVertex jobVertex;
 
+    // clouding 注释: 2025/9/6 17:09
+    //          一个JobVertex对应的多个并行subtask
     @Nullable private ExecutionVertex[] taskVertices;
 
-    @Nullable private IntermediateResult[] producedDataSets;
+    @Nullable private IntermediateResult[] producedDataSets; // clouding 注释: 2025/9/6 17:09 输出
 
-    @Nullable private List<IntermediateResult> inputs;
+    @Nullable private List<IntermediateResult> inputs; // clouding 注释: 2025/9/6 17:09 输入,可能是多个边的输入
 
     private final VertexParallelismInformation parallelismInfo;
 

@@ -57,7 +57,7 @@ import static org.apache.flink.util.Preconditions.checkState;
  * The ExecutionVertex is a parallel subtask of the execution. It may be executed once, or several
  * times, each of which time it spawns an {@link Execution}.
  */
-public class ExecutionVertex
+public class  ExecutionVertex
         implements AccessExecutionVertex, Archiveable<ArchivedExecutionVertex> {
 
     public static final long NUM_BYTES_UNKNOWN = -1;
@@ -66,6 +66,7 @@ public class ExecutionVertex
 
     final ExecutionJobVertex jobVertex;
 
+    // clouding 注释: 2025/9/6 17:11 该subtask的结果输出
     private final Map<IntermediateResultPartitionID, IntermediateResultPartition> resultPartitions;
 
     private final int subTaskIndex;

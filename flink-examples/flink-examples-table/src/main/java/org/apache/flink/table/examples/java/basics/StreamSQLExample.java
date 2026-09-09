@@ -76,6 +76,11 @@ public final class StreamSQLExample {
         // it will be accessible under a name
         tableEnv.createTemporaryView("TableB", orderB);
 
+        tableEnv.executeSql(
+                "SELECT * FROM TableB "
+                        + " WHERE amount > 2 UNION ALL "
+                        + "SELECT * FROM TableB WHERE amount < 2");
+
         // union the two tables
         final Table result =
                 tableEnv.sqlQuery(
